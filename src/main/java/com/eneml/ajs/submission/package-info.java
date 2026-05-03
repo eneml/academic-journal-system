@@ -1,13 +1,12 @@
 /**
- * Submission module — manuscript submissions, draft progress, contributors,
- * uploaded files (lifecycle-typed by file_stage), stage assignments.
+ * Submission module — manuscript submissions, contributors, uploaded
+ * files lifecycle-typed by stage. Owns the durable shell that survives
+ * the entire editorial workflow.
  *
- * <p>Owns: Submission, SubmissionFile, Author, AuthorAffiliation,
- * StageAssignment, Citation, ReviewerSuggestion.
- * <br>Emits: SubmissionStarted, SubmissionSubmitted, SubmissionRevised,
- * SubmissionFileUploaded, StageAssigned, SubmissionStageChanged.
- * <br>Consumes: UserRegistered, UserGroupAssigned (auto-add author
- * to user_user_groups when first submission is created).
+ * <p>Owns: Submission, SubmissionAuthor, SubmissionFile.
+ * <br>Emits: SubmissionStarted, SubmissionSubmitted, SubmissionStageChanged,
+ * SubmissionFileUploaded.
+ * <br>Consumes: nothing.
  */
 @org.springframework.modulith.ApplicationModule(
     displayName = "Submission",
