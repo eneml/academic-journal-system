@@ -1,0 +1,30 @@
+package com.eneml.ajs.review.internal.persistence;
+
+import com.eneml.ajs.review.api.ReviewAssignmentStatus;
+import com.eneml.ajs.review.internal.domain.ReviewAssignment;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface ReviewAssignmentRepository extends JpaRepository<ReviewAssignment, Long> {
+
+    List<ReviewAssignment> findByReviewRoundIdOrderByDateAssigned(Long reviewRoundId);
+
+    Optional<ReviewAssignment> findByReviewRoundIdAndReviewerUserId(Long reviewRoundId, Long reviewerUserId);
+
+    @Query("""
+            SELECT a FROM ReviewAssignment a
+            WHERE a.reviewerUserId = :reviewerUserId
+              AND a.status NOT IN (com.eneml.ajs.review.api.ReviewAssignmentStatus.DECLINED,
+                                    com.eneml.ajs.review.api.ReviewAssignmentStatus.CANCELLED,
+                                    com.eneml.ajs.review.api.ReviewAssignmentStatus.CONFIRMED)
+            ORDER BY a.dateAssigned DESC
+            """)
+    List<ReviewAssignment> findOpenForReviewer(Long reviewerUserId);
+
+    long countByReviewRoundIdAndStatusIn(Long reviewRoundId, List<ReviewAssignmentStatus> statuses);
+
+    long countByReviewRoundId(Long reviewRoundId);
+}

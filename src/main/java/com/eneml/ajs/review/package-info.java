@@ -1,12 +1,10 @@
 /**
- * Review module — peer review rounds, reviewer assignments, review forms,
- * recommendations.
+ * Review module — peer review rounds and reviewer assignments.
  *
- * <p>Owns: ReviewRound, ReviewAssignment, ReviewForm, ReviewFormElement,
- * ReviewFormResponse, ReviewFile.
+ * <p>Owns: ReviewRound, ReviewAssignment.
  * <br>Emits: ReviewRoundCreated, ReviewerInvited, ReviewerAccepted,
- * ReviewerDeclined, ReviewSubmitted, ReviewConfirmed, ReviewRoundCompleted.
- * <br>Consumes: SubmissionStageChanged, SubmissionRevised.
+ * ReviewerDeclined, ReviewSubmitted, ReviewRoundCompleted.
+ * <br>Consumes: nothing.
  */
 @org.springframework.modulith.ApplicationModule(
     displayName = "Review",
