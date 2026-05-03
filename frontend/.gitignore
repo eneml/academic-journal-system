@@ -41,3 +41,6 @@ next-env.d.ts
 
 # Generated API client
 packages/api-client/src/generated/
+
+# TanStack Router generated route tree
+**/routeTree.gen.ts

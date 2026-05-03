@@ -4,17 +4,7 @@
 /* Tailwind v4 — CSS-first config via @import + @theme. */
 @import "tailwindcss";
 
-/* Re-bind font tokens to the next/font CSS variables so we get self-hosted, swap-loaded fonts
-   while still routing every consumer through the design-token names. */
-:root {
-  --serif-display: var(--font-newsreader), "Newsreader", "Source Serif 4", Georgia, serif;
-  --serif-body: var(--font-source-serif), "Source Serif 4", "Newsreader", Georgia, serif;
-  --sans: var(--font-inter-tight), "Inter Tight", "Inter", -apple-system, system-ui, sans-serif;
-  --mono: var(--font-jetbrains-mono), "JetBrains Mono", "SF Mono", ui-monospace, monospace;
-}
-
 @theme {
-  /* Surface tokens, mirrored as Tailwind colour utilities. */
   --color-bg: var(--bg);
   --color-bg-tint: var(--bg-tint);
   --color-surface: var(--surface);
@@ -38,13 +28,11 @@
   --color-danger: var(--danger);
   --color-info: var(--info);
 
-  /* Type stacks. */
   --font-serif-display: var(--serif-display);
   --font-serif-body: var(--serif-body);
   --font-sans: var(--sans);
   --font-mono: var(--mono);
 
-  /* Radii. */
   --radius-1: var(--r-1);
   --radius-2: var(--r-2);
   --radius-3: var(--r-3);
