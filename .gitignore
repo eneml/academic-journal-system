@@ -1,0 +1,52 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.project
+.classpath
+.settings/
+.factorypath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Local env / secrets
+.env
+.env.local
+.env.*.local
+application-local.yml
+application-local.properties
+
+# Build
+build/
+out/
+bin/
+
+# Docker volumes (local data)
+docker-data/
+.docker/
+
+# Claude / AI tooling
+.claude/
+.claude*
+CLAUDE.md
+.anthropic/
+*.claude.md
+.ai/
+.cursor/
+.aider*
+.continue/
+.cline/

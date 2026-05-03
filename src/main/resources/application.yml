@@ -1,0 +1,183 @@
+spring:
+  application:
+    name: ajs
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  # ----------------------------------------------------------------
+  # Database
+  # ----------------------------------------------------------------
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/academic_journal}
+    username: ${DB_USERNAME:journal}
+    password: ${DB_PASSWORD:journal}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 10000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+        format_sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+    locations: classpath:db/migration
+    validate-migration-naming: true
+
+  # ----------------------------------------------------------------
+  # Cache & sessions: Redis
+  # ----------------------------------------------------------------
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+
+  # ----------------------------------------------------------------
+  # Spring Modulith: events outbox via JDBC
+  # ----------------------------------------------------------------
+  modulith:
+    events:
+      jdbc:
+        schema-initialization:
+          enabled: false   # managed by Flyway
+      republish-outstanding-events-on-restart: true
+      completion-mode: archive
+
+  # ----------------------------------------------------------------
+  # Security: validate Keycloak JWTs
+  # ----------------------------------------------------------------
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/academic-journal}
+
+  # ----------------------------------------------------------------
+  # Mail (Resend SMTP in prod, Mailpit in dev)
+  # ----------------------------------------------------------------
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_AUTH:false}
+          starttls:
+            enable: ${MAIL_STARTTLS:false}
+
+  # ----------------------------------------------------------------
+  # Docker Compose integration (dev convenience)
+  # ----------------------------------------------------------------
+  docker:
+    compose:
+      enabled: true
+      lifecycle-management: start-only
+
+# ----------------------------------------------------------------
+# Server
+# ----------------------------------------------------------------
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# ----------------------------------------------------------------
+# Actuator + observability
+# ----------------------------------------------------------------
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus, modulith
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: 0.1
+  otlp:
+    tracing:
+      endpoint: ${OTEL_ENDPOINT:http://localhost:4318/v1/traces}
+
+# ----------------------------------------------------------------
+# OpenAPI / Swagger
+# ----------------------------------------------------------------
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+
+# ----------------------------------------------------------------
+# Application-specific configuration
+# ----------------------------------------------------------------
+app:
+  base-url: ${APP_BASE_URL:http://localhost:8080}
+  public-site-url: ${PUBLIC_SITE_URL:http://localhost:3000}
+  editorial-app-url: ${EDITORIAL_APP_URL:http://localhost:5173}
+
+  cors:
+    allowed-origins:
+      - ${PUBLIC_SITE_URL:http://localhost:3000}
+      - ${EDITORIAL_APP_URL:http://localhost:5173}
+    allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+    allowed-headers: "*"
+    allow-credentials: true
+    max-age: 3600
+
+  storage:
+    s3:
+      endpoint: ${S3_ENDPOINT:http://localhost:9000}
+      region: ${S3_REGION:auto}
+      access-key: ${S3_ACCESS_KEY:minioadmin}
+      secret-key: ${S3_SECRET_KEY:minioadmin}
+      bucket: ${S3_BUCKET:academic-journal}
+      path-style-access: ${S3_PATH_STYLE:true}
+      presigned-url-ttl-seconds: 900
+
+  email:
+    from: ${MAIL_FROM:noreply@journal.local}
+    from-name: ${MAIL_FROM_NAME:Academic Journal}
+
+  journal:
+    # Singleton journal config — overridable from DB at runtime,
+    # these are bootstrap defaults
+    name: ${JOURNAL_NAME:Academic Journal}
+    issn-print: ${JOURNAL_ISSN_PRINT:}
+    issn-online: ${JOURNAL_ISSN_ONLINE:}
+    default-locale: ${JOURNAL_DEFAULT_LOCALE:en}
+    supported-locales:
+      - en
+      - ro
+
+# ----------------------------------------------------------------
+# Logging
+# ----------------------------------------------------------------
+logging:
+  level:
+    root: INFO
+    com.eneml.ajs: INFO
+    org.springframework.modulith: INFO
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
