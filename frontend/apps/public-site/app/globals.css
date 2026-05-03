@@ -1,0 +1,42 @@
+/* Pull in design tokens (custom properties + base typography). */
+@import "@ajs/ui/tokens.css";
+
+/* Tailwind v4 — CSS-first config via @import + @theme. */
+@import "tailwindcss";
+
+@theme {
+  /* Surface tokens, mirrored as Tailwind colour utilities. */
+  --color-bg: var(--bg);
+  --color-bg-tint: var(--bg-tint);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-fg: var(--fg);
+  --color-fg-2: var(--fg-2);
+  --color-muted: var(--muted);
+  --color-muted-2: var(--muted-2);
+
+  --color-cobalt: var(--cobalt);
+  --color-cobalt-deep: var(--cobalt-deep);
+  --color-cobalt-soft: var(--cobalt-soft);
+  --color-amber: var(--amber);
+  --color-amber-deep: var(--amber-deep);
+  --color-amber-soft: var(--amber-soft);
+
+  --color-success: var(--success);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  /* Type stacks. */
+  --font-serif-display: var(--serif-display);
+  --font-serif-body: var(--serif-body);
+  --font-sans: var(--sans);
+  --font-mono: var(--mono);
+
+  /* Radii. */
+  --radius-1: var(--r-1);
+  --radius-2: var(--r-2);
+  --radius-3: var(--r-3);
+}

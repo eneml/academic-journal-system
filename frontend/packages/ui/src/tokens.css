@@ -1,0 +1,241 @@
+/* Academic Journal System — design tokens */
+:root {
+  /* Cobalt + amber on warm whites, per brief */
+  --bg: oklch(99% 0.003 90);
+  --bg-tint: oklch(98% 0.005 90);
+  --surface: oklch(97% 0.006 90);
+  --surface-2: oklch(95% 0.008 90);
+  --border: oklch(91% 0.008 90);
+  --border-strong: oklch(85% 0.012 90);
+  --fg: oklch(20% 0.02 270);
+  --fg-2: oklch(35% 0.02 270);
+  --muted: oklch(52% 0.015 270);
+  --muted-2: oklch(65% 0.01 270);
+
+  /* Brand */
+  --cobalt: oklch(45% 0.18 255);
+  --cobalt-deep: oklch(35% 0.16 258);
+  --cobalt-soft: oklch(92% 0.04 255);
+  --amber: oklch(72% 0.16 75);
+  --amber-deep: oklch(58% 0.16 65);
+  --amber-soft: oklch(95% 0.05 80);
+
+  /* Semantic */
+  --success: oklch(58% 0.13 155);
+  --warn: oklch(70% 0.15 70);
+  --danger: oklch(55% 0.20 25);
+  --info: var(--cobalt);
+
+  /* Type */
+  --serif-display: "Newsreader", "Source Serif 4", Georgia, serif;
+  --serif-body: "Source Serif 4", "Newsreader", Georgia, serif;
+  --sans: "Inter Tight", "Inter", -apple-system, system-ui, sans-serif;
+  --mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+
+  /* Radii (per brief: 6 default, 4 inline, 10 modals) */
+  --r-1: 4px;
+  --r-2: 6px;
+  --r-3: 10px;
+
+  /* Shadows — flat with crisp lines */
+  --shadow-1: 0 1px 0 0 oklch(85% 0.012 90 / 0.6);
+  --shadow-2: 0 1px 2px oklch(20% 0.02 270 / 0.04), 0 0 0 1px oklch(91% 0.008 90);
+  --shadow-3: 0 4px 16px oklch(20% 0.02 270 / 0.06), 0 0 0 1px oklch(91% 0.008 90);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--sans);
+  color: var(--fg);
+  background: var(--bg);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Mono-numeric utility */
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* The signature 5-segment stepper */
+.stage-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.stage-stepper .seg {
+  height: 4px;
+  width: 18px;
+  background: var(--border);
+  border-radius: 2px;
+  position: relative;
+}
+.stage-stepper .seg.done {
+  background: var(--cobalt);
+}
+.stage-stepper .seg.current {
+  background: var(--amber);
+  box-shadow: 0 0 0 2px var(--amber-soft);
+}
+.stage-stepper.lg .seg { height: 6px; width: 56px; border-radius: 3px; }
+
+/* SVG placeholder pattern: subtle stripes */
+.placeholder-stripes {
+  background-image: repeating-linear-gradient(
+    135deg,
+    oklch(91% 0.008 90) 0,
+    oklch(91% 0.008 90) 1px,
+    transparent 1px,
+    transparent 8px
+  );
+  background-color: var(--surface);
+}
+
+/* Numbered marginalia for editorial press feel */
+.marginalia-num {
+  font-family: var(--serif-display);
+  font-feature-settings: "lnum";
+  color: var(--muted-2);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+/* Crisp small caps SC look */
+.sc {
+  font-family: var(--sans);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.rule {
+  border-top: 1px solid var(--border);
+}
+.rule-strong {
+  border-top: 1px solid var(--border-strong);
+}
+.double-rule {
+  border-top: 3px double var(--border-strong);
+}
+
+/* Button base */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 12px;
+  border-radius: var(--r-2);
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+  line-height: 1;
+}
+.btn:hover { background: var(--surface); }
+.btn-primary {
+  background: var(--cobalt);
+  border-color: var(--cobalt);
+  color: white;
+}
+.btn-primary:hover { background: var(--cobalt-deep); }
+.btn-ghost { border-color: transparent; background: transparent; }
+.btn-ghost:hover { background: var(--surface); }
+.btn-sm { padding: 5px 9px; font-size: 12px; }
+
+/* Chip / badge */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 7px;
+  border-radius: var(--r-1);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg-2);
+  letter-spacing: 0.01em;
+  font-family: var(--sans);
+  height: 20px;
+}
+.chip-mono { font-family: var(--mono); font-size: 10.5px; font-weight: 500; }
+.chip-cobalt { background: var(--cobalt-soft); border-color: oklch(85% 0.06 255); color: var(--cobalt-deep); }
+.chip-amber { background: var(--amber-soft); border-color: oklch(88% 0.08 80); color: var(--amber-deep); }
+.chip-green { background: oklch(94% 0.05 155); border-color: oklch(85% 0.08 155); color: oklch(40% 0.14 155); }
+.chip-red { background: oklch(95% 0.04 25); border-color: oklch(88% 0.08 25); color: oklch(45% 0.18 25); }
+.chip-dot::before {
+  content: "";
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+/* Avatar (initials) */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--fg-2);
+  font-family: var(--sans);
+}
+
+/* Reading typography */
+.reading {
+  font-family: var(--serif-body);
+  font-size: 18px;
+  line-height: 1.72;
+  color: var(--fg);
+  font-feature-settings: "onum";
+}
+.reading p { margin: 0 0 1.1em 0; }
+.reading h2 {
+  font-family: var(--serif-display);
+  font-weight: 600;
+  font-size: 26px;
+  line-height: 1.25;
+  margin: 1.6em 0 0.5em;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+.reading h3 {
+  font-family: var(--serif-display);
+  font-weight: 600;
+  font-size: 19px;
+  margin: 1.4em 0 0.4em;
+  color: var(--fg);
+}
+.reading a {
+  color: var(--cobalt);
+  text-decoration: underline;
+  text-decoration-color: oklch(80% 0.08 255);
+  text-underline-offset: 3px;
+}
+.reading a:hover { color: var(--amber-deep); text-decoration-color: var(--amber); }
+.reading sup.fnref {
+  color: var(--cobalt);
+  font-feature-settings: "lnum";
+  cursor: pointer;
+  padding: 0 1px;
+}
+.reading sup.fnref:hover { color: var(--amber-deep); }
+
+/* Drop cap on first paragraph */
+.reading.dropcap > p:first-of-type::first-letter {
+  font-family: var(--serif-display);
+  font-size: 4.6em;
+  float: left;
+  line-height: 0.86;
+  margin: 0.05em 0.08em 0 -0.04em;
+  font-weight: 500;
+  color: var(--cobalt-deep);
+}

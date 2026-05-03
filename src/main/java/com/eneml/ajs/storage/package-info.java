@@ -1,13 +1,11 @@
 /**
- * Storage module — physical file store abstraction (S3-compatible),
- * temporary upload buffer, virus scan hooks, content hashing.
+ * Storage module — S3-compatible binary store. Tracks every uploaded
+ * file (manuscripts, supplementary, galleys, JATS XML) with content
+ * hashing, deduplication, and presigned download URLs.
  *
- * <p>Owns: StoredFile, TemporaryFile.
+ * <p>Owns: StoredFile.
  * <br>Emits: FileStored, FileDeleted.
- * <br>Consumes: SubmissionFileUploaded.
- *
- * <p>Public API: {@link com.eneml.ajs.storage.api.FileStorageService}
- * provides upload/download/presigned-URL operations to other modules.
+ * <br>Consumes: nothing (other modules call the service directly).
  */
 @org.springframework.modulith.ApplicationModule(
     displayName = "Storage",

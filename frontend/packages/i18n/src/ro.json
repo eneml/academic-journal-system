@@ -1,0 +1,26 @@
+{
+  "common": {
+    "appName": "Jurnal Academic",
+    "signIn": "Autentificare",
+    "signOut": "Deconectare",
+    "loading": "Se încarcă...",
+    "search": "Căutare"
+  },
+  "nav": {
+    "home": "Acasă",
+    "issues": "Numere",
+    "articles": "Articole",
+    "about": "Despre",
+    "submit": "Trimite"
+  },
+  "home": {
+    "heroLead": "O publicație științifică de cercetare originală evaluată de specialiști.",
+    "latestIssue": "Cel mai recent număr",
+    "featured": "Articole recomandate",
+    "about": "Despre jurnal"
+  },
+  "editorial": {
+    "dashboard": "Tablou de bord",
+    "greeting": "Bună, {name}"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "common": {
+    "appName": "Academic Journal",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "loading": "Loading...",
+    "search": "Search"
+  },
+  "nav": {
+    "home": "Home",
+    "issues": "Issues",
+    "articles": "Articles",
+    "about": "About",
+    "submit": "Submit"
+  },
+  "home": {
+    "heroLead": "A scholarly journal of original peer-reviewed research.",
+    "latestIssue": "Latest issue",
+    "featured": "Featured articles",
+    "about": "About the journal"
+  },
+  "editorial": {
+    "dashboard": "Dashboard",
+    "greeting": "Hello {name}"
+  }
+}
