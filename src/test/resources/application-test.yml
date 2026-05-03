@@ -2,6 +2,10 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+  datasource:
+    # @ServiceConnection (Testcontainers) overrides this at runtime;
+    # placeholder satisfies the property binder during context init.
+    password: test
   jpa:
     hibernate:
       ddl-auto: validate
@@ -18,6 +22,11 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:8081/realms/test
+
+app:
+  storage:
+    s3:
+      secret-key: test
 
 logging:
   level:

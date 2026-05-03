@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: academic_journal
       POSTGRES_USER: journal
-      POSTGRES_PASSWORD: journal
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
     ports:
       - "5432:5432"
     volumes:
@@ -36,7 +36,7 @@ services:
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?S3_SECRET_KEY must be set in .env}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -54,12 +54,38 @@ services:
     depends_on:
       minio:
         condition: service_healthy
+    environment:
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY must be set in .env}
     entrypoint: >
       /bin/sh -c "
-      mc alias set local http://minio:9000 minioadmin minioadmin;
+      mc alias set local http://minio:9000 minioadmin $$S3_SECRET_KEY;
       mc mb -p local/academic-journal || true;
       mc anonymous set download local/academic-journal/public || true;
       exit 0;
+      "
+
+  keycloak-realm-init:
+    image: alpine:3.20
+    container_name: aj-keycloak-realm-init
+    environment:
+      KC_USER_ADMIN_PASSWORD: ${KC_USER_ADMIN_PASSWORD:?KC_USER_ADMIN_PASSWORD must be set in .env}
+      KC_USER_EDITOR_PASSWORD: ${KC_USER_EDITOR_PASSWORD:?KC_USER_EDITOR_PASSWORD must be set in .env}
+      KC_USER_REVIEWER_PASSWORD: ${KC_USER_REVIEWER_PASSWORD:?KC_USER_REVIEWER_PASSWORD must be set in .env}
+      KC_USER_AUTHOR_PASSWORD: ${KC_USER_AUTHOR_PASSWORD:?KC_USER_AUTHOR_PASSWORD must be set in .env}
+    volumes:
+      - ./infra/keycloak/realm:/tpl:ro
+      - keycloak-realm-imports:/out
+    command: |
+      sh -c "
+        set -e
+        apk add --no-cache gettext > /dev/null
+        envsubst '
+          $$KC_USER_ADMIN_PASSWORD
+          $$KC_USER_EDITOR_PASSWORD
+          $$KC_USER_REVIEWER_PASSWORD
+          $$KC_USER_AUTHOR_PASSWORD
+        ' < /tpl/academic-journal-realm.json.tpl > /out/academic-journal-realm.json
+        echo 'realm import file generated'
       "
 
   keycloak:
@@ -68,14 +94,17 @@ services:
     command: start-dev --import-realm
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?KEYCLOAK_ADMIN_PASSWORD must be set in .env}
       KC_DB: dev-mem
       KC_HEALTH_ENABLED: "true"
       KC_HTTP_PORT: 8081
     ports:
       - "8081:8081"
     volumes:
-      - ./infra/keycloak/realm:/opt/keycloak/data/import:ro
+      - keycloak-realm-imports:/opt/keycloak/data/import:ro
+    depends_on:
+      keycloak-realm-init:
+        condition: service_completed_successfully
 
   mailpit:
     image: axllent/mailpit:latest
@@ -92,3 +121,4 @@ volumes:
   postgres-data:
   redis-data:
   minio-data:
+  keycloak-realm-imports:

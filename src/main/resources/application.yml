@@ -10,7 +10,7 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/academic_journal}
     username: ${DB_USERNAME:journal}
-    password: ${DB_PASSWORD:journal}
+    password: ${DB_PASSWORD}
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
@@ -158,7 +158,7 @@ app:
       endpoint: ${S3_ENDPOINT:http://localhost:9000}
       region: ${S3_REGION:auto}
       access-key: ${S3_ACCESS_KEY:minioadmin}
-      secret-key: ${S3_SECRET_KEY:minioadmin}
+      secret-key: ${S3_SECRET_KEY}
       bucket: ${S3_BUCKET:academic-journal}
       path-style-access: ${S3_PATH_STYLE:true}
       presigned-url-ttl-seconds: 900

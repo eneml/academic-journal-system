@@ -1,13 +1,12 @@
 /**
- * Identity module — users, roles, user-groups, profile, ORCID linking.
+ * Identity module — local user accounts (lazy-provisioned from Keycloak
+ * JWTs), role grants, and the JWT authentication converter that maps
+ * realm roles into Spring Security authorities.
  *
- * <p>Owns: User, Role, UserGroup, UserGroupAssignment, OrcidLink.
- * <br>Emits: UserRegistered, UserActivated, UserDisabled,
- * UserGroupAssigned, OrcidLinked.
+ * <p>Owns: User, UserRoleAssignment.
+ * <br>Emits: UserRegistered, UserActivated, UserDisabled, UserRoleAssigned,
+ * UserRoleRevoked, OrcidLinked.
  * <br>Consumes: nothing (root of the dependency graph).
- *
- * <p>Public API package: {@code com.eneml.ajs.identity.api}
- * exposes lightweight read DTOs and lookup services for other modules.
  */
 @org.springframework.modulith.ApplicationModule(
     displayName = "Identity"
