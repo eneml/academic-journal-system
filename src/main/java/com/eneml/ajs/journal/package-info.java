@@ -1,9 +1,8 @@
 /**
- * Journal module — singleton journal configuration, sections, file genres,
- * masthead. Replaces OJS's per-context (multi-journal) settings with
- * a single configurable journal.
+ * Journal module — single-journal configuration and the catalogue admins
+ * curate: editorial sections, file genres, and the masthead listing.
  *
- * <p>Owns: JournalConfig, Section, Genre, MastheadEntry.
+ * <p>Owns: JournalConfig (singleton), Section, Genre, MastheadEntry.
  * <br>Emits: SectionCreated, SectionUpdated, GenreCreated, JournalConfigUpdated.
  * <br>Consumes: nothing.
  */

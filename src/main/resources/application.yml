@@ -97,6 +97,13 @@ server:
     include-message: always
     include-binding-errors: always
 
+spring.mvc:
+  problemdetails:
+    enabled: true
+spring.web:
+  resources:
+    add-mappings: false
+
 # ----------------------------------------------------------------
 # Actuator + observability
 # ----------------------------------------------------------------
