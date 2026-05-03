@@ -1,12 +1,13 @@
 /**
- * Editorial module — editorial decision engine, recommendations (sub-editor),
- * stage transitions, editorial discussions (queries).
+ * Editorial module — workflow engine + decision history. Each
+ * {@link com.eneml.ajs.editorial.api.DecisionType} has a stateless
+ * handler that validates preconditions and returns the desired
+ * state-transition outcome; the engine writes through the public
+ * submission and review ports.
  *
- * <p>Owns: EditorialDecision, Recommendation, Query, QueryParticipant, Note.
- * <br>Emits: DecisionMade, RecommendationMade, SubmissionAccepted,
- * SubmissionDeclined, RevisionsRequested, ResubmissionRequested,
- * SentToProduction, SentToCopyediting.
- * <br>Consumes: ReviewRoundCompleted, SubmissionSubmitted.
+ * <p>Owns: EditorialDecision.
+ * <br>Emits: DecisionMade.
+ * <br>Consumes: nothing.
  */
 @org.springframework.modulith.ApplicationModule(
     displayName = "Editorial",

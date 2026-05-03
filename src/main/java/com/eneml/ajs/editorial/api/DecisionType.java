@@ -1,0 +1,16 @@
+package com.eneml.ajs.editorial.api;
+
+public enum DecisionType {
+    EXTERNAL_REVIEW,
+    SKIP_REVIEW,
+    INITIAL_DECLINE,
+    ACCEPT,
+    DECLINE,
+    REQUEST_REVISIONS,
+    RESUBMIT_FOR_REVIEW,
+    NEW_REVIEW_ROUND,
+    CANCEL_REVIEW_ROUND,
+    SEND_TO_PRODUCTION,
+    BACK_FROM_PRODUCTION,
+    BACK_FROM_COPYEDITING
+}
