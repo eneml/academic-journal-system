@@ -47,6 +47,11 @@ class SecurityConfig {
                         // so the resource server doesn't reject it with 401 before the CORS
                         // filter can answer.
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Spring Boot forwards uncaught exceptions to /error before the
+                        // response is rendered. Without this, the resource-server filter
+                        // sees the forward as an unauthenticated request and masks any
+                        // real 500 with a misleading 401 + WWW-Authenticate: Bearer.
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/v1/journal/config",
                                 "/api/v1/journal/sections",

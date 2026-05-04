@@ -27,6 +27,11 @@ class PostgresSearchService implements SearchService {
         if (query.text() == null || query.text().isBlank()) {
             return List.of();
         }
+        // Postgres can't infer the type of a NULL parameter inside a nested
+        // expression like (:sectionId IS NULL OR ...) — we have to cast it
+        // explicitly. With CAST(... AS bigint) on every reference to a
+        // nullable filter, the JDBC driver gets a concrete type and the
+        // query plans correctly whether the param is null or set.
         @SuppressWarnings("unchecked")
         List<Object[]> rows = em.createNativeQuery("""
                 SELECT publication_id,
@@ -37,8 +42,10 @@ class PostgresSearchService implements SearchService {
                                    'StartSel=<mark>,StopSel=</mark>,MaxWords=24,MinWords=8,ShortWord=2,MaxFragments=1') AS snippet
                 FROM published_search_index
                 WHERE searchable @@ plainto_tsquery('simple', :q)
-                  AND (:sectionId IS NULL OR section_id = :sectionId)
-                  AND (:year IS NULL OR year = :year)
+                  AND (CAST(:sectionId AS bigint) IS NULL
+                       OR section_id = CAST(:sectionId AS bigint))
+                  AND (CAST(:year AS integer) IS NULL
+                       OR year = CAST(:year AS integer))
                 ORDER BY rank DESC, date_published DESC
                 LIMIT :limit OFFSET :offset
                 """)

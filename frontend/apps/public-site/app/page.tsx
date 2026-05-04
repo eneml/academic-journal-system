@@ -227,9 +227,6 @@ export default async function HomePage(): Promise<ReactNode> {
             </div>
           )}
           <div className="rule" style={{ margin: "20px 0 16px" }} />
-          <div className="sc" style={{ color: "var(--muted)", marginBottom: 10 }}>
-            Filters
-          </div>
           <Link
             href="/search"
             style={{
@@ -237,11 +234,12 @@ export default async function HomePage(): Promise<ReactNode> {
               color: "var(--cobalt)",
               fontFamily: "var(--sans)",
               textDecoration: "none",
-              lineHeight: 1.7,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
             }}
           >
-            Year · Section · Author<br />
-            Open access only ✓
+            Browse all articles →
           </Link>
         </aside>
 

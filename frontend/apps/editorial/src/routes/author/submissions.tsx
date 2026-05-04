@@ -1,4 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useLocation,
+} from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { Icon } from "@ajs/ui/primitives";
 import { useAuth } from "../../auth/AuthContext";
@@ -26,10 +31,20 @@ interface Submission {
 }
 
 function AuthorSubmissionsPage(): ReactNode {
+  // TanStack file-based routing nests submissions.new.tsx and submissions.$id.tsx
+  // under this parent. When the URL matches a child path, defer the entire main
+  // column to the child via <Outlet />. Without this, the parent layout
+  // hijacks the child's content and pages like /author/submissions/new render
+  // empty. (All hooks declared up front to keep the call order stable.)
+  const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const [page, setPage] = useState<Page<Submission> | null>(null);
   const [fetching, setFetching] = useState(false);
   const [errored, setErrored] = useState(false);
+
+  const isIndex =
+    location.pathname === "/author/submissions" ||
+    location.pathname === "/author/submissions/";
 
   useEffect(() => {
     if (!user) return;
@@ -48,6 +63,10 @@ function AuthorSubmissionsPage(): ReactNode {
     };
   }, [user]);
 
+  // Defer to child route when one is active.
+  if (!isIndex) {
+    return <Outlet />;
+  }
   if (authLoading) {
     return <p style={{ color: "var(--muted)" }}>Loading session&hellip;</p>;
   }

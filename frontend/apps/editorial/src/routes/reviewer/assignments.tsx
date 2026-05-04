@@ -1,4 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useLocation,
+} from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { api, type Page } from "../../lib/api";
@@ -26,6 +31,13 @@ interface ReviewAssignment {
 }
 
 function ReviewerAssignmentsPage(): ReactNode {
+  // assignments.$assignmentId.tsx is a child of this route — defer to
+  // <Outlet /> when one is matched so /reviewer/assignments/{id} renders
+  // the detail page rather than the index list.
+  const location = useLocation();
+  const isIndex =
+    location.pathname === "/reviewer/assignments" ||
+    location.pathname === "/reviewer/assignments/";
   const { user, loading: authLoading } = useAuth();
   const [items, setItems] = useState<ReviewAssignment[] | null>(null);
   const [fetching, setFetching] = useState(false);
@@ -55,6 +67,9 @@ function ReviewerAssignmentsPage(): ReactNode {
     };
   }, [user]);
 
+  if (!isIndex) {
+    return <Outlet />;
+  }
   if (authLoading) {
     return <p style={{ color: "var(--muted)" }}>Loading session&hellip;</p>;
   }

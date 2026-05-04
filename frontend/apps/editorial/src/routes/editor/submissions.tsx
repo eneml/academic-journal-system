@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { isEditorial } from "../../auth/roles";
@@ -11,7 +11,15 @@ export const Route = createFileRoute("/editor/submissions")({
 });
 
 function AllSubmissionsPage(): ReactNode {
+  // submissions.$id.tsx is a child of this route — defer the entire main
+  // column to it when matched, so /editor/submissions/{id} actually renders
+  // the detail page instead of the index list.
+  const location = useLocation();
   const { user, roles, loading } = useAuth();
+  const isIndex =
+    location.pathname === "/editor/submissions" ||
+    location.pathname === "/editor/submissions/";
+  if (!isIndex) return <Outlet />;
   if (loading) return <p style={{ color: "var(--muted)" }}>Loading session&hellip;</p>;
   if (!user) return <SignInPrompt />;
   if (!isEditorial(roles)) {
