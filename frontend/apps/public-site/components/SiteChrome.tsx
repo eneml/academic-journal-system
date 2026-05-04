@@ -74,8 +74,6 @@ export async function SiteChrome({
           }}
         >
           <div style={{ display: "flex", gap: 16 }}>
-            <span className="sc">ISSN 2069-3417</span>
-            <span style={{ color: "var(--border-strong)" }}>·</span>
             <span className="sc">Open Access</span>
             <span style={{ color: "var(--border-strong)" }}>·</span>
             <span className="sc">Peer Reviewed</span>
@@ -119,12 +117,6 @@ export async function SiteChrome({
             borderBottom: "1px solid var(--border)",
           }}
         >
-          <div
-            className="sc"
-            style={{ color: "var(--muted)", marginBottom: 8 }}
-          >
-            EST. 1987 · BUCHAREST
-          </div>
           <Link
             href="/"
             style={{
@@ -262,9 +254,9 @@ function SiteFooter({ journalName }: { journalName: string }): ReactNode {
               maxWidth: 360,
             }}
           >
-            A quarterly peer-reviewed journal of computational research,
-            methods, and theory. Open access, indexed in major academic
-            databases.
+            A peer-reviewed, open-access scholarly journal. Articles are
+            released as soon as they clear production — no embargo, no
+            article-processing charge.
           </p>
         </div>
         {[
@@ -334,10 +326,9 @@ function SiteFooter({ journalName }: { journalName: string }): ReactNode {
         }}
       >
         <div className="sc">
-          © {new Date().getFullYear()} · CC BY 4.0 · ISSN 2069-3417
+          © {new Date().getFullYear()} {journalName}
         </div>
         <div style={{ display: "flex", gap: 18 }}>
-          <span>DOI Foundation Member</span>
           <span>COPE Signatory</span>
           <span>OAI-PMH</span>
         </div>

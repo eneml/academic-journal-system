@@ -16,7 +16,7 @@ import {
 
 export const revalidate = 60;
 
-const TAGLINE = "A quarterly review of computational research, methods, and theory";
+const TAGLINE = "An open-access scholarly journal";
 
 export default async function HomePage(): Promise<ReactNode> {
   const [config, issues, sections, masthead, announcements] = await Promise.all([
@@ -111,7 +111,7 @@ export default async function HomePage(): Promise<ReactNode> {
             {currentIssue
               ? pickLocale(currentIssue.title, locale) ||
                 `${journalName}, ${formatIssueLine(currentIssue, locale)}`
-              : `${journalName}: an open-access journal of computational research`}
+              : journalName}
           </h2>
           <p
             style={{
@@ -174,16 +174,6 @@ export default async function HomePage(): Promise<ReactNode> {
             label={currentIssue ? formatVolNo(currentIssue) : "Forthcoming"}
             year={currentIssue?.year ?? null}
           />
-          <div
-            style={{
-              marginTop: 14,
-              fontSize: 11,
-              fontFamily: "var(--mono)",
-              color: "var(--muted)",
-            }}
-          >
-            ISSN 2069-3417
-          </div>
         </div>
       </section>
 
@@ -342,11 +332,23 @@ export default async function HomePage(): Promise<ReactNode> {
               color: "var(--fg-2)",
             }}
           >
-            We publish original research, systematic reviews, and methodological
-            contributions in computational science, with an emphasis on
-            reproducibility, generalization, and the social context of
-            computing research.
+            We publish original research, systematic reviews, and
+            methodological contributions across the journal&rsquo;s active
+            sections. Articles are peer-reviewed under a double-anonymous
+            protocol and released open access.
           </p>
+          <Link
+            href="/about"
+            style={{
+              fontSize: 12,
+              color: "var(--cobalt)",
+              textDecoration: "none",
+              marginTop: 8,
+              display: "inline-block",
+            }}
+          >
+            About the journal →
+          </Link>
         </ThreeUpCard>
 
         <ThreeUpCard title="Editorial board">
@@ -414,23 +416,32 @@ export default async function HomePage(): Promise<ReactNode> {
           </div>
         </ThreeUpCard>
 
-        <ThreeUpCard title="Indexed in">
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {[
-              "Scopus",
-              "Web of Science",
-              "Google Scholar",
-              "DOAJ",
-              "PubMed Central",
-              "EBSCO",
-              "Crossref",
-              "DBLP",
-            ].map((x) => (
-              <span key={x} className="chip">
-                {x}
-              </span>
-            ))}
-          </div>
+        <ThreeUpCard title="Indexing">
+          <p
+            style={{
+              fontFamily: "var(--serif-body)",
+              fontSize: 14.5,
+              lineHeight: 1.6,
+              margin: 0,
+              color: "var(--fg-2)",
+            }}
+          >
+            Articles are deposited with Crossref for DOI registration and
+            harvested via OAI-PMH so they appear in the abstracting and
+            indexing services your institution subscribes to.
+          </p>
+          <Link
+            href="/policies"
+            style={{
+              fontSize: 12,
+              color: "var(--cobalt)",
+              textDecoration: "none",
+              marginTop: 8,
+              display: "inline-block",
+            }}
+          >
+            See archiving policy →
+          </Link>
         </ThreeUpCard>
       </section>
 
