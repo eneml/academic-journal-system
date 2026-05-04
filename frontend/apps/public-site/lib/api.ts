@@ -122,6 +122,27 @@ export type MastheadEntry = {
 export const fetchMasthead = () =>
   getJson<MastheadEntry[]>("/api/v1/journal/masthead?visibleOnly=true");
 
+export type AnnouncementType =
+  | "GENERAL"
+  | "CALL_FOR_PAPERS"
+  | "SPECIAL_ISSUE"
+  | "POLICY";
+
+export type Announcement = {
+  id: number;
+  type: AnnouncementType;
+  title: Record<string, string>;
+  body: Record<string, string>;
+  urlPath: string | null;
+  datePosted: string;
+  dateExpires: string | null;
+  pinned: boolean;
+  visible: boolean;
+};
+
+export const fetchAnnouncements = (limit = 20) =>
+  getJson<Announcement[]>(`/api/v1/announcements?limit=${limit}`);
+
 export const fetchRecentPublications = (limit = 6) =>
   getJson<PublicationSummary[]>(`/api/v1/publications/recent?limit=${limit}`);
 

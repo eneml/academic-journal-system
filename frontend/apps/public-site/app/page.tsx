@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
-  fetchActiveSections,
   fetchIssues,
   fetchJournalConfig,
   fetchRecentPublications,
@@ -11,9 +10,8 @@ import {
 export const revalidate = 60;
 
 export default async function HomePage(): Promise<ReactNode> {
-  const [config, sections, recent, issues] = await Promise.all([
+  const [config, recent, issues] = await Promise.all([
     fetchJournalConfig(),
-    fetchActiveSections(),
     fetchRecentPublications(6),
     fetchIssues(),
   ]);
@@ -57,21 +55,15 @@ export default async function HomePage(): Promise<ReactNode> {
             <Link href="/issues" className="text-fg-2 hover:text-cobalt">
               Archive
             </Link>
+            <Link href="/announcements" className="text-fg-2 hover:text-cobalt">
+              News
+            </Link>
             <Link href="/search" className="text-fg-2 hover:text-cobalt">
               Search
             </Link>
             <Link href="/about" className="text-fg-2 hover:text-cobalt">
               About
             </Link>
-            {(sections ?? []).slice(0, 2).map((s) => (
-              <Link
-                key={s.id}
-                href={`/sections/${s.code}`}
-                className="text-fg-2 hover:text-cobalt"
-              >
-                {pickLocale(s.title, locale) || s.code}
-              </Link>
-            ))}
           </nav>
         </div>
       </header>
