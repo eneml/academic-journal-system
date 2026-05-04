@@ -95,14 +95,21 @@ pnpm --filter @ajs/editorial dev     # http://localhost:5173
 
 ## 4. Login
 
-Realm `academic-journal` on Keycloak ships 4 pre-created users (passwords from `.env`, all `rootroot`):
+Realm `academic-journal` on Keycloak ships 4 pre-created users (passwords from `.env`, all `rootroot`).
 
-| username | roles | what they can do |
-|---|---|---|
-| `admin` | ADMIN, EDITOR, AUTHOR | full administration |
-| `editor` | EDITOR, AUTHOR | triage submissions, invite reviewers, take decisions, publish |
-| `reviewer` | REVIEWER, AUTHOR | accept invitations, submit reviews |
-| `author` | AUTHOR | start submissions, upload manuscripts, manage contributors |
+> **Login uses the email address, not the bare username** — the realm
+> has `loginWithEmailAllowed=true` and Keycloak prompts for "Email".
+
+| Email | Password | Roles | What they can do |
+|---|---|---|---|
+| `admin@journal.local` | `rootroot` | ADMIN, EDITOR, AUTHOR | full administration |
+| `editor@journal.local` | `rootroot` | EDITOR, AUTHOR | triage submissions, invite reviewers, take decisions, publish |
+| `reviewer@journal.local` | `rootroot` | REVIEWER, AUTHOR | accept invitations, submit reviews |
+| `author@journal.local` | `rootroot` | AUTHOR | start submissions, upload manuscripts, manage contributors |
+
+For the **Keycloak admin console** (separate from the app, at
+http://localhost:8081/admin) the bootstrap admin is plain `admin` /
+`rootroot` — that's a Keycloak-internal account, not a realm user.
 
 Sign in flow: editorial app at `:5173` → "Sign in" → redirected to Keycloak at `:8081` → after login redirected back with a token.
 
