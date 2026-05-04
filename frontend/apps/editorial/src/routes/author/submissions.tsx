@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { Icon } from "@ajs/ui/primitives";
 import { useAuth } from "../../auth/AuthContext";
@@ -128,72 +128,81 @@ function SubmissionRow({
   return (
     <li
       style={{
-        padding: "16px 22px",
         borderBottom: divider ? "1px solid var(--border)" : "none",
-        display: "flex",
-        gap: 16,
-        alignItems: "flex-start",
       }}
     >
-      <span
-        className="marginalia-num tnum"
-        style={{ width: 28, marginTop: 4, flex: "none" }}
+      <Link
+        to="/author/submissions/$id"
+        params={{ id: String(submission.id) }}
+        style={{
+          padding: "16px 22px",
+          display: "flex",
+          gap: 16,
+          alignItems: "flex-start",
+          textDecoration: "none",
+          color: "inherit",
+        }}
       >
-        {String(submission.id).padStart(3, "0")}
-      </span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            alignItems: "baseline",
-            justifyContent: "space-between",
-          }}
+        <span
+          className="marginalia-num tnum"
+          style={{ width: 28, marginTop: 4, flex: "none" }}
         >
-          <p
+          {String(submission.id).padStart(3, "0")}
+        </span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
             style={{
-              fontFamily: "var(--serif-display)",
-              fontSize: 16,
-              fontWeight: 500,
-              margin: 0,
-              color: "var(--fg)",
-              letterSpacing: "-0.005em",
+              display: "flex",
+              gap: 10,
+              alignItems: "baseline",
+              justifyContent: "space-between",
             }}
           >
-            {title}
-          </p>
-          {date ? (
-            <span
-              className="tnum"
-              style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}
+            <p
+              style={{
+                fontFamily: "var(--serif-display)",
+                fontSize: 16,
+                fontWeight: 500,
+                margin: 0,
+                color: "var(--fg)",
+                letterSpacing: "-0.005em",
+              }}
             >
-              {new Date(date).toLocaleDateString()}
-            </span>
+              {title}
+            </p>
+            {date ? (
+              <span
+                className="tnum"
+                style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}
+              >
+                {new Date(date).toLocaleDateString()}
+              </span>
+            ) : null}
+          </div>
+          {summary ? (
+            <p
+              style={{
+                fontFamily: "var(--serif-body)",
+                fontSize: 13.5,
+                color: "var(--fg-2)",
+                margin: "5px 0 0",
+                lineHeight: 1.55,
+              }}
+            >
+              {summary}
+            </p>
           ) : null}
+          <div style={{ display: "flex", gap: 6, marginTop: 9, flexWrap: "wrap" }}>
+            {submission.status ? <StatusChip status={submission.status} /> : null}
+            {submission.stage ? (
+              <StatusChip status={submission.stage} label={submission.stage.replace(/_/g, " ").toLowerCase()} />
+            ) : null}
+            {submission.progress ? (
+              <span className="chip chip-mono">{submission.progress}</span>
+            ) : null}
+          </div>
         </div>
-        {summary ? (
-          <p
-            style={{
-              fontFamily: "var(--serif-body)",
-              fontSize: 13.5,
-              color: "var(--fg-2)",
-              margin: "5px 0 0",
-              lineHeight: 1.55,
-            }}
-          >
-            {summary}
-          </p>
-        ) : null}
-        <div style={{ display: "flex", gap: 6, marginTop: 9, flexWrap: "wrap" }}>
-          {submission.status ? <StatusChip status={submission.status} /> : null}
-          {submission.stage ? (
-            <StatusChip status={submission.stage} label={submission.stage.replace(/_/g, " ").toLowerCase()} />
-          ) : null}
-          {submission.progress ? (
-            <span className="chip chip-mono">{submission.progress}</span>
-          ) : null}
-        </div>
-      </div>
+      </Link>
     </li>
   );
 }
