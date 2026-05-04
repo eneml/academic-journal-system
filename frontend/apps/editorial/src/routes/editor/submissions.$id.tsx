@@ -27,6 +27,7 @@ type ReviewRound = components["schemas"]["ReviewRoundResponse"];
 type Assignment = components["schemas"]["ReviewAssignmentResponse"];
 type Decision = components["schemas"]["EditorialDecisionResponse"];
 type UserSummary = components["schemas"]["UserResponse"];
+type Publication = components["schemas"]["PublicationResponse"];
 
 const DECISION_TYPES = [
   "EXTERNAL_REVIEW",
@@ -57,15 +58,17 @@ function EditorialSubmissionDetailPage(): ReactNode {
   const [files, setFiles] = useState<FileRow[]>([]);
   const [rounds, setRounds] = useState<ReviewRound[]>([]);
   const [decisions, setDecisions] = useState<Decision[]>([]);
+  const [publications, setPublications] = useState<Publication[]>([]);
   const [errored, setErrored] = useState(false);
 
   const reload = useCallback(async (): Promise<void> => {
-    const [s, a, f, r, d] = await Promise.all([
+    const [s, a, f, r, d, p] = await Promise.all([
       api<Submission>(`/api/v1/submissions/${submissionId}`),
       api<AuthorRow[]>(`/api/v1/submissions/${submissionId}/authors`),
       api<FileRow[]>(`/api/v1/submissions/${submissionId}/files`),
       api<ReviewRound[]>(`/api/v1/submissions/${submissionId}/review-rounds`),
       api<Decision[]>(`/api/v1/submissions/${submissionId}/decisions`),
+      api<Publication[]>(`/api/v1/submissions/${submissionId}/publications`),
     ]);
     if (!s) {
       setErrored(true);
@@ -77,6 +80,7 @@ function EditorialSubmissionDetailPage(): ReactNode {
     setFiles(f ?? []);
     setRounds(r ?? []);
     setDecisions(d ?? []);
+    setPublications(p ?? []);
   }, [submissionId]);
 
   useEffect(() => {
@@ -165,7 +169,119 @@ function EditorialSubmissionDetailPage(): ReactNode {
         history={decisions}
         onChanged={() => void reload()}
       />
+
+      <PublicationsCard
+        submissionId={submissionId}
+        publications={publications}
+        onChanged={() => void reload()}
+      />
     </>
+  );
+}
+
+function PublicationsCard({
+  submissionId,
+  publications,
+  onChanged,
+}: {
+  submissionId: number;
+  publications: Publication[];
+  onChanged: () => void;
+}): ReactNode {
+  const [busy, setBusy] = useState(false);
+
+  const draftFirst = async (): Promise<void> => {
+    setBusy(true);
+    const result = await api<Publication>(
+      `/api/v1/submissions/${submissionId}/publications`,
+      { method: "POST" },
+    );
+    setBusy(false);
+    if (result?.id) {
+      window.location.assign(`/editor/publications/${result.id}`);
+    } else {
+      onChanged();
+    }
+  };
+
+  return (
+    <Card padded={false}>
+      <div
+        style={{
+          padding: "16px 22px",
+          borderBottom: publications.length > 0 ? "1px solid var(--border)" : "none",
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <h2 style={{ ...h2Style, marginBottom: 0 }}>
+          Publications ({publications.length})
+        </h2>
+        {publications.length === 0 ? (
+          <button type="button" onClick={draftFirst} disabled={busy} style={btnSecondary}>
+            {busy ? "Drafting…" : "Draft first version"}
+          </button>
+        ) : null}
+      </div>
+      {publications.length === 0 ? (
+        <p style={{ padding: "12px 22px 18px", color: "var(--muted)", fontSize: 13, margin: 0 }}>
+          No publications yet — usually drafted automatically after a SEND_TO_PRODUCTION decision.
+        </p>
+      ) : (
+        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+          {publications.map((p, idx) => (
+            <li
+              key={p.id}
+              style={{
+                padding: "12px 22px",
+                borderBottom:
+                  idx < publications.length - 1 ? "1px solid var(--border)" : "none",
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p
+                  style={{
+                    fontFamily: "var(--serif-display)",
+                    fontWeight: 600,
+                    fontSize: 14,
+                    margin: 0,
+                  }}
+                >
+                  Version {p.version}
+                </p>
+                <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+                  <StatusChip status={p.status} />
+                  <StatusChip status={p.accessStatus} />
+                  {p.urlPath ? (
+                    <span
+                      className="chip"
+                      style={{ fontFamily: "var(--mono)", fontSize: 10 }}
+                    >
+                      /{p.urlPath}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+              <Link
+                to="/editor/publications/$id"
+                params={{ id: String(p.id) }}
+                style={{
+                  ...btnSecondary,
+                  textDecoration: "none",
+                }}
+              >
+                Open editor
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
   );
 }
 
