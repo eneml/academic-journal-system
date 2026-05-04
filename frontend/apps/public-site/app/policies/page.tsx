@@ -47,12 +47,12 @@ export default async function PoliciesPage(): Promise<ReactNode> {
           Submissions undergo <strong style={{ color: "var(--fg)" }}>double-anonymous peer review</strong>.
           Manuscripts are screened by an editor for fit and basic quality, then sent to two
           independent reviewers selected for relevant expertise. Authors and reviewers do
-          not know each other's identities.
+          not know each other&rsquo;s identities.
         </p>
         <p style={paragraphStyle}>
           Typical review timeline: editorial triage in 1–2 weeks, external review in 8–12
           weeks, decision shortly after. Authors receive the full reviewer reports along
-          with the editor's decision.
+          with the editor&rsquo;s decision.
         </p>
 
         <h2 className="text-fg mt-10 mb-3" style={h2Style}>Open access</h2>
@@ -60,7 +60,7 @@ export default async function PoliciesPage(): Promise<ReactNode> {
           Every accepted article is published open access — readers pay nothing, authors
           pay nothing. Articles are released under a Creative Commons licence
           (CC&nbsp;BY&nbsp;4.0 by default; CC&nbsp;BY-NC, CC&nbsp;BY-SA, or CC0 also
-          available at the author's request) chosen during production.
+          available at the author&rsquo;s request) chosen during production.
         </p>
 
         <h2 className="text-fg mt-10 mb-3" style={h2Style}>Copyright</h2>
@@ -90,7 +90,7 @@ export default async function PoliciesPage(): Promise<ReactNode> {
         <p style={paragraphStyle}>
           The author byline lists everyone who made a substantial contribution to the
           conception, design, execution, or interpretation of the work. Acknowledgements
-          recognise contributors who don't meet the authorship criteria. Contributor
+          recognise contributors who don&rsquo;t meet the authorship criteria. Contributor
           changes after acceptance require a written justification countersigned by all
           listed authors.
         </p>
@@ -108,7 +108,7 @@ export default async function PoliciesPage(): Promise<ReactNode> {
           </a>{" "}
           for DOI registration and metadata interchange. The full corpus is harvested by
           academic indexers (CLOCKSS, LOCKSS, PKP&nbsp;PN where applicable) so that
-          articles remain accessible even if the journal's hosting changes.
+          articles remain accessible even if the journal&rsquo;s hosting changes.
         </p>
 
         <h2 className="text-fg mt-10 mb-3" style={h2Style}>Corrections &amp; retractions</h2>
@@ -125,7 +125,7 @@ export default async function PoliciesPage(): Promise<ReactNode> {
           We collect only the data needed to run the editorial process: names, email
           addresses, ORCID iDs, manuscripts, and reviewer reports. We do not sell or
           share author or reviewer information with third parties. Authentication uses
-          your institutional or ORCID account through the journal's identity provider.
+          your institutional or ORCID account through the journal&rsquo;s identity provider.
         </p>
       </article>
     </SiteChrome>

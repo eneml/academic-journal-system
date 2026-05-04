@@ -6,125 +6,375 @@ import { getT } from "@/lib/locale";
 const EDITORIAL_APP_URL =
   process.env.NEXT_PUBLIC_EDITORIAL_APP_URL ?? "http://localhost:5173";
 
+export type ActiveNav =
+  | "current"
+  | "archive"
+  | "about"
+  | "for-authors"
+  | "for-reviewers"
+  | "contact"
+  | null;
+
 export interface SiteChromeProps {
   journalName: string;
-  /** Highlights the matching nav item. */
-  active?: "home" | "issues" | "announcements" | "search" | "about" | null;
+  /** Highlights the matching tab. */
+  active?: ActiveNav;
+  /** Optional tagline shown under the masthead title. */
+  tagline?: string;
   children: ReactNode;
 }
 
+const NAV_ITEMS: Array<{ key: ActiveNav; href: string; label: string }> = [
+  { key: "current",       href: "/",            label: "Current" },
+  { key: "archive",       href: "/issues",      label: "Archive" },
+  { key: "about",         href: "/about",       label: "About" },
+  { key: "for-authors",   href: "/for-authors", label: "For Authors" },
+  { key: "for-reviewers", href: "/policies",    label: "For Reviewers" },
+  { key: "contact",       href: "/contact",     label: "Contact" },
+];
+
 /**
- * Shared header + footer wrapper for every public-site page. Keeps
- * navigation consistent without duplicating the chrome on each page.
- * Reads the active locale via cookie / Accept-Language so nav labels and
- * the locale switcher always match the user's preference.
+ * Site chrome modeled on the design handoff: top metadata bar, centered
+ * masthead, tabbed nav with amber underline, dark global footer.
  */
 export async function SiteChrome({
   journalName,
   active = null,
+  tagline,
   children,
 }: SiteChromeProps): Promise<ReactNode> {
-  const { locale, t } = await getT();
+  const { locale } = await getT();
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        background: "var(--bg)",
+      }}
+    >
+      <header
+        style={{
+          background: "var(--bg)",
+          borderBottom: "1px solid var(--border)",
+        }}
+      >
+        {/* Top metadata strip */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "10px 56px",
+            borderBottom: "1px solid var(--border)",
+            fontSize: 11,
+            color: "var(--muted)",
+            letterSpacing: "0.04em",
+          }}
+        >
+          <div style={{ display: "flex", gap: 16 }}>
+            <span className="sc">ISSN 2069-3417</span>
+            <span style={{ color: "var(--border-strong)" }}>·</span>
+            <span className="sc">Open Access</span>
+            <span style={{ color: "var(--border-strong)" }}>·</span>
+            <span className="sc">Peer Reviewed</span>
+          </div>
+          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+            <a
+              href="/feed.xml"
+              style={{
+                fontSize: 11,
+                fontWeight: 500,
+                textDecoration: "none",
+                color: "var(--fg-2)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              <RssIcon /> RSS
+            </a>
+            <LocaleSwitcher active={locale} />
+            <a
+              href={EDITORIAL_APP_URL}
+              style={{
+                fontSize: 12,
+                fontWeight: 500,
+                color: "var(--fg)",
+                textDecoration: "none",
+                padding: "4px 10px",
+              }}
+            >
+              Sign in
+            </a>
+          </div>
+        </div>
+
+        {/* Centered masthead */}
+        <div
+          style={{
+            padding: "32px 56px 24px",
+            textAlign: "center",
+            borderBottom: "1px solid var(--border)",
+          }}
+        >
+          <div
+            className="sc"
+            style={{ color: "var(--muted)", marginBottom: 8 }}
+          >
+            EST. 1987 · BUCHAREST
+          </div>
           <Link
             href="/"
-            className="text-fg"
             style={{
+              display: "inline-block",
               fontFamily: "var(--serif-display)",
-              fontWeight: 600,
-              fontSize: 18,
+              fontWeight: 500,
+              fontSize: 44,
+              margin: 0,
+              letterSpacing: "-0.015em",
+              color: "var(--fg)",
+              lineHeight: 1.05,
+              textDecoration: "none",
             }}
           >
             {journalName}
           </Link>
-          <nav style={{ display: "flex", gap: 22, alignItems: "center", fontSize: 14 }}>
-            <NavLink href="/" active={active === "home"}>
-              {t("nav.home")}
-            </NavLink>
-            <NavLink href="/issues" active={active === "issues"}>
-              {t("nav.issues")}
-            </NavLink>
-            <NavLink href="/announcements" active={active === "announcements"}>
-              {t("nav.announcements")}
-            </NavLink>
-            <NavLink href="/search" active={active === "search"}>
-              {t("common.search")}
-            </NavLink>
-            <NavLink href="/about" active={active === "about"}>
-              {t("nav.about")}
-            </NavLink>
-            <a
-              href={EDITORIAL_APP_URL}
+          {tagline ? (
+            <div
               style={{
-                marginLeft: 4,
-                padding: "7px 14px",
-                background: "var(--cobalt)",
-                color: "white",
-                borderRadius: "var(--r-2)",
-                textDecoration: "none",
-                fontFamily: "var(--sans)",
-                fontSize: 13,
-                fontWeight: 500,
+                marginTop: 6,
+                fontFamily: "var(--serif-body)",
+                fontStyle: "italic",
+                color: "var(--muted)",
+                fontSize: 14,
               }}
             >
-              {t("common.signIn")}
-            </a>
-          </nav>
+              {tagline}
+            </div>
+          ) : null}
         </div>
+
+        {/* Tab nav */}
+        <nav
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 0,
+            padding: "0 56px",
+          }}
+        >
+          {NAV_ITEMS.map((n) => {
+            const isActive = active === n.key;
+            return (
+              <Link
+                key={n.key}
+                href={n.href}
+                style={{
+                  padding: "14px 22px",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: isActive ? "var(--fg)" : "var(--fg-2)",
+                  textDecoration: "none",
+                  borderBottom: isActive
+                    ? "2px solid var(--amber)"
+                    : "2px solid transparent",
+                  marginBottom: -1,
+                  letterSpacing: "0.01em",
+                }}
+              >
+                {n.label}
+              </Link>
+            );
+          })}
+          <div style={{ flex: 1 }} />
+          <Link
+            href="/search"
+            style={{
+              padding: "10px 8px",
+              color: "var(--muted)",
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 13,
+            }}
+          >
+            <SearchIcon />
+            Search articles
+            <span
+              className="chip chip-mono"
+              style={{ fontSize: 9, height: 16, padding: "0 5px" }}
+            >
+              ⌘K
+            </span>
+          </Link>
+        </nav>
       </header>
 
-      <main className="flex-1">{children}</main>
+      <main style={{ flex: 1 }}>{children}</main>
 
-      <footer className="border-t border-border">
-        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-wrap items-center justify-between gap-4 text-sm text-muted">
-          <p>
-            © {new Date().getFullYear()} {journalName}. {t("footer.allRightsReserved")}
-          </p>
-          <p style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <Link href="/for-authors" className="hover:text-cobalt">
-              {t("nav.forAuthors")}
-            </Link>
-            <Link href="/contact" className="hover:text-cobalt">
-              {t("nav.contact")}
-            </Link>
-            <a href="/feed.xml" className="hover:text-cobalt">
-              RSS
-            </a>
-            <LocaleSwitch active={locale} />
-          </p>
-        </div>
-      </footer>
+      <SiteFooter journalName={journalName} />
     </div>
   );
 }
 
-function LocaleSwitch({ active }: { active: Locale }): ReactNode {
+function SiteFooter({ journalName }: { journalName: string }): ReactNode {
+  return (
+    <footer
+      style={{
+        background: "oklch(18% 0.018 270)",
+        color: "oklch(80% 0.01 270)",
+        padding: "48px 56px 28px",
+        marginTop: 80,
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1.4fr 1fr 1fr 1fr",
+          gap: 40,
+          paddingBottom: 36,
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontFamily: "var(--serif-display)",
+              fontSize: 22,
+              color: "white",
+              fontWeight: 500,
+              letterSpacing: "-0.01em",
+              marginBottom: 8,
+            }}
+          >
+            {journalName}
+          </div>
+          <p
+            style={{
+              fontFamily: "var(--serif-body)",
+              fontSize: 13,
+              lineHeight: 1.6,
+              color: "oklch(72% 0.01 270)",
+              margin: 0,
+              maxWidth: 360,
+            }}
+          >
+            A quarterly peer-reviewed journal of computational research,
+            methods, and theory. Open access, indexed in major academic
+            databases.
+          </p>
+        </div>
+        {[
+          {
+            t: "Browse",
+            l: [
+              { label: "Current Issue", href: "/" },
+              { label: "Archive", href: "/issues" },
+              { label: "Search", href: "/search" },
+              { label: "Announcements", href: "/announcements" },
+            ],
+          },
+          {
+            t: "For Authors",
+            l: [
+              { label: "Submission Guidelines", href: "/for-authors" },
+              { label: "Submit Manuscript", href: EDITORIAL_APP_URL },
+              { label: "Policies", href: "/policies" },
+            ],
+          },
+          {
+            t: "Editorial",
+            l: [
+              { label: "Editorial Board", href: "/about/editorial-board" },
+              { label: "Peer Review", href: "/policies" },
+              { label: "Contact", href: "/contact" },
+            ],
+          },
+        ].map((c) => (
+          <div key={c.t}>
+            <div
+              className="sc"
+              style={{ color: "white", marginBottom: 12 }}
+            >
+              {c.t}
+            </div>
+            {c.l.map((x) => (
+              <div
+                key={x.label}
+                style={{
+                  fontSize: 13,
+                  marginBottom: 7,
+                  color: "oklch(75% 0.01 270)",
+                }}
+              >
+                <a
+                  href={x.href}
+                  style={{ color: "inherit", textDecoration: "none" }}
+                >
+                  {x.label}
+                </a>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+      <div
+        style={{
+          borderTop: "1px solid oklch(28% 0.02 270)",
+          paddingTop: 18,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          fontSize: 11,
+          color: "oklch(58% 0.01 270)",
+          letterSpacing: "0.04em",
+        }}
+      >
+        <div className="sc">
+          © {new Date().getFullYear()} · CC BY 4.0 · ISSN 2069-3417
+        </div>
+        <div style={{ display: "flex", gap: 18 }}>
+          <span>DOI Foundation Member</span>
+          <span>COPE Signatory</span>
+          <span>OAI-PMH</span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+function LocaleSwitcher({ active }: { active: Locale }): ReactNode {
   return (
     <span
       style={{
         display: "inline-flex",
-        gap: 4,
-        marginLeft: 8,
-        paddingLeft: 12,
-        borderLeft: "1px solid var(--border)",
-        fontFamily: "var(--mono)",
+        alignItems: "center",
+        gap: 6,
+        border: "1px solid var(--border)",
+        borderRadius: 4,
+        padding: "3px 8px",
         fontSize: 11,
+        fontWeight: 500,
+        color: "var(--fg-2)",
+        fontFamily: "var(--sans)",
       }}
     >
+      <GlobeIcon />
       {locales.map((l, i) => (
         <span key={l}>
           {i > 0 ? <span style={{ color: "var(--border)" }}>·</span> : null}
           <a
             href={`/api/locale?to=${l}`}
-            className={l === active ? "text-cobalt" : "hover:text-cobalt"}
             style={{
-              padding: "0 4px",
+              padding: "0 3px",
               textTransform: "uppercase",
-              letterSpacing: "0.08em",
+              letterSpacing: "0.06em",
+              color: l === active ? "var(--fg)" : "var(--muted)",
               fontWeight: l === active ? 600 : 400,
+              textDecoration: "none",
             }}
           >
             {l}
@@ -135,21 +385,58 @@ function LocaleSwitch({ active }: { active: Locale }): ReactNode {
   );
 }
 
-function NavLink({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  children: ReactNode;
-}): ReactNode {
+function GlobeIcon(): ReactNode {
   return (
-    <Link
-      href={href}
-      className={active ? "text-cobalt" : "text-fg-2 hover:text-cobalt"}
+    <svg
+      width={12}
+      height={12}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
     >
-      {children}
-    </Link>
+      <circle cx={12} cy={12} r={9} />
+      <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+    </svg>
+  );
+}
+
+function SearchIcon(): ReactNode {
+  return (
+    <svg
+      width={15}
+      height={15}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <circle cx={11} cy={11} r={7} />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
+function RssIcon(): ReactNode {
+  return (
+    <svg
+      width={12}
+      height={12}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M5 19a2 2 0 1 0 .001-3.999A2 2 0 0 0 5 19ZM4 12a8 8 0 0 1 8 8M4 5a15 15 0 0 1 15 15" />
+    </svg>
   );
 }

@@ -72,7 +72,7 @@ export default async function SearchPage({ searchParams }: Props): Promise<React
   );
 
   return (
-    <SiteChrome journalName={journalName} active="search">
+    <SiteChrome journalName={journalName} >
       <section className="border-b border-border">
           <div className="max-w-3xl mx-auto px-6 py-14">
             <p

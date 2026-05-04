@@ -25,7 +25,7 @@ export default async function IssuesPage(): Promise<ReactNode> {
   const byYear = groupByYear(published);
 
   return (
-    <SiteChrome journalName={journalName} active="issues">
+    <SiteChrome journalName={journalName} active="archive">
       <section className="border-b border-border">
           <div className="max-w-4xl mx-auto px-6 py-20">
             <p
