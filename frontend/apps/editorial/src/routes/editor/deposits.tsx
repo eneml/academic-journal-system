@@ -1,5 +1,6 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
+import type { components } from "@ajs/api-client/schema";
 import { useAuth } from "../../auth/AuthContext";
 import { hasAnyRole } from "../../auth/roles";
 import { api } from "../../lib/api";
@@ -20,21 +21,8 @@ export const Route = createFileRoute("/editor/deposits")({
   },
 });
 
-type DepositTarget = "CROSSREF" | "ORCID";
-type DepositStatus = "PENDING" | "SENT" | "ACCEPTED" | "FAILED" | "SKIPPED";
-
-interface DepositSummary {
-  id: number;
-  target: DepositTarget;
-  subjectType: "PUBLICATION" | "GALLEY" | "ISSUE";
-  subjectId: number;
-  externalRef: string | null;
-  status: DepositStatus;
-  attempts: number;
-  lastAttemptAt: string | null;
-  completedAt: string | null;
-  errorMessage: string | null;
-}
+type DepositSummary = components["schemas"]["DepositSummary"];
+type DepositTarget = NonNullable<DepositSummary["target"]>;
 
 function DepositsPage(): ReactNode {
   const { user, roles, loading: authLoading } = useAuth();
@@ -222,7 +210,7 @@ function DepositsPage(): ReactNode {
                       {d.target}
                     </p>
                     <StatusChip status={d.status} />
-                    {d.attempts > 0 ? (
+                    {(d.attempts ?? 0) > 0 ? (
                       <span className="chip" style={{ fontSize: 10 }}>
                         attempt #{d.attempts}
                       </span>

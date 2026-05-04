@@ -5,6 +5,7 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
+import type { components } from "@ajs/api-client/schema";
 import { useAuth } from "../../auth/AuthContext";
 import { hasAnyRole } from "../../auth/roles";
 import { api } from "../../lib/api";
@@ -18,20 +19,8 @@ export const Route = createFileRoute("/admin/announcements")({
   component: AnnouncementsAdminPage,
 });
 
-type AnnouncementType = "GENERAL" | "CALL_FOR_PAPERS" | "SPECIAL_ISSUE" | "POLICY";
-
-interface Announcement {
-  id: number;
-  type: AnnouncementType;
-  title: Record<string, string>;
-  body: Record<string, string>;
-  urlPath: string | null;
-  datePosted: string;
-  dateExpires: string | null;
-  pinned: boolean;
-  visible: boolean;
-  updatedAt: string;
-}
+type Announcement = components["schemas"]["AnnouncementResponse"];
+type AnnouncementType = NonNullable<Announcement["type"]>;
 
 const TYPE_OPTIONS: AnnouncementType[] = [
   "GENERAL",
@@ -162,7 +151,7 @@ function AnnouncementsAdminPage(): ReactNode {
                         margin: 0,
                       }}
                     >
-                      {a.title.en ?? Object.values(a.title)[0] ?? `#${a.id}`}
+                      {(a.title?.en ?? (a.title ? Object.values(a.title)[0] : null)) ?? `#${a.id}`}
                     </p>
                     <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
                       <StatusChip status={a.type} />
@@ -172,7 +161,7 @@ function AnnouncementsAdminPage(): ReactNode {
                         className="tnum"
                         style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}
                       >
-                        posted {new Date(a.datePosted).toLocaleDateString()}
+                        posted {a.datePosted ? new Date(a.datePosted).toLocaleDateString() : "—"}
                       </span>
                     </div>
                   </div>
@@ -233,8 +222,8 @@ function AnnouncementForm({
   onCancel: () => void;
 }): ReactNode {
   const [type, setType] = useState<AnnouncementType>(initial?.type ?? "GENERAL");
-  const [title, setTitle] = useState(initial?.title.en ?? "");
-  const [body, setBody] = useState(initial?.body.en ?? "");
+  const [title, setTitle] = useState(initial?.title?.en ?? "");
+  const [body, setBody] = useState(initial?.body?.en ?? "");
   const [urlPath, setUrlPath] = useState(initial?.urlPath ?? "");
   const [pinned, setPinned] = useState(initial?.pinned ?? false);
   const [visible, setVisible] = useState(initial?.visible ?? true);
