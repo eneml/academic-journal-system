@@ -8,16 +8,22 @@
   },
   "nav": {
     "home": "Acasă",
-    "issues": "Numere",
+    "issues": "Arhivă",
     "articles": "Articole",
+    "announcements": "Anunțuri",
     "about": "Despre",
-    "submit": "Trimite"
+    "submit": "Trimite",
+    "forAuthors": "Pentru autori",
+    "contact": "Contact"
   },
   "home": {
     "heroLead": "O publicație științifică de cercetare originală evaluată de specialiști.",
     "latestIssue": "Cel mai recent număr",
     "featured": "Articole recomandate",
     "about": "Despre jurnal"
+  },
+  "footer": {
+    "allRightsReserved": "Toate drepturile rezervate."
   },
   "editorial": {
     "dashboard": "Tablou de bord",

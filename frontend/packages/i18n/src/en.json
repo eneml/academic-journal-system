@@ -8,16 +8,22 @@
   },
   "nav": {
     "home": "Home",
-    "issues": "Issues",
+    "issues": "Archive",
     "articles": "Articles",
+    "announcements": "News",
     "about": "About",
-    "submit": "Submit"
+    "submit": "Submit",
+    "forAuthors": "For Authors",
+    "contact": "Contact"
   },
   "home": {
     "heroLead": "A scholarly journal of original peer-reviewed research.",
     "latestIssue": "Latest issue",
     "featured": "Featured articles",
     "about": "About the journal"
+  },
+  "footer": {
+    "allRightsReserved": "All rights reserved."
   },
   "editorial": {
     "dashboard": "Dashboard",
