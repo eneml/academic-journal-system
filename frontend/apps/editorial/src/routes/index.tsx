@@ -1,212 +1,838 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
-import { Icon, type IconName } from "@ajs/ui/primitives";
+import { useEffect, useState, type ReactNode } from "react";
+import { Icon, type IconName, StageStepper, type StageIndex } from "@ajs/ui/primitives";
 import { useAuth } from "../auth/AuthContext";
-import { hasRole, isEditorial, type RealmRole } from "../auth/roles";
+import {
+  hasRole,
+  isEditorial,
+  type RealmRole,
+} from "../auth/roles";
+import { api, type Page } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-interface ActionCard {
-  to: string;
-  icon: IconName;
-  eyebrow: string;
-  title: string;
-  description: string;
-  when: (roles: RealmRole[]) => boolean;
-}
-
-const CARDS: ActionCard[] = [
-  {
-    to: "/author/submissions",
-    icon: "fileText",
-    eyebrow: "Authoring",
-    title: "Pick up a submission",
-    description: "Continue a draft, check status on a submitted manuscript, or review feedback from editors.",
-    when: (r) => hasRole(r, "AUTHOR"),
-  },
-  {
-    to: "/author/submissions/new",
-    icon: "plus",
-    eyebrow: "Authoring",
-    title: "Start something new",
-    description: "Begin a fresh submission — title, abstract, files, contributors.",
-    when: (r) => hasRole(r, "AUTHOR"),
-  },
-  {
-    to: "/reviewer/assignments",
-    icon: "badgeCheck",
-    eyebrow: "Reviewing",
-    title: "Respond to review invitations",
-    description: "Accept, decline, or complete the reviews you&rsquo;re assigned to.",
-    when: (r) => hasRole(r, "REVIEWER"),
-  },
-  {
-    to: "/editor/queue",
-    icon: "inbox",
-    eyebrow: "Editorial",
-    title: "Triage the editorial queue",
-    description: "Look at newly submitted manuscripts and route them into peer review.",
-    when: isEditorial,
-  },
-  {
-    to: "/editor/submissions",
-    icon: "layers",
-    eyebrow: "Editorial",
-    title: "Browse all submissions",
-    description: "Search across stages and statuses, filter by section or section editor.",
-    when: isEditorial,
-  },
-  {
-    to: "/admin/users",
-    icon: "users",
-    eyebrow: "Administration",
-    title: "Manage users",
-    description: "Activate, disable, or update user accounts mirrored from Keycloak.",
-    when: (r) => hasRole(r, "ADMIN"),
-  },
-  {
-    to: "/admin/journal",
-    icon: "settings",
-    eyebrow: "Administration",
-    title: "Journal settings",
-    description: "Sections, masthead, submission policies — the journal&rsquo;s configuration.",
-    when: (r) => hasRole(r, "ADMIN"),
-  },
-  {
-    to: "/notifications",
-    icon: "bell",
-    eyebrow: "Account",
-    title: "Check your notifications",
-    description: "Recent activity that needs your attention.",
-    when: () => true,
-  },
-  {
-    to: "/profile",
-    icon: "user",
-    eyebrow: "Account",
-    title: "Review your profile",
-    description: "Confirm your details and see which roles you currently hold.",
-    when: () => true,
-  },
-];
+// --------------------------------------------------------------------------
 
 function Dashboard(): ReactNode {
   const { user, roles, loading, signIn } = useAuth();
 
   if (loading) {
-    return <p style={{ color: "var(--muted)" }}>Loading session&hellip;</p>;
+    return <p style={{ color: "var(--muted)", fontSize: 13 }}>Loading session&hellip;</p>;
   }
-
-  if (!user) {
-    return <UnauthenticatedDashboard signIn={signIn} />;
-  }
+  if (!user) return <UnauthenticatedDashboard signIn={signIn} />;
 
   const greeting =
     (user.profile.given_name as string | undefined) ??
-    user.profile.preferred_username ??
+    (user.profile.preferred_username as string | undefined) ??
     "there";
-  const visibleCards = CARDS.filter((c) => c.when(roles));
+
+  // Pick the most-privileged role for the dashboard layout decision. A user
+  // with multiple roles still gets shortcuts to the others via the sidebar.
+  const primary = primaryRole(roles);
 
   return (
     <>
       <PageHeader
-        eyebrow={roles.length > 0 ? `Signed in as ${roles.map(formatRole).join(" · ")}` : "Signed in"}
+        eyebrow={`Signed in · ${formatRoles(roles)}`}
         title={`Hello, ${greeting}.`}
-        description="What can you do today? The cards below adapt to the roles you hold in this journal."
+        description={dashboardSubtitle(primary)}
+        actions={dashboardActions(primary)}
       />
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-          gap: 14,
-        }}
-      >
-        {visibleCards.map((card) => (
-          <ActionCardLink key={card.to} card={card} />
-        ))}
-      </div>
+      {primary === "editor" ? <EditorOverview /> : null}
+      {primary === "reviewer" ? <ReviewerOverview /> : null}
+      {primary === "author" ? <AuthorOverview /> : null}
+      {primary === "admin" ? <AdminOverview /> : null}
     </>
   );
 }
 
-function ActionCardLink({ card }: { card: ActionCard }): ReactNode {
+function dashboardSubtitle(primary: PrimaryRole): string {
+  switch (primary) {
+    case "editor":
+      return "Triage the queue, decide on rounds in flight, and push the issue forward.";
+    case "reviewer":
+      return "Outstanding review invitations and the assignments that are due.";
+    case "author":
+      return "Drafts you're working on, plus anything currently moving through the editorial workflow.";
+    case "admin":
+      return "Journal configuration, user roster, and ops surfaces.";
+    default:
+      return "Pick up where you left off.";
+  }
+}
+
+function dashboardActions(primary: PrimaryRole): ReactNode {
+  if (primary === "author") {
+    return (
+      <Link to="/author/submissions/new" className="btn btn-primary btn-sm" style={{ textDecoration: "none" }}>
+        <Icon name="plus" size={13} /> New submission
+      </Link>
+    );
+  }
+  if (primary === "editor") {
+    return (
+      <Link to="/editor/queue" className="btn btn-primary btn-sm" style={{ textDecoration: "none" }}>
+        <Icon name="inbox" size={13} /> Open queue
+      </Link>
+    );
+  }
+  if (primary === "reviewer") {
+    return (
+      <Link to="/reviewer/assignments" className="btn btn-primary btn-sm" style={{ textDecoration: "none" }}>
+        <Icon name="badgeCheck" size={13} /> Review queue
+      </Link>
+    );
+  }
+  return null;
+}
+
+// --------------------------------------------------------------------------
+// EDITOR overview — stat strip + recent queue rows
+// --------------------------------------------------------------------------
+
+interface SubmissionRow {
+  id: number;
+  title?: Record<string, string>;
+  sectionId?: number | null;
+  stage?: string;
+  status?: string;
+  dateSubmitted?: string | null;
+  dateLastActivity?: string | null;
+}
+
+function EditorOverview(): ReactNode {
+  const [byStage, setByStage] = useState<Record<string, number>>({});
+  const [recent, setRecent] = useState<SubmissionRow[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.all([
+      api<Page<SubmissionRow>>("/api/v1/submissions?status=QUEUED&size=1"),
+      api<Page<SubmissionRow>>("/api/v1/submissions?status=ACTIVE&size=1"),
+      api<Page<SubmissionRow>>("/api/v1/submissions?status=ACTIVE&stage=REVIEW&size=1"),
+      api<Page<SubmissionRow>>("/api/v1/submissions?status=ACTIVE&stage=EDITING&size=1"),
+      api<Page<SubmissionRow>>("/api/v1/submissions?status=ACTIVE&stage=PRODUCTION&size=1"),
+      api<Page<SubmissionRow>>("/api/v1/submissions?status=COMPLETE&size=1"),
+      api<Page<SubmissionRow>>("/api/v1/submissions?size=8"),
+    ]).then(([qd, ac, rv, ed, pd, pb, recentPage]) => {
+      if (cancelled) return;
+      setByStage({
+        SUBMISSION: qd?.totalElements ?? 0,
+        REVIEW: rv?.totalElements ?? 0,
+        EDITING: ed?.totalElements ?? 0,
+        PRODUCTION: pd?.totalElements ?? 0,
+        PUBLISHED: pb?.totalElements ?? 0,
+        ACTIVE: ac?.totalElements ?? 0,
+      });
+      setRecent(recentPage?.content ?? []);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <>
+      <StageStrip
+        cells={[
+          { stage: 0, label: "Submission", n: byStage.SUBMISSION ?? 0 },
+          { stage: 1, label: "Review", n: byStage.REVIEW ?? 0 },
+          { stage: 2, label: "Editing", n: byStage.EDITING ?? 0 },
+          { stage: 3, label: "Production", n: byStage.PRODUCTION ?? 0 },
+          { stage: 4, label: "Published", n: byStage.PUBLISHED ?? 0 },
+        ]}
+      />
+
+      <SubsectionHead
+        title="Recent submissions"
+        cta={{ to: "/editor/submissions", label: "Open all submissions" }}
+      />
+      {recent == null ? (
+        <p style={{ color: "var(--muted)", fontSize: 13, padding: "12px 0" }}>
+          Loading queue&hellip;
+        </p>
+      ) : recent.length === 0 ? (
+        <EmptyRow message="No submissions yet — first one will appear here when an author submits." />
+      ) : (
+        <SubmissionTable rows={recent} viewerRole="editor" />
+      )}
+    </>
+  );
+}
+
+// --------------------------------------------------------------------------
+// AUTHOR overview — 3-up active-submission cards + recent activity
+// --------------------------------------------------------------------------
+
+function AuthorOverview(): ReactNode {
+  const [submissions, setSubmissions] = useState<SubmissionRow[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void api<Page<SubmissionRow>>("/api/v1/submissions/me?size=12").then(
+      (data) => {
+        if (cancelled) return;
+        setSubmissions(data?.content ?? []);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (submissions == null) {
+    return <p style={{ color: "var(--muted)", fontSize: 13 }}>Loading submissions&hellip;</p>;
+  }
+
+  const active = submissions.filter((s) => s.status !== "ARCHIVED").slice(0, 3);
+
+  return (
+    <>
+      {active.length === 0 ? (
+        <EmptyHero
+          icon="fileText"
+          title="No submissions yet"
+          description="Start a draft and pick up here. Drafts auto-save as you fill in the wizard."
+          cta={{ to: "/author/submissions/new", label: "Start a submission" }}
+        />
+      ) : (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+            gap: 14,
+            marginBottom: 22,
+          }}
+        >
+          {active.map((s) => (
+            <AuthorSubmissionCard key={s.id} submission={s} />
+          ))}
+        </div>
+      )}
+
+      <SubsectionHead
+        title="All my submissions"
+        cta={{ to: "/author/submissions", label: "Open author area" }}
+      />
+      {submissions.length > active.length ? (
+        <SubmissionTable
+          rows={submissions.slice(active.length, active.length + 6)}
+          viewerRole="author"
+        />
+      ) : (
+        <p style={{ color: "var(--muted)", fontSize: 13, padding: "12px 0" }}>
+          Nothing further — every submission you have is highlighted above.
+        </p>
+      )}
+    </>
+  );
+}
+
+function AuthorSubmissionCard({ submission }: { submission: SubmissionRow }): ReactNode {
+  const stage = stageIndexFor(submission.stage);
+  const title = pickLocalized(submission.title) ?? `Submission #${submission.id}`;
+  const isDraft = submission.status === "DRAFT";
+  const lastActivity = submission.dateLastActivity ?? submission.dateSubmitted;
+
   return (
     <Link
-      to={card.to}
+      to="/author/submissions/$id"
+      params={{ id: String(submission.id) }}
       style={{
         textDecoration: "none",
         color: "inherit",
-        display: "block",
         background: "var(--bg)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--r-2)",
-        padding: "18px 18px 16px",
-        transition: "border-color 120ms, background 120ms",
+        border: isDraft ? "1px solid oklch(88% 0.08 80)" : "1px solid var(--border)",
+        borderRadius: 6,
+        padding: 16,
+        display: "block",
+        boxShadow: isDraft ? "0 0 0 3px var(--amber-soft)" : undefined,
       }}
-      activeProps={{ style: { borderColor: "var(--cobalt)" } }}
     >
       <div
         style={{
           display: "flex",
-          alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: 12,
+          alignItems: "center",
+          marginBottom: 10,
         }}
       >
         <span
           style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 30,
-            height: 30,
-            borderRadius: "var(--r-1)",
-            background: "var(--cobalt-soft)",
-            color: "var(--cobalt-deep)",
+            fontFamily: "var(--mono)",
+            fontSize: 11,
+            color: "var(--cobalt)",
+            fontWeight: 600,
           }}
         >
-          <Icon name={card.icon} size={15} />
+          AJ-{String(submission.id).padStart(4, "0")}
         </span>
         <Icon name="arrowUpRight" size={14} color="var(--muted)" />
       </div>
-      <p
-        className="sc"
-        style={{ color: "var(--muted)", marginBottom: 4 }}
-      >
-        {card.eyebrow}
-      </p>
-      <p
+      <div
         style={{
-          fontFamily: "var(--serif-display)",
-          fontSize: 17,
-          fontWeight: 500,
-          margin: "0 0 6px",
-          color: "var(--fg)",
-          letterSpacing: "-0.005em",
-        }}
-      >
-        {card.title}
-      </p>
-      <p
-        style={{
-          fontFamily: "var(--serif-body)",
           fontSize: 14,
-          lineHeight: 1.55,
-          color: "var(--fg-2)",
-          margin: 0,
+          fontWeight: 500,
+          lineHeight: 1.35,
+          minHeight: 56,
+          marginBottom: 10,
+          color: "var(--fg)",
+          overflow: "hidden",
+          display: "-webkit-box",
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: "vertical",
         }}
       >
-        {card.description}
-      </p>
+        {title}
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <StageStepper stage={stage} showLabels />
+      </div>
+      <div className="rule" style={{ margin: "10px 0" }} />
+      <div
+        style={{
+          fontSize: 12,
+          color: isDraft ? "var(--amber-deep)" : "var(--fg-2)",
+          fontWeight: isDraft ? 600 : 500,
+          marginBottom: 4,
+        }}
+      >
+        {isDraft ? (
+          <>
+            <Icon name="alert" size={12} /> Draft — finish + submit
+          </>
+        ) : (
+          formatStatus(submission.status, submission.stage)
+        )}
+      </div>
+      <div style={{ fontSize: 11.5, color: "var(--muted)" }}>
+        {lastActivity
+          ? `Last activity ${new Date(lastActivity).toLocaleDateString()}`
+          : "Just started"}
+      </div>
     </Link>
   );
 }
 
-function UnauthenticatedDashboard({ signIn }: { signIn: () => Promise<void> }): ReactNode {
+// --------------------------------------------------------------------------
+// REVIEWER overview
+// --------------------------------------------------------------------------
+
+interface AssignmentRow {
+  id: number;
+  submissionId: number;
+  status?: string;
+  dueDate?: string | null;
+  reviewRoundNumber?: number | null;
+}
+
+function ReviewerOverview(): ReactNode {
+  const [assignments, setAssignments] = useState<AssignmentRow[] | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void api<Page<AssignmentRow>>("/api/v1/reviewer/assignments?size=8").then(
+      (data) => {
+        if (cancelled) return;
+        setAssignments(data?.content ?? []);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (assignments == null) {
+    return <p style={{ color: "var(--muted)", fontSize: 13 }}>Loading assignments&hellip;</p>;
+  }
+  if (assignments.length === 0) {
+    return (
+      <EmptyHero
+        icon="badgeCheck"
+        title="No reviews assigned"
+        description="When an editor invites you to review a manuscript it'll show up here."
+      />
+    );
+  }
+  const open = assignments.filter((a) => a.status !== "COMPLETED");
+
+  return (
+    <>
+      <StageStrip
+        cells={[
+          { stage: 0, label: "Invited", n: countBy(assignments, "INVITED") },
+          { stage: 1, label: "Accepted", n: countBy(assignments, "ACCEPTED") },
+          { stage: 2, label: "Submitted", n: countBy(assignments, "COMPLETED") },
+          { stage: 3, label: "Declined", n: countBy(assignments, "DECLINED") },
+          { stage: 4, label: "Total", n: assignments.length },
+        ]}
+      />
+      <SubsectionHead
+        title="Open assignments"
+        cta={{ to: "/reviewer/assignments", label: "Open review queue" }}
+      />
+      {open.length === 0 ? (
+        <EmptyRow message="No open assignments — submitted reviews still show in the full queue." />
+      ) : (
+        <div
+          style={{
+            background: "var(--bg)",
+            border: "1px solid var(--border)",
+            borderRadius: 6,
+          }}
+        >
+          {open.slice(0, 5).map((a, i, arr) => (
+            <Link
+              key={a.id}
+              to="/reviewer/assignments/$assignmentId"
+              params={{ assignmentId: String(a.id) }}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 120px 110px 80px",
+                gap: 12,
+                alignItems: "center",
+                padding: "12px 16px",
+                textDecoration: "none",
+                color: "inherit",
+                borderBottom: i === arr.length - 1 ? "none" : "1px solid var(--border)",
+              }}
+            >
+              <div>
+                <span style={{ fontSize: 13, fontWeight: 500 }}>
+                  Submission #{a.submissionId}
+                </span>
+                <span
+                  style={{
+                    color: "var(--muted)",
+                    fontSize: 11.5,
+                    marginLeft: 8,
+                    fontFamily: "var(--mono)",
+                  }}
+                >
+                  R{a.reviewRoundNumber ?? 1}
+                </span>
+              </div>
+              <span style={{ fontSize: 12 }}>
+                <StatusPill status={a.status ?? "INVITED"} />
+              </span>
+              <span style={{ color: "var(--muted)", fontSize: 12, fontFamily: "var(--mono)" }}>
+                {a.dueDate
+                  ? `due ${new Date(a.dueDate).toLocaleDateString()}`
+                  : "no due date"}
+              </span>
+              <Icon name="chevronRight" size={14} color="var(--muted)" />
+            </Link>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+// --------------------------------------------------------------------------
+// ADMIN overview — utility tiles
+// --------------------------------------------------------------------------
+
+function AdminOverview(): ReactNode {
+  const tiles: Array<{ to: string; icon: IconName; title: string; body: string }> = [
+    {
+      to: "/admin/users",
+      icon: "users",
+      title: "Users",
+      body: "Activate or disable accounts, hand out roles, audit sign-ins.",
+    },
+    {
+      to: "/admin/journal",
+      icon: "settings",
+      title: "Journal config",
+      body: "Sections, masthead, ISSN, and submission policies.",
+    },
+    {
+      to: "/admin/announcements",
+      icon: "flag",
+      title: "Announcements",
+      body: "Calls for papers, special issue invitations, journal news.",
+    },
+    {
+      to: "/editor/deposits",
+      icon: "arrowUpRight",
+      title: "Deposits",
+      body: "CrossRef + ORCID outbox — retry failed deposits, inspect logs.",
+    },
+  ];
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+        gap: 14,
+      }}
+    >
+      {tiles.map((t) => (
+        <Link
+          key={t.to}
+          to={t.to}
+          style={{
+            textDecoration: "none",
+            color: "inherit",
+            background: "var(--bg)",
+            border: "1px solid var(--border)",
+            borderRadius: 6,
+            padding: 18,
+            display: "block",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 10,
+            }}
+          >
+            <span
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 4,
+                background: "var(--cobalt-soft)",
+                color: "var(--cobalt-deep)",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Icon name={t.icon} size={15} />
+            </span>
+            <Icon name="arrowUpRight" size={14} color="var(--muted)" />
+          </div>
+          <div
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              marginBottom: 4,
+              color: "var(--fg)",
+            }}
+          >
+            {t.title}
+          </div>
+          <div style={{ fontSize: 12.5, color: "var(--fg-2)", lineHeight: 1.55 }}>
+            {t.body}
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------
+// Shared bits
+// --------------------------------------------------------------------------
+
+function StageStrip({
+  cells,
+}: {
+  cells: Array<{ stage: StageIndex; label: string; n: number }>;
+}): ReactNode {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: `repeat(${cells.length}, 1fr)`,
+        gap: 1,
+        background: "var(--border)",
+        border: "1px solid var(--border)",
+        borderRadius: 6,
+        marginBottom: 22,
+        overflow: "hidden",
+      }}
+    >
+      {cells.map((s) => (
+        <div key={s.label} style={{ background: "var(--bg)", padding: "14px 16px" }}>
+          <div className="sc" style={{ color: "var(--muted)" }}>
+            {String(s.stage + 1).padStart(2, "0")} · {s.label}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: 8,
+              marginTop: 6,
+            }}
+          >
+            <span
+              className="tnum"
+              style={{
+                fontSize: 28,
+                fontWeight: 600,
+                fontFamily: "var(--serif-display)",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              {s.n}
+            </span>
+            <StageStepper stage={s.stage} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SubsectionHead({
+  title,
+  cta,
+}: {
+  title: string;
+  cta?: { to: string; label: string };
+}): ReactNode {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "baseline",
+        justifyContent: "space-between",
+        marginBottom: 10,
+      }}
+    >
+      <div className="sc" style={{ color: "var(--muted)" }}>
+        {title}
+      </div>
+      {cta ? (
+        <Link
+          to={cta.to}
+          style={{
+            fontSize: 12,
+            color: "var(--cobalt)",
+            textDecoration: "none",
+            fontWeight: 500,
+          }}
+        >
+          {cta.label} →
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
+function SubmissionTable({
+  rows,
+  viewerRole,
+}: {
+  rows: SubmissionRow[];
+  viewerRole: "editor" | "author";
+}): ReactNode {
+  return (
+    <div
+      style={{
+        background: "var(--bg)",
+        border: "1px solid var(--border)",
+        borderRadius: 6,
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "120px 1fr 130px 110px 90px",
+          padding: "10px 14px",
+          borderBottom: "1px solid var(--border)",
+          background: "var(--surface)",
+          fontSize: 10.5,
+          fontWeight: 600,
+          color: "var(--muted)",
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+          gap: 12,
+        }}
+      >
+        <div>ID</div>
+        <div>Manuscript</div>
+        <div>Stage</div>
+        <div>Status</div>
+        <div style={{ textAlign: "right" }}>Last activity</div>
+      </div>
+      {rows.map((s, i) => {
+        const stage = stageIndexFor(s.stage);
+        const title = pickLocalized(s.title) ?? `Submission #${s.id}`;
+        const last = s.dateLastActivity ?? s.dateSubmitted;
+        const path =
+          viewerRole === "editor"
+            ? `/editor/submissions/${s.id}`
+            : `/author/submissions/${s.id}`;
+        return (
+          <Link
+            key={s.id}
+            to={path}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "120px 1fr 130px 110px 90px",
+              padding: "12px 14px",
+              gap: 12,
+              alignItems: "center",
+              textDecoration: "none",
+              color: "inherit",
+              borderBottom: i === rows.length - 1 ? "none" : "1px solid var(--border)",
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "var(--mono)",
+                fontSize: 11,
+                color: "var(--cobalt)",
+                fontWeight: 600,
+              }}
+            >
+              AJ-{String(s.id).padStart(4, "0")}
+            </span>
+            <div
+              style={{
+                fontSize: 13.5,
+                fontWeight: 500,
+                lineHeight: 1.4,
+                color: "var(--fg)",
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {title}
+            </div>
+            <StageStepper stage={stage} />
+            <StatusPill status={s.status ?? "DRAFT"} />
+            <span
+              style={{
+                color: "var(--muted)",
+                fontSize: 11.5,
+                fontFamily: "var(--mono)",
+                textAlign: "right",
+              }}
+            >
+              {last ? new Date(last).toLocaleDateString() : "—"}
+            </span>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+function StatusPill({ status }: { status: string }): ReactNode {
+  const palette = pillPalette(status);
+  return (
+    <span
+      className={`chip ${palette.cls}`}
+      style={{ fontSize: 10.5, fontFamily: "var(--sans)" }}
+    >
+      {status.replace(/_/g, " ").toLowerCase()}
+    </span>
+  );
+}
+
+function pillPalette(status: string): { cls: string } {
+  const s = status.toUpperCase();
+  if (s === "DRAFT") return { cls: "chip-amber" };
+  if (s === "QUEUED" || s === "INVITED") return { cls: "chip" };
+  if (s === "ACCEPTED" || s === "ACTIVE") return { cls: "chip-cobalt" };
+  if (s === "COMPLETED" || s === "PUBLISHED") return { cls: "chip-green" };
+  if (s === "DECLINED" || s === "REJECTED" || s === "WITHDRAWN") return { cls: "chip-red" };
+  return { cls: "chip" };
+}
+
+function EmptyRow({ message }: { message: string }): ReactNode {
+  return (
+    <div
+      style={{
+        background: "var(--bg)",
+        border: "1px solid var(--border)",
+        borderRadius: 6,
+        padding: "20px 18px",
+        fontSize: 13,
+        color: "var(--muted)",
+      }}
+    >
+      {message}
+    </div>
+  );
+}
+
+function EmptyHero({
+  icon,
+  title,
+  description,
+  cta,
+}: {
+  icon: IconName;
+  title: string;
+  description: string;
+  cta?: { to: string; label: string };
+}): ReactNode {
+  return (
+    <div
+      style={{
+        background: "var(--bg)",
+        border: "1px dashed var(--border-strong)",
+        borderRadius: 6,
+        padding: "32px 24px",
+        textAlign: "center",
+        color: "var(--fg-2)",
+      }}
+    >
+      <div
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: "50%",
+          background: "var(--surface-2)",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 10,
+        }}
+      >
+        <Icon name={icon} size={16} color="var(--muted)" />
+      </div>
+      <div
+        style={{
+          fontSize: 16,
+          fontWeight: 600,
+          marginBottom: 4,
+          color: "var(--fg)",
+        }}
+      >
+        {title}
+      </div>
+      <div
+        style={{
+          fontSize: 13,
+          maxWidth: 480,
+          margin: "0 auto 14px",
+          lineHeight: 1.55,
+        }}
+      >
+        {description}
+      </div>
+      {cta ? (
+        <Link
+          to={cta.to}
+          className="btn btn-primary btn-sm"
+          style={{ textDecoration: "none" }}
+        >
+          {cta.label}
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
+function UnauthenticatedDashboard({
+  signIn,
+}: {
+  signIn: () => Promise<void>;
+}): ReactNode {
   return (
     <div style={{ maxWidth: 540 }}>
       <p className="sc" style={{ color: "var(--muted)", marginBottom: 6 }}>
@@ -214,9 +840,9 @@ function UnauthenticatedDashboard({ signIn }: { signIn: () => Promise<void> }): 
       </p>
       <h1
         style={{
-          fontFamily: "var(--serif-display)",
-          fontWeight: 500,
-          fontSize: 36,
+          fontFamily: "var(--sans)",
+          fontWeight: 600,
+          fontSize: 28,
           letterSpacing: "-0.015em",
           margin: "0 0 14px",
         }}
@@ -225,22 +851,78 @@ function UnauthenticatedDashboard({ signIn }: { signIn: () => Promise<void> }): 
       </h1>
       <p
         style={{
-          fontFamily: "var(--serif-body)",
-          fontSize: 17,
+          fontSize: 14,
           color: "var(--fg-2)",
           lineHeight: 1.65,
           marginBottom: 22,
         }}
       >
-        Authenticate with the journal&rsquo;s identity provider to access submissions, reviews, and editorial workflows.
+        Authenticate with the journal&rsquo;s identity provider to access
+        submissions, reviews, and editorial workflows.
       </p>
-      <button type="button" className="btn btn-primary" onClick={() => void signIn()}>
+      <button
+        type="button"
+        className="btn btn-primary"
+        onClick={() => void signIn()}
+      >
         Sign in with Keycloak
       </button>
     </div>
   );
 }
 
-function formatRole(r: RealmRole): string {
-  return r.replace(/_/g, " ").toLowerCase();
+// --------------------------------------------------------------------------
+// helpers
+// --------------------------------------------------------------------------
+
+type PrimaryRole = "editor" | "reviewer" | "author" | "admin" | "none";
+
+function primaryRole(roles: RealmRole[]): PrimaryRole {
+  if (hasRole(roles, "ADMIN")) return "admin";
+  if (isEditorial(roles)) return "editor";
+  if (hasRole(roles, "REVIEWER")) return "reviewer";
+  if (hasRole(roles, "AUTHOR")) return "author";
+  return "none";
+}
+
+function formatRoles(roles: RealmRole[]): string {
+  if (roles.length === 0) return "no roles assigned";
+  return roles.map((r) => r.replace(/_/g, " ").toLowerCase()).join(" · ");
+}
+
+function pickLocalized(map?: Record<string, string>): string | undefined {
+  if (!map) return undefined;
+  return (
+    map["en"] ??
+    map["en-US"] ??
+    Object.values(map).find((v) => v && v.trim().length > 0)
+  );
+}
+
+function stageIndexFor(stage: string | undefined): StageIndex {
+  switch (stage) {
+    case "SUBMISSION": return 0;
+    case "REVIEW": return 1;
+    case "EDITING": return 2;
+    case "PRODUCTION": return 3;
+    case "PUBLISHED": return 4;
+    default: return 0;
+  }
+}
+
+function formatStatus(status: string | undefined, stage: string | undefined): string {
+  if (!status) return "—";
+  if (status === "DRAFT") return "Draft";
+  if (status === "QUEUED") return "Queued — awaiting editor triage";
+  if (status === "ACTIVE") {
+    return stage
+      ? `In ${stage.toLowerCase()}`
+      : "Active";
+  }
+  if (status === "COMPLETE") return "Complete";
+  return status.replace(/_/g, " ").toLowerCase();
+}
+
+function countBy<T extends { status?: string }>(items: T[], status: string): number {
+  return items.filter((i) => i.status === status).length;
 }

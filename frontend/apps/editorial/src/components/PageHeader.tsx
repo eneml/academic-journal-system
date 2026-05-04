@@ -1,12 +1,22 @@
 import type { ReactNode } from "react";
 
 export interface PageHeaderProps {
+  /** Optional small-caps eyebrow above the title. */
   eyebrow?: string;
   title: string;
+  /** Subtitle line — short editorial summary like "47 active manuscripts across 5 stages". */
   description?: string;
+  /** Right-aligned actions row (e.g. Filter / Sort / New submission buttons). */
   actions?: ReactNode;
 }
 
+/**
+ * Page header used inside {@code AppShell}'s main column. Matches the design
+ * handoff: 22px sans headline (not the marketing-site serif), tight tracking,
+ * gray subtitle, and an optional actions slot pinned to the right. Dropping
+ * down to sans here is intentional — the editorial app is utility, not
+ * editorial display.
+ */
 export function PageHeader({
   eyebrow,
   title,
@@ -14,20 +24,35 @@ export function PageHeader({
   actions,
 }: PageHeaderProps): ReactNode {
   return (
-    <header style={{ marginBottom: 28, display: "flex", alignItems: "flex-end", gap: 16 }}>
+    <div
+      style={{
+        marginBottom: 18,
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-end",
+        gap: 16,
+      }}
+    >
       <div style={{ flex: 1, minWidth: 0 }}>
         {eyebrow ? (
-          <p className="sc" style={{ color: "var(--muted)", marginBottom: 6 }}>
+          <p
+            className="sc"
+            style={{
+              color: "var(--muted)",
+              marginBottom: 6,
+              fontSize: 9.5,
+            }}
+          >
             {eyebrow}
           </p>
         ) : null}
         <h1
           style={{
-            fontFamily: "var(--serif-display)",
-            fontWeight: 500,
-            fontSize: 32,
-            letterSpacing: "-0.01em",
             margin: 0,
+            fontSize: 22,
+            fontWeight: 600,
+            letterSpacing: "-0.015em",
+            fontFamily: "var(--sans)",
             color: "var(--fg)",
           }}
         >
@@ -36,19 +61,21 @@ export function PageHeader({
         {description ? (
           <p
             style={{
-              fontFamily: "var(--serif-body)",
-              fontSize: 16,
-              lineHeight: 1.6,
-              color: "var(--fg-2)",
-              margin: "8px 0 0",
+              fontSize: 13,
+              color: "var(--muted)",
+              margin: "4px 0 0",
+              fontFamily: "var(--sans)",
               maxWidth: 720,
+              lineHeight: 1.55,
             }}
           >
             {description}
           </p>
         ) : null}
       </div>
-      {actions ? <div style={{ display: "flex", gap: 8 }}>{actions}</div> : null}
-    </header>
+      {actions ? (
+        <div style={{ display: "flex", gap: 6, flex: "none" }}>{actions}</div>
+      ) : null}
+    </div>
   );
 }

@@ -58,19 +58,46 @@ function NewSubmissionPage(): ReactNode {
     }
     setBusy(true);
     setError(null);
-    const created = await api<SubmissionResponse>("/api/v1/submissions", {
-      method: "POST",
-      body: { sectionId: id, locale },
-    });
-    setBusy(false);
+    let created: SubmissionResponse | null = null;
+    try {
+      created = await api<SubmissionResponse>("/api/v1/submissions", {
+        method: "POST",
+        body: { sectionId: id, locale },
+      });
+    } catch (err) {
+      // api() shouldn't throw, but be defensive — if anything in the auth /
+      // fetch chain rejects, we don't want the spinner stuck on forever.
+      // eslint-disable-next-line no-console
+      console.error("POST /api/v1/submissions failed", err);
+    }
     if (!created || !created.id) {
-      setError("Couldn't start a new submission. Try again or contact the editors.");
+      setBusy(false);
+      setError(
+        "Couldn't start a new submission. Check that you're signed in with " +
+          "an AUTHOR role and try again — if it keeps failing, contact the editors.",
+      );
       return;
     }
-    void navigate({
-      to: "/author/submissions/$id",
-      params: { id: String(created.id) },
-    });
+    // Try the router first; if for any reason the navigate promise hangs or
+    // the route id changes, fall back to a hard redirect so the user never
+    // gets stuck on the form. The hard redirect also protects against weird
+    // history-stack issues after deep links into /author/submissions/new.
+    const target = `/author/submissions/${created.id}`;
+    try {
+      await navigate({
+        to: "/author/submissions/$id",
+        params: { id: String(created.id) },
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("Router navigate failed; falling back to location", err);
+      window.location.assign(target);
+      return;
+    }
+    // Belt-and-braces: if we somehow stayed here, force the URL forward.
+    if (typeof window !== "undefined" && window.location.pathname.endsWith("/new")) {
+      window.location.assign(target);
+    }
   };
 
   return (
