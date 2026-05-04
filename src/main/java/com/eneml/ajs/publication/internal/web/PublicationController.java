@@ -43,6 +43,14 @@ class PublicationController {
         return lookup.latestPublished(limit);
     }
 
+    @GetMapping("/sections/{sectionId}/publications")
+    @Operation(summary = "Recent published articles in a given section (public)")
+    java.util.List<com.eneml.ajs.publication.api.PublicationSummary> publicationsInSection(
+            @PathVariable Long sectionId,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "30") int limit) {
+        return lookup.publishedInSection(sectionId, limit);
+    }
+
     @GetMapping("/articles/{slugOrId}")
     @Operation(summary = "Public article view by url-path slug or numeric id (PUBLISHED only)")
     PublicArticleResponse articleBySlugOrId(@PathVariable String slugOrId) {

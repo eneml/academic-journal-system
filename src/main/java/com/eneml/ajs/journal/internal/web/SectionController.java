@@ -48,6 +48,12 @@ class SectionController {
         return mapper.toResponse(service.get(id));
     }
 
+    @GetMapping("/by-code/{code}")
+    @Operation(summary = "Get section by url code (public)")
+    SectionResponse getByCode(@PathVariable String code) {
+        return mapper.toResponse(service.getByCode(code));
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create a section")

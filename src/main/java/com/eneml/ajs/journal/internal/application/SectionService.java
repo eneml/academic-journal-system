@@ -40,6 +40,11 @@ public class SectionService {
         return repository.findById(id).orElseThrow(() -> NotFoundException.of("Section", id));
     }
 
+    public Section getByCode(String code) {
+        return repository.findByCode(code)
+                .orElseThrow(() -> NotFoundException.of("Section", code));
+    }
+
     @Transactional
     public Section create(SectionCreateRequest request) {
         if (repository.existsByCode(request.code())) {

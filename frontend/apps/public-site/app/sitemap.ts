@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import {
+  fetchActiveSections,
   fetchIssues,
   fetchRecentPublications,
 } from "@/lib/api";
@@ -28,9 +29,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/contact`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];
 
-  const [issues, articles] = await Promise.all([
+  const [issues, articles, sections] = await Promise.all([
     fetchIssues(),
     fetchRecentPublications(200),
+    fetchActiveSections(),
   ]);
 
   const issueEntries: MetadataRoute.Sitemap = (issues ?? [])
@@ -55,5 +57,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     };
   });
 
-  return [...staticEntries, ...issueEntries, ...articleEntries];
+  const sectionEntries: MetadataRoute.Sitemap = (sections ?? [])
+    .filter((s) => !s.inactive)
+    .map((s) => ({
+      url: `${base}/sections/${encodeURIComponent(s.code)}`,
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.5,
+    }));
+
+  return [...staticEntries, ...sectionEntries, ...issueEntries, ...articleEntries];
 }

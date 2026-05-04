@@ -107,6 +107,14 @@ export const fetchJournalConfig = () =>
 export const fetchActiveSections = () =>
   getJson<SectionSummary[]>("/api/v1/journal/sections");
 
+export const fetchSectionByCode = (code: string) =>
+  getJson<SectionSummary>(`/api/v1/journal/sections/by-code/${encodeURIComponent(code)}`);
+
+export const fetchPublicationsInSection = (sectionId: number, limit = 30) =>
+  getJson<PublicationSummary[]>(
+    `/api/v1/sections/${sectionId}/publications?limit=${limit}`,
+  );
+
 export type MastheadEntry = {
   id: number;
   userId: number;
