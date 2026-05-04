@@ -6,9 +6,11 @@ import com.eneml.ajs.identity.internal.domain.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +24,24 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmailIgnoreCase(String email);
 
     Page<User> findByStatus(UserStatus status, Pageable pageable);
+
+    /**
+     * Direct SQL update of {@code last_login_at} that bypasses Hibernate
+     * dirty-checking and the {@code @Version} optimistic-lock check. Two
+     * concurrent authenticated requests for the same user race to bump
+     * this timestamp; with a managed-entity update the loser fails the
+     * @Version check and a request 500s. This single-column UPDATE doesn't
+     * touch {@code version}, so concurrent writers are both safe — the
+     * timestamp simply ends up as whichever wrote last.
+     */
+    @Modifying
+    @Query(value = """
+            UPDATE app_user
+               SET last_login_at = :now,
+                   updated_at    = :now
+             WHERE id = :userId
+            """, nativeQuery = true)
+    int touchLastLogin(@Param("userId") long userId, @Param("now") Instant now);
 
     @Query("""
             SELECT DISTINCT u
