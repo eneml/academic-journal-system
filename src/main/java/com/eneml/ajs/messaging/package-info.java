@@ -1,11 +1,13 @@
 /**
- * Messaging module — in-app notifications. Pure consumer of domain
- * events from other modules; email delivery + templates ship in a
- * follow-up phase.
+ * Messaging module — in-app notifications + outbound email. Each persisted
+ * Notification can fan out to a templated email (Thymeleaf) sent via
+ * {@code spring-boot-starter-mail}; SMTP failures are logged but never
+ * roll back the in-app record so the user always sees the alert.
  *
  * <p>Owns: Notification.
  * <br>Emits: NotificationCreated.
- * <br>Consumes: SubmissionSubmitted, DecisionMade, ReviewerInvited.
+ * <br>Consumes: SubmissionSubmitted, DecisionMade, ReviewerInvited,
+ *               NotificationCreated (self, for email fanout).
  */
 @org.springframework.modulith.ApplicationModule(
     displayName = "Messaging",
