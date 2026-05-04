@@ -44,7 +44,7 @@ export default async function AuthorProfilePage({ params }: Props): Promise<Reac
   return (
     <SiteChrome journalName={journalName}>
       <section className="border-b border-border">
-        <div style={{ padding: "48px 56px", maxWidth: 900 }}>
+        <div style={{ padding: "48px var(--page-gutter)", maxWidth: 900 }}>
           <p
             className="sc text-cobalt mb-3"
             style={{
@@ -97,7 +97,7 @@ export default async function AuthorProfilePage({ params }: Props): Promise<Reac
       </section>
 
       <section>
-        <div style={{ padding: "48px 56px", maxWidth: 900 }}>
+        <div style={{ padding: "48px var(--page-gutter)", maxWidth: 900 }}>
           {author.works.length === 0 ? (
             <p className="text-fg-2" style={{ fontFamily: "var(--serif-body)" }}>
               No published articles in this journal yet.

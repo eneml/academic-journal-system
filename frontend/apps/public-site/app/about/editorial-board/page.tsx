@@ -54,7 +54,7 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
     <SiteChrome journalName={journalName} active="editorial-board">
       <section
         style={{
-          padding: "40px 56px 24px",
+          padding: "40px var(--page-gutter) 24px",
         }}
       >
         <div
@@ -91,7 +91,7 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
       </section>
 
       {all.length === 0 ? (
-        <section style={{ padding: "32px 56px 80px" }}>
+        <section style={{ padding: "32px var(--page-gutter) 80px" }}>
           <p
             style={{
               fontFamily: "var(--serif-body)",
@@ -107,7 +107,7 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
         <>
           {senior.length > 0 ? (
             <section
-              style={{ padding: "32px 56px 0" }}
+              style={{ padding: "32px var(--page-gutter) 0" }}
             >
               <SectionHead title="Senior editors" count={`${senior.length} editors`} />
               <div
@@ -126,7 +126,7 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
 
           {associate.length > 0 ? (
             <section
-              style={{ padding: "44px 56px 0" }}
+              style={{ padding: "44px var(--page-gutter) 0" }}
             >
               <SectionHead
                 title="Associate editors"
@@ -148,7 +148,7 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
 
           {advisory.length > 0 ? (
             <section
-              style={{ padding: "44px 56px 0" }}
+              style={{ padding: "44px var(--page-gutter) 0" }}
             >
               <SectionHead
                 title="Editorial advisory board"

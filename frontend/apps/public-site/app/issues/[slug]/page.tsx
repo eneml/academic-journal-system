@@ -100,7 +100,7 @@ export default async function SingleIssuePage({ params }: Props): Promise<ReactN
       {/* Breadcrumb */}
       <div
         style={{
-          padding: "20px 56px 0",
+          padding: "20px var(--page-gutter) 0",
           display: "flex",
           gap: 6,
           alignItems: "center",
@@ -136,7 +136,7 @@ export default async function SingleIssuePage({ params }: Props): Promise<ReactN
       {/* Issue masthead */}
       <section
         style={{
-          padding: "32px 56px 40px",
+          padding: "32px var(--page-gutter) 40px",
           display: "grid",
           gridTemplateColumns: "260px 1fr",
           gap: 56,
@@ -255,14 +255,14 @@ export default async function SingleIssuePage({ params }: Props): Promise<ReactN
         </div>
       </section>
 
-      <div style={{ padding: "0 56px" }}>
+      <div style={{ padding: "0 var(--page-gutter)" }}>
         <div className="double-rule" />
       </div>
 
       {/* TOC by section */}
       <section
         style={{
-          padding: "36px 56px 0",
+          padding: "36px var(--page-gutter) 0",
           display: "grid",
           gridTemplateColumns: "200px 1fr",
           gap: 56,

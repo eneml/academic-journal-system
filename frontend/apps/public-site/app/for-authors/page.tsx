@@ -34,7 +34,7 @@ export default async function ForAuthorsPage(): Promise<ReactNode> {
     <SiteChrome journalName={journalName} active="for-authors">
       <section
         style={{
-          padding: "32px 56px 24px",
+          padding: "32px var(--page-gutter) 24px",
           borderBottom: "1px solid var(--border)",
         }}
       >
@@ -75,7 +75,7 @@ export default async function ForAuthorsPage(): Promise<ReactNode> {
           display: "grid",
           gridTemplateColumns: "240px minmax(0, 720px) 1fr",
           gap: 56,
-          padding: "32px 56px 80px",
+          padding: "32px var(--page-gutter) 80px",
         }}
       >
         {/* Sticky On this page */}

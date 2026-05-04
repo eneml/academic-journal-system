@@ -114,7 +114,7 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
       {/* Breadcrumb + version meta */}
       <div
         style={{
-          padding: "20px 56px 0",
+          padding: "20px var(--page-gutter) 0",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -201,7 +201,7 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
           display: "grid",
           gridTemplateColumns: "240px minmax(0, 720px) 1fr",
           gap: 56,
-          padding: "32px 56px 80px",
+          padding: "32px var(--page-gutter) 80px",
           alignItems: "start",
         }}
       >

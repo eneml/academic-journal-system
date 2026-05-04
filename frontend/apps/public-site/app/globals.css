@@ -11,6 +11,15 @@
   --serif-body: var(--font-source-serif), "Source Serif 4", "Newsreader", Georgia, serif;
   --sans: var(--font-inter-tight), "Inter Tight", "Inter", -apple-system, system-ui, sans-serif;
   --mono: var(--font-jetbrains-mono), "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+
+  /*
+   * Horizontal page gutter — used as the left/right padding on every
+   * top-level section in the public site. clamp() so a small monitor
+   * gets a tight gutter (40px floor) and an ultra-wide one gets
+   * proportional breathing room (capped at 96px) instead of all
+   * content pinning to the left edge.
+   */
+  --page-gutter: clamp(40px, 4vw, 96px);
 }
 
 @theme {

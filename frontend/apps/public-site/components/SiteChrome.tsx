@@ -69,7 +69,7 @@ export async function SiteChrome({
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            padding: "10px 56px",
+            padding: "10px var(--page-gutter)",
             borderBottom: "1px solid var(--border)",
             fontSize: 11,
             color: "var(--muted)",
@@ -115,7 +115,7 @@ export async function SiteChrome({
         {/* Masthead — centered typography, full-width container per handoff */}
         <div
           style={{
-            padding: "28px 56px 22px",
+            padding: "28px var(--page-gutter) 22px",
             borderBottom: "1px solid var(--border)",
             textAlign: "center",
           }}
@@ -158,7 +158,7 @@ export async function SiteChrome({
             justifyContent: "center",
             alignItems: "center",
             gap: 0,
-            padding: "0 56px",
+            padding: "0 var(--page-gutter)",
           }}
         >
           {NAV_ITEMS.map((n) => {
@@ -222,7 +222,7 @@ function SiteFooter({ journalName }: { journalName: string }): ReactNode {
       style={{
         background: "oklch(18% 0.018 270)",
         color: "oklch(80% 0.01 270)",
-        padding: "48px 56px 28px",
+        padding: "48px var(--page-gutter) 28px",
         marginTop: 80,
       }}
     >

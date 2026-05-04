@@ -62,7 +62,7 @@ export default async function HomePage(): Promise<ReactNode> {
       {/* Hero — current issue */}
       <section
         style={{
-          padding: "56px 56px 40px",
+          padding: "56px var(--page-gutter) 40px",
           display: "grid",
           gridTemplateColumns: "1fr 280px",
           gap: 56,
@@ -171,14 +171,14 @@ export default async function HomePage(): Promise<ReactNode> {
         </div>
       </section>
 
-      <div style={{ padding: "0 56px" }}>
+      <div style={{ padding: "0 var(--page-gutter)" }}>
         <div className="double-rule" />
       </div>
 
       {/* Table of contents */}
       <section
         style={{
-          padding: "32px 56px 0",
+          padding: "32px var(--page-gutter) 0",
           display: "grid",
           gridTemplateColumns: "200px 1fr",
           gap: 56,
@@ -309,7 +309,7 @@ export default async function HomePage(): Promise<ReactNode> {
       {/* Three-up: Scope, Editorial, Indexing */}
       <section
         style={{
-          padding: "64px 56px 0",
+          padding: "64px var(--page-gutter) 0",
           display: "grid",
           gridTemplateColumns: "1fr 1fr 1fr",
           gap: 1,
@@ -443,7 +443,7 @@ export default async function HomePage(): Promise<ReactNode> {
       {callForPapers ? (
         <section
           style={{
-            padding: "56px 56px 0",
+            padding: "56px var(--page-gutter) 0",
           }}
         >
           <Link
