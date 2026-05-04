@@ -27,6 +27,7 @@ public record PublicationResponse(
         List<String> disciplines,
         String locale,
         Instant datePublished,
+        Long doiId,
         long version_no,
         Instant updatedAt
 ) {

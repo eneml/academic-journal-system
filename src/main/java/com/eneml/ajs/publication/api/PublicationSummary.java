@@ -17,6 +17,7 @@ public record PublicationSummary(
         Map<String, String> abstractText,
         List<String> keywords,
         String locale,
-        Instant datePublished
+        Instant datePublished,
+        Long doiId
 ) {
 }
