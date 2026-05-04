@@ -5,7 +5,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 if (!BASE_URL) {
   // Fail loud at module load if the API base URL isn't configured. The shell
   // can still render — fetches will surface the misconfig with a clear error.
-  // eslint-disable-next-line no-console
+   
   console.error("VITE_API_BASE_URL is not set; API calls will fail.");
 }
 
@@ -34,7 +34,7 @@ async function getAccessToken(): Promise<string | null> {
       const renewed = await manager.signinSilent();
       if (renewed) user = renewed;
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.warn("Silent renew failed:", err);
       return null;
     }
@@ -80,7 +80,7 @@ export async function api<T>(path: string, opts: ApiOptions = {}): Promise<T | n
       signal: opts.signal,
     });
   } catch (err) {
-    // eslint-disable-next-line no-console
+     
     console.warn(`API ${opts.method ?? "GET"} ${path} failed (network):`, err);
     return null;
   }
@@ -90,7 +90,7 @@ export async function api<T>(path: string, opts: ApiOptions = {}): Promise<T | n
   }
 
   if (!response.ok) {
-    // eslint-disable-next-line no-console
+     
     console.warn(`API ${opts.method ?? "GET"} ${path} -> ${response.status}`);
     return null;
   }
@@ -98,7 +98,7 @@ export async function api<T>(path: string, opts: ApiOptions = {}): Promise<T | n
   try {
     return (await response.json()) as T;
   } catch (err) {
-    // eslint-disable-next-line no-console
+     
     console.warn(`API ${path} returned non-JSON body:`, err);
     return null;
   }

@@ -12,7 +12,7 @@ function SilentCallback(): ReactNode {
     // Just hand the URL back to the manager and exit; nothing to render.
     void getUserManager()
       .signinSilentCallback()
-      // eslint-disable-next-line no-console
+       
       .catch((err) => console.warn("Silent callback failed:", err));
   }, []);
   return null;

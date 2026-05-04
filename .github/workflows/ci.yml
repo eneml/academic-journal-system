@@ -67,9 +67,8 @@ jobs:
       - name: Type-check
         run: pnpm -r --if-present run type-check
 
-      # Lint step intentionally skipped until ESLint is properly installed
-      # at the workspace root (@ajs/eslint-config peer-depends on eslint^9
-      # but the runtime is not yet wired). Tracked as a follow-up.
+      - name: Lint
+        run: pnpm -r --if-present run lint
 
       - name: Build (turbo)
         run: pnpm build

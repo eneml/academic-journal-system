@@ -24,7 +24,7 @@ function AuthCallback(): ReactNode {
         }
       } catch (err) {
         if (!cancelled) {
-          // eslint-disable-next-line no-console
+           
           console.error("OIDC callback failed:", err);
           setError(err instanceof Error ? err.message : "Sign-in failed");
         }
