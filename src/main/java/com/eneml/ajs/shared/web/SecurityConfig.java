@@ -1,5 +1,8 @@
 package com.eneml.ajs.shared.web;
 
+import java.util.Arrays;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -11,11 +14,20 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
  * Stateless OAuth2 resource server. The {@link Converter} bean is supplied
  * by another module (the identity module) and handles realm-role mapping
  * plus lazy provisioning of local users.
+ *
+ * <p>CORS is wired here using the {@code app.cors.*} block from
+ * {@code application.yml} so the SPA origins (public site + editorial app)
+ * can call the API in the browser. {@code OPTIONS} requests are explicitly
+ * permitted in the security chain so the CORS preflight isn't intercepted
+ * by the resource-server JWT filter and rejected with 401.
  */
 @Configuration
 @EnableMethodSecurity
@@ -24,11 +36,17 @@ class SecurityConfig {
     @Bean
     SecurityFilterChain filterChain(
             HttpSecurity http,
-            Converter<Jwt, AbstractAuthenticationToken> jwtConverter) throws Exception {
+            Converter<Jwt, AbstractAuthenticationToken> jwtConverter,
+            CorsConfigurationSource corsConfigurationSource) throws Exception {
         return http
+                .cors(c -> c.configurationSource(corsConfigurationSource))
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // CORS preflight has no Authorization header by design — let it through
+                        // so the resource server doesn't reject it with 401 before the CORS
+                        // filter can answer.
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/v1/journal/config",
                                 "/api/v1/journal/sections",
@@ -52,5 +70,38 @@ class SecurityConfig {
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(o -> o.jwt(j -> j.jwtAuthenticationConverter(jwtConverter)))
                 .build();
+    }
+
+    /**
+     * CORS source built from {@code app.cors.*} YAML. The default values
+     * mirror the local-dev compose stack (public site on :3000, editorial
+     * app on :5173) so it works out of the box without env vars.
+     */
+    @Bean
+    CorsConfigurationSource corsConfigurationSource(
+            @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:5173}")
+                    List<String> allowedOrigins,
+            @Value("${app.cors.allowed-methods:GET,POST,PUT,PATCH,DELETE,OPTIONS}")
+                    String allowedMethods,
+            @Value("${app.cors.allowed-headers:*}") String allowedHeaders,
+            @Value("${app.cors.allow-credentials:true}") boolean allowCredentials,
+            @Value("${app.cors.max-age:3600}") long maxAge) {
+        CorsConfiguration cfg = new CorsConfiguration();
+        cfg.setAllowedOrigins(allowedOrigins);
+        cfg.setAllowedMethods(Arrays.stream(allowedMethods.split(",")).map(String::trim).toList());
+        if ("*".equals(allowedHeaders.trim())) {
+            cfg.addAllowedHeader("*");
+        } else {
+            cfg.setAllowedHeaders(Arrays.stream(allowedHeaders.split(",")).map(String::trim).toList());
+        }
+        // Expose Location so client-side flows that follow created resources
+        // can read where the new entity lives.
+        cfg.setExposedHeaders(List.of("Location", "Content-Disposition"));
+        cfg.setAllowCredentials(allowCredentials);
+        cfg.setMaxAge(maxAge);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", cfg);
+        return source;
     }
 }
