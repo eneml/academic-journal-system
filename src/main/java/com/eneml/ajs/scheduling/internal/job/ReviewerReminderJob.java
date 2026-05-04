@@ -33,12 +33,7 @@ class ReviewerReminderJob {
     public void run() {
         Instant now = Instant.now();
         int reminders = 0;
-        // Without a "list overdue" repository view, sweep through all
-        // active reviewers' inboxes that the lookup exposes — the
-        // implementation is fine for journal-scale workloads (hundreds
-        // of open assignments). A dedicated SQL query can replace this
-        // when volumes grow.
-        for (var summary : collectActiveAssignments()) {
+        for (var summary : reviewLookup.overdueAssignments(now)) {
             ReviewerReminderDue.Kind kind = overdueKind(summary, now);
             if (kind == null) continue;
             events.publishEvent(ReviewerReminderDue.of(
@@ -49,13 +44,6 @@ class ReviewerReminderJob {
         if (reminders > 0) {
             log.info("dispatched {} reviewer reminders", reminders);
         }
-    }
-
-    private java.util.List<ReviewAssignmentSummary> collectActiveAssignments() {
-        // Walk reviewers we know about by enumerating assignments per
-        // round. This isn't ideal at scale; a dedicated repository query
-        // can replace it in a future commit.
-        return java.util.Collections.emptyList();
     }
 
     static ReviewerReminderDue.Kind overdueKind(ReviewAssignmentSummary a, Instant now) {

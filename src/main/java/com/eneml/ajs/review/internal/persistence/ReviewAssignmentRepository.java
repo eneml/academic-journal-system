@@ -27,4 +27,20 @@ public interface ReviewAssignmentRepository extends JpaRepository<ReviewAssignme
     long countByReviewRoundIdAndStatusIn(Long reviewRoundId, List<ReviewAssignmentStatus> statuses);
 
     long countByReviewRoundId(Long reviewRoundId);
+
+    /**
+     * Assignments still in flight (invited, accepted, in-progress) whose
+     * response or review deadline has passed. Used by the scheduled
+     * reminder sweep.
+     */
+    @Query("""
+            SELECT a FROM ReviewAssignment a
+            WHERE a.status IN (com.eneml.ajs.review.api.ReviewAssignmentStatus.AWAITING_RESPONSE,
+                                com.eneml.ajs.review.api.ReviewAssignmentStatus.ACCEPTED,
+                                com.eneml.ajs.review.api.ReviewAssignmentStatus.IN_PROGRESS)
+              AND ((a.dateResponseDue IS NOT NULL AND a.dateResponseDue < :cutoff)
+                   OR (a.dateDue IS NOT NULL AND a.dateDue < :cutoff))
+            ORDER BY a.dateAssigned ASC
+            """)
+    List<ReviewAssignment> findOverdue(java.time.Instant cutoff);
 }

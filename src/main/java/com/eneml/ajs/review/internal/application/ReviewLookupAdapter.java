@@ -10,10 +10,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
@@ -47,7 +47,16 @@ class ReviewLookupAdapter implements ReviewLookup {
 
     @Override
     public List<ReviewAssignmentSummary> openAssignmentsForReviewer(Long reviewerUserId) {
-        var assignments = assignmentRepository.findOpenForReviewer(reviewerUserId);
+        return inflate(assignmentRepository.findOpenForReviewer(reviewerUserId));
+    }
+
+    @Override
+    public List<ReviewAssignmentSummary> overdueAssignments(Instant cutoff) {
+        return inflate(assignmentRepository.findOverdue(cutoff));
+    }
+
+    private List<ReviewAssignmentSummary> inflate(
+            List<com.eneml.ajs.review.internal.domain.ReviewAssignment> assignments) {
         // Bulk-fetch parent rounds to avoid N+1.
         Map<Long, Long> roundToSubmission = roundRepository.findAllById(
                 assignments.stream().map(a -> a.getReviewRoundId()).distinct().toList())

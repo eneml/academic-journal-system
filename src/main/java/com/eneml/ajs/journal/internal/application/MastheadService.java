@@ -1,11 +1,15 @@
 package com.eneml.ajs.journal.internal.application;
 
+import com.eneml.ajs.identity.api.UserDirectoryService;
+import com.eneml.ajs.identity.api.UserStatus;
+import com.eneml.ajs.identity.api.UserSummary;
 import com.eneml.ajs.journal.api.MastheadEntryAdded;
 import com.eneml.ajs.journal.api.MastheadEntryRemoved;
 import com.eneml.ajs.journal.internal.domain.MastheadEntry;
 import com.eneml.ajs.journal.internal.persistence.MastheadEntryRepository;
 import com.eneml.ajs.journal.internal.web.dto.MastheadEntryUpsertRequest;
 import com.eneml.ajs.journal.internal.web.mapper.MastheadMapper;
+import com.eneml.ajs.shared.exception.ConflictException;
 import com.eneml.ajs.shared.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -27,6 +31,7 @@ public class MastheadService {
     private final MastheadEntryRepository repository;
     private final MastheadMapper mapper;
     private final ApplicationEventPublisher events;
+    private final UserDirectoryService userDirectory;
 
     public List<MastheadEntry> list(boolean visibleOnly) {
         return visibleOnly ? repository.listVisible() : repository.listAll();
@@ -38,8 +43,7 @@ public class MastheadService {
 
     @Transactional
     public MastheadEntry add(MastheadEntryUpsertRequest request) {
-        // TODO(identity): once identity::api exists, validate that userId
-        //                 references an existing User with editor/section_editor role.
+        validateUser(request.userId());
         MastheadEntry saved = repository.save(mapper.toEntity(request));
         events.publishEvent(MastheadEntryAdded.of(saved.getId(), saved.getUserId()));
         return saved;
@@ -48,8 +52,20 @@ public class MastheadService {
     @Transactional
     public MastheadEntry update(Long id, MastheadEntryUpsertRequest request) {
         MastheadEntry entry = get(id);
+        if (!entry.getUserId().equals(request.userId())) {
+            validateUser(request.userId());
+        }
         mapper.updateEntity(request, entry);
         return entry;
+    }
+
+    private void validateUser(Long userId) {
+        UserSummary u = userDirectory.findById(userId)
+                .orElseThrow(() -> NotFoundException.of("User", userId));
+        if (u.status() != UserStatus.ACTIVE) {
+            throw new ConflictException(
+                    "User %d is not active and cannot appear on the masthead".formatted(userId));
+        }
     }
 
     @Transactional
