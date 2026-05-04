@@ -113,6 +113,15 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
             <Link href="/" className="text-fg-2 hover:text-cobalt">
               Home
             </Link>
+            <Link href="/issues" className="text-fg-2 hover:text-cobalt">
+              Archive
+            </Link>
+            <Link href="/announcements" className="text-fg-2 hover:text-cobalt">
+              News
+            </Link>
+            <Link href="/search" className="text-fg-2 hover:text-cobalt">
+              Search
+            </Link>
             <Link href="/about" className="text-fg-2 hover:text-cobalt">
               About
             </Link>

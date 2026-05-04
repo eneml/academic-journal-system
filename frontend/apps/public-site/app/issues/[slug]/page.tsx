@@ -81,8 +81,14 @@ export default async function SingleIssuePage({ params }: Props): Promise<ReactN
             <Link href="/" className="text-fg-2 hover:text-cobalt">
               Home
             </Link>
-            <Link href="/issues" className="text-fg hover:text-cobalt">
+            <Link href="/issues" className="text-cobalt">
               Archive
+            </Link>
+            <Link href="/announcements" className="text-fg-2 hover:text-cobalt">
+              News
+            </Link>
+            <Link href="/search" className="text-fg-2 hover:text-cobalt">
+              Search
             </Link>
             <Link href="/about" className="text-fg-2 hover:text-cobalt">
               About

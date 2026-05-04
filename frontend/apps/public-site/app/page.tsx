@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { SiteChrome } from "@/components/SiteChrome";
 import {
   fetchIssues,
   fetchJournalConfig,
@@ -34,42 +35,8 @@ export default async function HomePage(): Promise<ReactNode> {
     : "Forthcoming";
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="text-fg"
-            style={{
-              fontFamily: "var(--serif-display)",
-              fontWeight: 600,
-              fontSize: 18,
-            }}
-          >
-            {journalName}
-          </Link>
-          <nav className="flex gap-6 text-sm">
-            <Link href="/" className="text-fg-2 hover:text-cobalt">
-              Home
-            </Link>
-            <Link href="/issues" className="text-fg-2 hover:text-cobalt">
-              Archive
-            </Link>
-            <Link href="/announcements" className="text-fg-2 hover:text-cobalt">
-              News
-            </Link>
-            <Link href="/search" className="text-fg-2 hover:text-cobalt">
-              Search
-            </Link>
-            <Link href="/about" className="text-fg-2 hover:text-cobalt">
-              About
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      <main className="flex-1">
-        <section className="border-b border-border">
+    <SiteChrome journalName={journalName} active="home">
+      <section className="border-b border-border">
           <div className="max-w-6xl mx-auto px-6 py-24">
             <p
               className="text-cobalt mb-4"
@@ -179,25 +146,7 @@ export default async function HomePage(): Promise<ReactNode> {
             )}
           </div>
         </section>
-      </main>
-
-      <footer className="border-t border-border">
-        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-wrap items-center justify-between gap-4 text-sm text-muted">
-          <p>
-            © {new Date().getFullYear()} {journalName}. All rights reserved.
-          </p>
-          {config?.contactEmail ? (
-            <a
-              href={`mailto:${config.contactEmail}`}
-              className="hover:text-cobalt"
-              style={{ fontFamily: "var(--mono)", fontSize: 12 }}
-            >
-              {config.contactEmail}
-            </a>
-          ) : null}
-        </div>
-      </footer>
-    </div>
+    </SiteChrome>
   );
 }
 
