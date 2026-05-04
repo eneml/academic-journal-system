@@ -65,11 +65,29 @@ const NAV_GROUPS: NavGroup[] = [
         icon: "layers",
         when: isEditorial,
       },
+      {
+        to: "/editor/issues",
+        label: "Issues",
+        icon: "calendar",
+        when: isEditorial,
+      },
+      {
+        to: "/editor/deposits",
+        label: "DOI / ORCID deposits",
+        icon: "arrowUpRight",
+        when: isEditorial,
+      },
     ],
   },
   {
     title: "Administration",
     items: [
+      {
+        to: "/admin/announcements",
+        label: "Announcements",
+        icon: "flag",
+        when: isEditorial,
+      },
       {
         to: "/admin/users",
         label: "Users",
