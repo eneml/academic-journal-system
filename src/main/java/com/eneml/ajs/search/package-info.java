@@ -1,13 +1,12 @@
 /**
- * Search module — read-only projections optimized for the public reading
- * site (PostgreSQL FTS via tsvector + pg_trgm + unaccent).
+ * Search module — denormalized full-text index over published works,
+ * fed by publication lifecycle events and queried via Postgres
+ * tsvector. Swapping in Meilisearch later is a matter of replacing the
+ * service implementation; the public API stays the same.
  *
- * <p>Owns: read-only materialized projections (no business entities).
- * <br>Emits: SearchIndexUpdated.
- * <br>Consumes: PublicationPublished, PublicationUnpublished, MetadataChanged.
- *
- * <p>Phase 2 trigger: swap PG FTS for Meilisearch when corpus exceeds
- * ~50K articles or faceted search complexity becomes painful.
+ * <p>Owns: PublishedSearchIndex (read-only projection).
+ * <br>Emits: nothing.
+ * <br>Consumes: PublicationPublished, PublicationUnpublished.
  */
 @org.springframework.modulith.ApplicationModule(
     displayName = "Search",
