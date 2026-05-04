@@ -20,14 +20,14 @@ export default async function IssuesPage(): Promise<ReactNode> {
   ]);
 
   const locale = config?.defaultLocale ?? "en";
-  const journalName = pickLocale(config?.name, locale) || "Academic Journal";
+  const journalName = pickLocale(config?.name, locale) || "The Academic Journal";
   const published = (issues ?? []).filter((i) => i.published);
   const byYear = groupByYear(published);
 
   return (
     <SiteChrome journalName={journalName} active="archive">
       <section className="border-b border-border">
-          <div className="max-w-4xl mx-auto px-6 py-20">
+          <div style={{ padding: "64px 56px" }}>
             <p
               className="sc text-cobalt mb-3"
               style={{
@@ -55,7 +55,7 @@ export default async function IssuesPage(): Promise<ReactNode> {
         </section>
 
         <section>
-          <div className="max-w-4xl mx-auto px-6 py-16">
+          <div style={{ padding: "56px 56px" }}>
             {byYear.length === 0 ? (
               <p
                 className="text-fg-2"

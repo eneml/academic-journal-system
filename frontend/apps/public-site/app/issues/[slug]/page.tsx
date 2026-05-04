@@ -64,7 +64,7 @@ export default async function SingleIssuePage({ params }: Props): Promise<ReactN
   ]);
 
   const locale = config?.defaultLocale ?? "en";
-  const journalName = pickLocale(config?.name, locale) || "Academic Journal";
+  const journalName = pickLocale(config?.name, locale) || "The Academic Journal";
   const grouped = groupBySection(toc ?? [], sectionsMap, locale);
 
   const totalArticles = (toc ?? []).length;

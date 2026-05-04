@@ -29,13 +29,13 @@ export default async function AnnouncementsPage(): Promise<ReactNode> {
     fetchAnnouncements(50),
   ]);
   const locale = config?.defaultLocale ?? "en";
-  const journalName = pickLocale(config?.name, locale) || "Academic Journal";
+  const journalName = pickLocale(config?.name, locale) || "The Academic Journal";
   const items = list ?? [];
 
   return (
     <SiteChrome journalName={journalName} >
       <section className="border-b border-border">
-        <div className="max-w-3xl mx-auto px-6 py-14">
+        <div style={{ padding: "48px 56px" }}>
           <p
             className="sc text-cobalt mb-3"
             style={{
@@ -63,7 +63,7 @@ export default async function AnnouncementsPage(): Promise<ReactNode> {
       </section>
 
       <section>
-        <div className="max-w-3xl mx-auto px-6 py-12">
+        <div style={{ padding: "40px 56px", maxWidth: 900 }}>
           {items.length === 0 ? (
             <p className="text-fg-2" style={{ fontFamily: "var(--serif-body)" }}>
               No announcements at the moment. Check back soon.

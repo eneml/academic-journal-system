@@ -60,7 +60,7 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
   if (!article) notFound();
 
   const locale = article.locale ?? config?.defaultLocale ?? "en";
-  const journalName = pickLocale(config?.name, locale) || "Academic Journal";
+  const journalName = pickLocale(config?.name, locale) || "The Academic Journal";
   const issue = article.issueId ? await fetchIssueById(article.issueId) : null;
 
   const title = pickLocale(article.title, locale) || "Untitled";

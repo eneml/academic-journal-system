@@ -7,12 +7,11 @@ const EDITORIAL_APP_URL =
   process.env.NEXT_PUBLIC_EDITORIAL_APP_URL ?? "http://localhost:5173";
 
 export type ActiveNav =
+  | "about"
   | "current"
   | "archive"
-  | "about"
-  | "editorial-board"
   | "for-authors"
-  | "for-reviewers"
+  | "editorial-board"
   | "contact"
   | null;
 
@@ -26,12 +25,11 @@ export interface SiteChromeProps {
 }
 
 const NAV_ITEMS: Array<{ key: ActiveNav; href: string; label: string }> = [
+  { key: "about",           href: "/about",                  label: "About" },
   { key: "current",         href: "/",                       label: "Current" },
   { key: "archive",         href: "/issues",                 label: "Archive" },
-  { key: "about",           href: "/about",                  label: "About" },
-  { key: "editorial-board", href: "/about/editorial-board",  label: "Editorial Board" },
   { key: "for-authors",     href: "/for-authors",            label: "For Authors" },
-  { key: "for-reviewers",   href: "/policies",               label: "For Reviewers" },
+  { key: "editorial-board", href: "/about/editorial-board",  label: "Editorial Board" },
   { key: "contact",         href: "/contact",                label: "Contact" },
 ];
 
@@ -111,11 +109,10 @@ export async function SiteChrome({
           </div>
         </div>
 
-        {/* Centered masthead */}
+        {/* Masthead */}
         <div
           style={{
-            padding: "32px 56px 24px",
-            textAlign: "center",
+            padding: "28px 56px 22px",
             borderBottom: "1px solid var(--border)",
           }}
         >
@@ -154,20 +151,21 @@ export async function SiteChrome({
         <nav
           style={{
             display: "flex",
-            justifyContent: "center",
             alignItems: "center",
             gap: 0,
             padding: "0 56px",
           }}
         >
-          {NAV_ITEMS.map((n) => {
+          {NAV_ITEMS.map((n, i) => {
             const isActive = active === n.key;
             return (
               <Link
                 key={n.key}
                 href={n.href}
                 style={{
-                  padding: "14px 22px",
+                  // Flush the first item with the page gutter so the nav
+                  // reads as anchored to the left rather than indented.
+                  padding: i === 0 ? "14px 22px 14px 0" : "14px 22px",
                   fontSize: 13,
                   fontWeight: 500,
                   color: isActive ? "var(--fg)" : "var(--fg-2)",
@@ -228,7 +226,7 @@ function SiteFooter({ journalName }: { journalName: string }): ReactNode {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1.4fr 1fr 1fr 1fr",
+          gridTemplateColumns: "1.4fr 1fr 1fr 1fr 1fr",
           gap: 40,
           paddingBottom: 36,
         }}
@@ -276,14 +274,21 @@ function SiteFooter({ journalName }: { journalName: string }): ReactNode {
             l: [
               { label: "Submission Guidelines", href: "/for-authors" },
               { label: "Submit Manuscript", href: EDITORIAL_APP_URL },
-              { label: "Policies", href: "/policies" },
             ],
           },
           {
-            t: "Editorial",
+            t: "For Reviewers",
             l: [
-              { label: "Editorial Board", href: "/about/editorial-board" },
               { label: "Peer Review", href: "/policies" },
+              { label: "Publication Ethics", href: "/policies" },
+            ],
+          },
+          {
+            t: "Journal",
+            l: [
+              { label: "About", href: "/about" },
+              { label: "Editorial Board", href: "/about/editorial-board" },
+              { label: "Policies", href: "/policies" },
               { label: "Contact", href: "/contact" },
             ],
           },

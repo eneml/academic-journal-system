@@ -21,7 +21,7 @@ export async function GET(): Promise<NextResponse> {
   ]);
   const base = SITE_URL.replace(/\/$/, "");
   const locale = config?.defaultLocale ?? "en";
-  const journalName = pickLocale(config?.name, locale) || "Academic Journal";
+  const journalName = pickLocale(config?.name, locale) || "The Academic Journal";
 
   const items = (articles ?? [])
     .map((a) => {

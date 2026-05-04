@@ -29,7 +29,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Academic Journal",
+  title: "The Academic Journal",
   description: "A scholarly journal of original peer-reviewed research.",
 };
 

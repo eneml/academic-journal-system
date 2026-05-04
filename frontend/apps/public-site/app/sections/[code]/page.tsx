@@ -39,13 +39,13 @@ export default async function SectionPage({ params }: Props): Promise<ReactNode>
 
   const articles = (await fetchPublicationsInSection(section.id, 50)) ?? [];
   const locale = config?.defaultLocale ?? "en";
-  const journalName = pickLocale(config?.name, locale) || "Academic Journal";
+  const journalName = pickLocale(config?.name, locale) || "The Academic Journal";
   const title = pickLocale(section.title, locale) || section.code;
 
   return (
     <SiteChrome journalName={journalName}>
       <section className="border-b border-border">
-          <div className="max-w-3xl mx-auto px-6 py-16">
+          <div style={{ padding: "56px 56px" }}>
             <p
               className="sc text-cobalt mb-3"
               style={{
@@ -73,7 +73,7 @@ export default async function SectionPage({ params }: Props): Promise<ReactNode>
         </section>
 
         <section>
-          <div className="max-w-3xl mx-auto px-6 py-12">
+          <div style={{ padding: "40px 56px", maxWidth: 900 }}>
             {articles.length === 0 ? (
               <p className="text-fg-2" style={{ fontFamily: "var(--serif-body)" }}>
                 No published articles in this section yet.

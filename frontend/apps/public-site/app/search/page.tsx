@@ -46,7 +46,7 @@ export default async function SearchPage({
     fetchActiveSections(),
   ]);
   const locale = config?.defaultLocale ?? "en";
-  const journalName = pickLocale(config?.name, locale) || "Academic Journal";
+  const journalName = pickLocale(config?.name, locale) || "The Academic Journal";
   const sectionsById = new Map<number, SectionSummary>(
     (sections ?? []).map((s) => [s.id, s]),
   );

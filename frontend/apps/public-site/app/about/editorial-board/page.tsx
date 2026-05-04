@@ -32,7 +32,7 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
     fetchMasthead(),
   ]);
   const locale = config?.defaultLocale ?? "en";
-  const journalName = pickLocale(config?.name, locale) || "Academic Journal";
+  const journalName = pickLocale(config?.name, locale) || "The Academic Journal";
 
   const all = (masthead ?? [])
     .filter((e) => e.visible)

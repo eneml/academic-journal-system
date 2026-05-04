@@ -37,14 +37,14 @@ export default async function AuthorProfilePage({ params }: Props): Promise<Reac
   if (!author) notFound();
 
   const locale = config?.defaultLocale ?? "en";
-  const journalName = pickLocale(config?.name, locale) || "Academic Journal";
+  const journalName = pickLocale(config?.name, locale) || "The Academic Journal";
   const fullName = [author.givenName, author.familyName].filter(Boolean).join(" ").trim();
   const orcidShort = author.orcidUrl.replace(/^https?:\/\/orcid\.org\//, "");
 
   return (
     <SiteChrome journalName={journalName}>
       <section className="border-b border-border">
-        <div className="max-w-3xl mx-auto px-6 py-14">
+        <div style={{ padding: "48px 56px", maxWidth: 900 }}>
           <p
             className="sc text-cobalt mb-3"
             style={{
@@ -97,7 +97,7 @@ export default async function AuthorProfilePage({ params }: Props): Promise<Reac
       </section>
 
       <section>
-        <div className="max-w-3xl mx-auto px-6 py-14">
+        <div style={{ padding: "48px 56px", maxWidth: 900 }}>
           {author.works.length === 0 ? (
             <p className="text-fg-2" style={{ fontFamily: "var(--serif-body)" }}>
               No published articles in this journal yet.

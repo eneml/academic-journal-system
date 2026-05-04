@@ -17,7 +17,7 @@ export default async function AboutPage(): Promise<ReactNode> {
     fetchIssues(),
   ]);
   const locale = config?.defaultLocale ?? "en";
-  const journalName = pickLocale(config?.name, locale) || "Academic Journal";
+  const journalName = pickLocale(config?.name, locale) || "The Academic Journal";
 
   // "Current" = the most recently published issue, if any.
   const currentIssue = (issues ?? [])
@@ -77,7 +77,7 @@ export default async function AboutPage(): Promise<ReactNode> {
   return (
     <SiteChrome journalName={journalName} active="about">
       <section className="border-b border-border">
-        <div className="max-w-4xl mx-auto px-6 py-16">
+        <div style={{ padding: "56px 56px" }}>
           <p
             className="sc text-cobalt mb-3"
             style={{
@@ -119,7 +119,7 @@ export default async function AboutPage(): Promise<ReactNode> {
       </section>
 
       <section>
-        <div className="max-w-4xl mx-auto px-6 py-14">
+        <div style={{ padding: "48px 56px" }}>
           <ul
             style={{
               listStyle: "none",

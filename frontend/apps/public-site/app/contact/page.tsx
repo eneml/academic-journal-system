@@ -14,12 +14,12 @@ export const metadata: Metadata = {
 export default async function ContactPage(): Promise<ReactNode> {
   const config = await fetchJournalConfig();
   const locale = config?.defaultLocale ?? "en";
-  const journalName = pickLocale(config?.name, locale) || "Academic Journal";
+  const journalName = pickLocale(config?.name, locale) || "The Academic Journal";
   const contactEmail = config?.contactEmail ?? "editors@example.org";
 
   return (
-    <SiteChrome journalName={journalName}>
-      <article className="max-w-2xl mx-auto px-6 py-16 reading">
+    <SiteChrome journalName={journalName} active="contact">
+      <article className="reading" style={{ padding: "56px 56px", maxWidth: 760 }}>
           <p
             className="sc text-cobalt mb-3"
             style={{
