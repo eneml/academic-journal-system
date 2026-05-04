@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { api, type Page } from "../../lib/api";
@@ -121,22 +121,26 @@ function AssignmentRow({
       : null;
 
   return (
-    <li
-      style={{
-        padding: "14px 22px",
-        borderBottom: divider ? "1px solid var(--border)" : "none",
-        display: "flex",
-        gap: 16,
-        alignItems: "flex-start",
-      }}
-    >
-      <span
-        className="marginalia-num tnum"
-        style={{ width: 28, marginTop: 4, flex: "none" }}
+    <li style={{ borderBottom: divider ? "1px solid var(--border)" : "none" }}>
+      <Link
+        to="/reviewer/assignments/$assignmentId"
+        params={{ assignmentId: String(assignment.id) }}
+        style={{
+          padding: "14px 22px",
+          display: "flex",
+          gap: 16,
+          alignItems: "flex-start",
+          textDecoration: "none",
+          color: "inherit",
+        }}
       >
-        {String(assignment.id).padStart(3, "0")}
-      </span>
-      <div style={{ flex: 1, minWidth: 0 }}>
+        <span
+          className="marginalia-num tnum"
+          style={{ width: 28, marginTop: 4, flex: "none" }}
+        >
+          {String(assignment.id).padStart(3, "0")}
+        </span>
+        <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
             display: "flex",
@@ -179,6 +183,7 @@ function AssignmentRow({
           ) : null}
         </div>
       </div>
+      </Link>
     </li>
   );
 }
