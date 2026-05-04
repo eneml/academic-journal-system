@@ -51,7 +51,7 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
   const totalDescription = countsLine(counts);
 
   return (
-    <SiteChrome journalName={journalName} active="about">
+    <SiteChrome journalName={journalName} active="editorial-board">
       <section
         style={{
           padding: "40px 56px 24px",

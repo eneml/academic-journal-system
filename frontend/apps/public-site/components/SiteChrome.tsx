@@ -10,6 +10,7 @@ export type ActiveNav =
   | "current"
   | "archive"
   | "about"
+  | "editorial-board"
   | "for-authors"
   | "for-reviewers"
   | "contact"
@@ -25,12 +26,13 @@ export interface SiteChromeProps {
 }
 
 const NAV_ITEMS: Array<{ key: ActiveNav; href: string; label: string }> = [
-  { key: "current",       href: "/",            label: "Current" },
-  { key: "archive",       href: "/issues",      label: "Archive" },
-  { key: "about",         href: "/about",       label: "About" },
-  { key: "for-authors",   href: "/for-authors", label: "For Authors" },
-  { key: "for-reviewers", href: "/policies",    label: "For Reviewers" },
-  { key: "contact",       href: "/contact",     label: "Contact" },
+  { key: "current",         href: "/",                       label: "Current" },
+  { key: "archive",         href: "/issues",                 label: "Archive" },
+  { key: "about",           href: "/about",                  label: "About" },
+  { key: "editorial-board", href: "/about/editorial-board",  label: "Editorial Board" },
+  { key: "for-authors",     href: "/for-authors",            label: "For Authors" },
+  { key: "for-reviewers",   href: "/policies",               label: "For Reviewers" },
+  { key: "contact",         href: "/contact",                label: "Contact" },
 ];
 
 /**
