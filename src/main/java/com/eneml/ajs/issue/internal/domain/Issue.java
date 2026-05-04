@@ -75,6 +75,9 @@ public class Issue extends AuditableEntity {
     @Column(name = "open_access_date")
     private Instant openAccessDate;
 
+    @Column(name = "doi_id")
+    private Long doiId;
+
     public void publish() {
         this.published = true;
         if (this.datePublished == null) {

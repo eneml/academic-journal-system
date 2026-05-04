@@ -92,6 +92,9 @@ public class Publication extends AuditableEntity {
     @Column(name = "date_published")
     private Instant datePublished;
 
+    @Column(name = "doi_id")
+    private Long doiId;
+
     public boolean isDraft()      { return status == PublicationStatus.DRAFT; }
     public boolean isPublished()  { return status == PublicationStatus.PUBLISHED; }
 }
