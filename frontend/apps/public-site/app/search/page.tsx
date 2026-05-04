@@ -18,6 +18,19 @@ export const metadata: Metadata = {
   description: "Full-text search across published articles.",
 };
 
+const filterSelectStyle: React.CSSProperties = {
+  padding: "9px 11px",
+  border: "1px solid var(--border)",
+  borderRadius: "var(--r-2)",
+  fontFamily: "var(--sans)",
+  fontSize: 13,
+  background: "var(--surface)",
+  color: "var(--fg)",
+  textTransform: "none",
+  letterSpacing: 0,
+  fontWeight: 400,
+};
+
 type Props = {
   searchParams: Promise<{
     q?: string;
@@ -88,39 +101,98 @@ export default async function SearchPage({ searchParams }: Props): Promise<React
             <form
               method="get"
               action="/search"
-              className="flex flex-col sm:flex-row gap-3"
+              style={{ display: "grid", gap: 10 }}
             >
-              <input
-                type="search"
-                name="q"
-                defaultValue={q}
-                placeholder="Title, abstract, keywords, author affiliation…"
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="search"
+                  name="q"
+                  defaultValue={q}
+                  placeholder="Title, abstract, keywords, author affiliation…"
+                  style={{
+                    flex: 1,
+                    padding: "11px 14px",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--r-2)",
+                    fontFamily: "var(--sans)",
+                    fontSize: 14,
+                    background: "var(--surface)",
+                  }}
+                />
+                <button
+                  type="submit"
+                  style={{
+                    padding: "11px 22px",
+                    background: "var(--cobalt)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "var(--r-2)",
+                    fontFamily: "var(--sans)",
+                    fontSize: 14,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                  }}
+                >
+                  Search
+                </button>
+              </div>
+              <div
                 style={{
-                  flex: 1,
-                  padding: "11px 14px",
-                  border: "1px solid var(--border)",
-                  borderRadius: "var(--r-2)",
-                  fontFamily: "var(--sans)",
-                  fontSize: 14,
-                  background: "var(--surface)",
-                }}
-              />
-              <button
-                type="submit"
-                style={{
-                  padding: "11px 22px",
-                  background: "var(--cobalt)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "var(--r-2)",
-                  fontFamily: "var(--sans)",
-                  fontSize: 14,
-                  fontWeight: 500,
-                  cursor: "pointer",
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 10,
                 }}
               >
-                Search
-              </button>
+                <label
+                  style={{
+                    display: "grid",
+                    gap: 4,
+                    fontSize: 11,
+                    fontFamily: "var(--sans)",
+                    color: "var(--muted)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    fontWeight: 600,
+                  }}
+                >
+                  Section
+                  <select
+                    name="section"
+                    defaultValue={sectionId ? String(sectionId) : ""}
+                    style={filterSelectStyle}
+                  >
+                    <option value="">— any —</option>
+                    {(sections ?? []).map((s) => (
+                      <option key={s.id} value={String(s.id)}>
+                        {pickLocale(s.title, locale) || s.code}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label
+                  style={{
+                    display: "grid",
+                    gap: 4,
+                    fontSize: 11,
+                    fontFamily: "var(--sans)",
+                    color: "var(--muted)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    fontWeight: 600,
+                  }}
+                >
+                  Year
+                  <input
+                    type="number"
+                    name="year"
+                    defaultValue={year ? String(year) : ""}
+                    placeholder="e.g. 2024"
+                    min="1900"
+                    max={new Date().getFullYear() + 1}
+                    style={filterSelectStyle}
+                  />
+                </label>
+              </div>
             </form>
           </div>
         </section>
