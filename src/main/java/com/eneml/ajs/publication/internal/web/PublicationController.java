@@ -37,6 +37,25 @@ class PublicationController {
         return lookup.latestPublished(limit);
     }
 
+    @GetMapping("/articles/{slugOrId}")
+    @Operation(summary = "Public article view by url-path slug or numeric id (PUBLISHED only)")
+    PublicationResponse articleBySlugOrId(@PathVariable String slugOrId) {
+        var byPath = lookup.findByUrlPath(slugOrId);
+        var summary = byPath.orElseGet(() -> tryNumeric(slugOrId)
+                .flatMap(lookup::findById)
+                .orElse(null));
+        if (summary == null
+                || summary.status() != com.eneml.ajs.publication.api.PublicationStatus.PUBLISHED) {
+            throw com.eneml.ajs.shared.exception.NotFoundException.of("Article", slugOrId);
+        }
+        return mapper.toResponse(service.get(summary.id()));
+    }
+
+    private static java.util.Optional<Long> tryNumeric(String s) {
+        try { return java.util.Optional.of(Long.parseLong(s)); }
+        catch (NumberFormatException e) { return java.util.Optional.empty(); }
+    }
+
     @GetMapping("/submissions/{submissionId}/publications")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List all versions of a submission's publication")

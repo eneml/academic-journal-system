@@ -56,6 +56,28 @@ export type PublicationSummary = {
   datePublished: string | null;
 };
 
+export type Article = {
+  id: number;
+  submissionId: number;
+  version: number;
+  status: PublicationSummary["status"];
+  accessStatus: PublicationSummary["accessStatus"];
+  sectionId: number;
+  issueId: number | null;
+  primaryAuthorEmail: string | null;
+  urlPath: string | null;
+  licenseUrl: string | null;
+  copyrightHolder: string | null;
+  copyrightYear: number | null;
+  pages: string | null;
+  title: Record<string, string>;
+  abstractText: Record<string, string>;
+  keywords: string[];
+  disciplines: string[];
+  locale: string;
+  datePublished: string | null;
+};
+
 async function getJson<T>(path: string): Promise<T | null> {
   try {
     const res = await fetch(`${BASE_URL}${path}`, {
@@ -80,6 +102,9 @@ export const fetchRecentPublications = (limit = 6) =>
   getJson<PublicationSummary[]>(`/api/v1/publications/recent?limit=${limit}`);
 
 export const fetchIssues = () => getJson<IssueSummary[]>("/api/v1/issues");
+
+export const fetchArticle = (slugOrId: string) =>
+  getJson<Article>(`/api/v1/articles/${encodeURIComponent(slugOrId)}`);
 
 /**
  * Pick the best translation for the active locale, falling back to

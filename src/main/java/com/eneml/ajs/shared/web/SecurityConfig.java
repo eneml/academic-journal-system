@@ -39,6 +39,8 @@ class SecurityConfig {
                                 "/api/v1/issues",
                                 "/api/v1/issues/**",
                                 "/api/v1/publications/recent",
+                                "/api/v1/articles/**",
+                                "/api/v1/search",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",

@@ -1,0 +1,240 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import type { Metadata, ResolvingMetadata } from "next";
+import type { ReactNode } from "react";
+import {
+  fetchArticle,
+  fetchJournalConfig,
+  fetchActiveSections,
+  pickLocale,
+} from "@/lib/api";
+
+export const revalidate = 60;
+
+type Props = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata(
+  { params }: Props,
+  _parent: ResolvingMetadata,
+): Promise<Metadata> {
+  const { slug } = await params;
+  const article = await fetchArticle(slug);
+  if (!article) {
+    return { title: "Article not found" };
+  }
+  const title = pickLocale(article.title, article.locale) || "Untitled";
+  const abstract =
+    pickLocale(article.abstractText, article.locale).slice(0, 200) || undefined;
+  return {
+    title,
+    description: abstract,
+    openGraph: {
+      title,
+      description: abstract,
+      type: "article",
+    },
+    other: {
+      "citation_title": title,
+      "citation_publication_date": article.datePublished ?? "",
+      ...(article.copyrightYear
+        ? { "citation_year": String(article.copyrightYear) }
+        : {}),
+    },
+  };
+}
+
+export default async function ArticlePage({ params }: Props): Promise<ReactNode> {
+  const { slug } = await params;
+  const [article, config, sections] = await Promise.all([
+    fetchArticle(slug),
+    fetchJournalConfig(),
+    fetchActiveSections(),
+  ]);
+
+  if (!article) {
+    notFound();
+  }
+
+  const locale = article.locale ?? config?.defaultLocale ?? "en";
+  const journalName = pickLocale(config?.name, locale) || "Academic Journal";
+  const title = pickLocale(article.title, locale) || "Untitled";
+  const abstract = pickLocale(article.abstractText, locale);
+  const section = (sections ?? []).find((s) => s.id === article.sectionId);
+  const sectionLabel = section
+    ? pickLocale(section.title, locale)
+    : "Article";
+  const publishedAt = article.datePublished
+    ? new Date(article.datePublished)
+    : null;
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <header className="border-b border-border">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link
+            href="/"
+            className="text-fg"
+            style={{
+              fontFamily: "var(--serif-display)",
+              fontWeight: 600,
+              fontSize: 18,
+            }}
+          >
+            {journalName}
+          </Link>
+          <nav className="flex gap-6 text-sm">
+            <Link href="/" className="text-fg-2 hover:text-cobalt">
+              Home
+            </Link>
+            <Link href="/about" className="text-fg-2 hover:text-cobalt">
+              About
+            </Link>
+          </nav>
+        </div>
+      </header>
+
+      <main className="flex-1">
+        <article className="max-w-3xl mx-auto px-6 py-16">
+          <p
+            className="sc text-cobalt mb-4"
+            style={{
+              textTransform: "uppercase",
+              letterSpacing: "0.12em",
+              fontSize: 11,
+              fontWeight: 600,
+            }}
+          >
+            {sectionLabel}
+            {article.accessStatus === "OPEN" ? " · Open Access" : ""}
+            {article.version > 1 ? ` · Version ${article.version}` : ""}
+          </p>
+
+          <h1
+            className="text-fg mb-4"
+            style={{
+              fontFamily: "var(--serif-display)",
+              fontWeight: 500,
+              fontSize: "clamp(32px, 4vw, 48px)",
+              lineHeight: 1.12,
+              letterSpacing: "-0.02em",
+              textWrap: "balance",
+            }}
+          >
+            {title}
+          </h1>
+
+          {publishedAt ? (
+            <p
+              className="text-muted mb-10"
+              style={{
+                fontFamily: "var(--mono)",
+                fontSize: 12,
+              }}
+            >
+              Published{" "}
+              {publishedAt.toLocaleDateString(locale, {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+              {article.pages ? ` · pp. ${article.pages}` : ""}
+            </p>
+          ) : null}
+
+          {abstract ? (
+            <section
+              className="mb-12 reading"
+              style={{
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--r-3)",
+                padding: 24,
+              }}
+            >
+              <p
+                className="sc text-muted mb-3"
+                style={{ fontSize: 10.5, fontWeight: 600 }}
+              >
+                Abstract
+              </p>
+              <p style={{ margin: 0, fontSize: 17, lineHeight: 1.65 }}>
+                {abstract}
+              </p>
+            </section>
+          ) : null}
+
+          {article.keywords && article.keywords.length > 0 ? (
+            <section className="mb-12 flex flex-wrap gap-2">
+              {article.keywords.map((kw) => (
+                <span
+                  key={kw}
+                  className="chip"
+                  style={{
+                    fontFamily: "var(--sans)",
+                    fontSize: 11,
+                    padding: "3px 8px",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--r-1)",
+                    background: "var(--surface)",
+                    color: "var(--fg-2)",
+                  }}
+                >
+                  {kw}
+                </span>
+              ))}
+            </section>
+          ) : null}
+
+          <section className="reading dropcap">
+            <p>
+              Full text and downloadable galleys (PDF, JATS XML, HTML) will
+              appear here once the production phase wires Galley publishing.
+              For now this page renders the metadata captured at publication
+              time so the article is citable and discoverable.
+            </p>
+          </section>
+
+          {article.licenseUrl || article.copyrightHolder ? (
+            <footer
+              className="mt-16 pt-8"
+              style={{
+                borderTop: "1px solid var(--border)",
+                fontFamily: "var(--sans)",
+                fontSize: 13,
+                color: "var(--muted)",
+              }}
+            >
+              {article.copyrightHolder ? (
+                <p>
+                  © {article.copyrightYear ?? ""} {article.copyrightHolder}.
+                </p>
+              ) : null}
+              {article.licenseUrl ? (
+                <p>
+                  Licensed under{" "}
+                  <a
+                    href={article.licenseUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-cobalt"
+                  >
+                    {article.licenseUrl.replace(/^https?:\/\//, "")}
+                  </a>
+                  .
+                </p>
+              ) : null}
+            </footer>
+          ) : null}
+        </article>
+      </main>
+
+      <footer className="border-t border-border">
+        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-wrap items-center justify-between gap-4 text-sm text-muted">
+          <p>
+            © {new Date().getFullYear()} {journalName}. All rights reserved.
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+}
