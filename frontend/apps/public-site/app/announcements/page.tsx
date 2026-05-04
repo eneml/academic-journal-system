@@ -1,6 +1,6 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { SiteChrome } from "@/components/SiteChrome";
 import {
   fetchAnnouncements,
   fetchJournalConfig,
@@ -33,79 +33,53 @@ export default async function AnnouncementsPage(): Promise<ReactNode> {
   const items = list ?? [];
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="text-fg"
-            style={{ fontFamily: "var(--serif-display)", fontWeight: 600, fontSize: 18 }}
+    <SiteChrome journalName={journalName} active="announcements">
+      <section className="border-b border-border">
+        <div className="max-w-3xl mx-auto px-6 py-14">
+          <p
+            className="sc text-cobalt mb-3"
+            style={{
+              textTransform: "uppercase",
+              letterSpacing: "0.12em",
+              fontSize: 11,
+              fontWeight: 600,
+            }}
           >
-            {journalName}
-          </Link>
-          <nav className="flex gap-6 text-sm">
-            <Link href="/" className="text-fg-2 hover:text-cobalt">Home</Link>
-            <Link href="/issues" className="text-fg-2 hover:text-cobalt">Archive</Link>
-            <Link href="/search" className="text-fg-2 hover:text-cobalt">Search</Link>
-            <Link href="/about" className="text-fg-2 hover:text-cobalt">About</Link>
-          </nav>
+            Announcements
+          </p>
+          <h1
+            className="text-fg"
+            style={{
+              fontFamily: "var(--serif-display)",
+              fontWeight: 500,
+              fontSize: "clamp(34px, 5vw, 52px)",
+              lineHeight: 1.1,
+              letterSpacing: "-0.02em",
+            }}
+          >
+            News &amp; calls
+          </h1>
         </div>
-      </header>
+      </section>
 
-      <main className="flex-1">
-        <section className="border-b border-border">
-          <div className="max-w-3xl mx-auto px-6 py-14">
-            <p
-              className="sc text-cobalt mb-3"
-              style={{
-                textTransform: "uppercase",
-                letterSpacing: "0.12em",
-                fontSize: 11,
-                fontWeight: 600,
-              }}
-            >
-              Announcements
+      <section>
+        <div className="max-w-3xl mx-auto px-6 py-12">
+          {items.length === 0 ? (
+            <p className="text-fg-2" style={{ fontFamily: "var(--serif-body)" }}>
+              No announcements at the moment. Check back soon.
             </p>
-            <h1
-              className="text-fg"
-              style={{
-                fontFamily: "var(--serif-display)",
-                fontWeight: 500,
-                fontSize: "clamp(34px, 5vw, 52px)",
-                lineHeight: 1.1,
-                letterSpacing: "-0.02em",
-              }}
-            >
-              News &amp; calls
-            </h1>
-          </div>
-        </section>
-
-        <section>
-          <div className="max-w-3xl mx-auto px-6 py-12">
-            {items.length === 0 ? (
-              <p className="text-fg-2" style={{ fontFamily: "var(--serif-body)" }}>
-                No announcements at the moment. Check back soon.
-              </p>
-            ) : (
-              <ul className="grid grid-cols-1 gap-y-10">
-                {items.map((a) => (
-                  <li key={a.id}>
-                    <AnnouncementItem item={a} locale={locale} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
-      </main>
-
-      <footer className="border-t border-border">
-        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-wrap items-center justify-between gap-4 text-sm text-muted">
-          <p>© {new Date().getFullYear()} {journalName}. All rights reserved.</p>
+          ) : (
+            <ul className="grid grid-cols-1 gap-y-10">
+              {items.map((a) => (
+                <li key={a.id}>
+                  <AnnouncementItem item={a} locale={locale} />
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-      </footer>
-    </div>
+      </section>
+    </SiteChrome>
   );
 }
 

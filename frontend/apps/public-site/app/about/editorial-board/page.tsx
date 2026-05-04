@@ -1,6 +1,6 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { SiteChrome } from "@/components/SiteChrome";
 import {
   fetchJournalConfig,
   fetchMasthead,
@@ -26,27 +26,8 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
   const grouped = groupByRole(entries, locale);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="text-fg"
-            style={{ fontFamily: "var(--serif-display)", fontWeight: 600, fontSize: 18 }}
-          >
-            {journalName}
-          </Link>
-          <nav className="flex gap-6 text-sm">
-            <Link href="/" className="text-fg-2 hover:text-cobalt">Home</Link>
-            <Link href="/issues" className="text-fg-2 hover:text-cobalt">Archive</Link>
-            <Link href="/search" className="text-fg-2 hover:text-cobalt">Search</Link>
-            <Link href="/about" className="text-fg-2 hover:text-cobalt">About</Link>
-          </nav>
-        </div>
-      </header>
-
-      <main className="flex-1">
-        <section className="border-b border-border">
+    <SiteChrome journalName={journalName} active="about">
+      <section className="border-b border-border">
           <div className="max-w-3xl mx-auto px-6 py-16">
             <p
               className="sc text-cobalt mb-3"
@@ -159,14 +140,7 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
             )}
           </div>
         </section>
-      </main>
-
-      <footer className="border-t border-border">
-        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-wrap items-center justify-between gap-4 text-sm text-muted">
-          <p>© {new Date().getFullYear()} {journalName}. All rights reserved.</p>
-        </div>
-      </footer>
-    </div>
+    </SiteChrome>
   );
 }
 
