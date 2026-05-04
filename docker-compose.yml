@@ -91,17 +91,22 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
     container_name: aj-keycloak
+    # File-backed H2 (`dev-file`) — survives container restarts so the
+    # realm import doesn't have to re-run every time the JVM cycles. The
+    # in-memory `dev-mem` mode loses its schema on any GC / JVM hiccup,
+    # which manifests as 500s on /.well-known/openid-configuration.
     command: start-dev --import-realm
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?KEYCLOAK_ADMIN_PASSWORD must be set in .env}
-      KC_DB: dev-mem
+      KC_DB: dev-file
       KC_HEALTH_ENABLED: "true"
       KC_HTTP_PORT: 8081
     ports:
       - "8081:8081"
     volumes:
       - keycloak-realm-imports:/opt/keycloak/data/import:ro
+      - keycloak-data:/opt/keycloak/data
     depends_on:
       keycloak-realm-init:
         condition: service_completed_successfully
@@ -122,3 +127,4 @@ volumes:
   redis-data:
   minio-data:
   keycloak-realm-imports:
+  keycloak-data:
