@@ -144,6 +144,21 @@ app:
   public-site-url: ${PUBLIC_SITE_URL:http://localhost:3000}
   editorial-app-url: ${EDITORIAL_APP_URL:http://localhost:5173}
 
+  # Keycloak admin credentials used by the registration endpoint to create
+  # users in the application realm. master.username/password authenticates
+  # against the Keycloak master realm; target.realm is the realm whose users
+  # we manage. In production swap to a confidential client + service-account
+  # with the realm-management/manage-users role.
+  keycloak:
+    admin:
+      url: ${KEYCLOAK_URL:http://localhost:8081}
+      master:
+        client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:admin-cli}
+        username: ${KEYCLOAK_ADMIN_USERNAME:admin}
+        password: ${KEYCLOAK_ADMIN_PASSWORD}
+      target-realm: ${KEYCLOAK_TARGET_REALM:academic-journal}
+      default-role: ${KEYCLOAK_DEFAULT_ROLE:AUTHOR}
+
   cors:
     allowed-origins:
       - ${PUBLIC_SITE_URL:http://localhost:3000}

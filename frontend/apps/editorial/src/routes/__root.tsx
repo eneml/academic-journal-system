@@ -9,9 +9,14 @@ export const Route = createRootRoute({
 
 function RootLayout(): ReactNode {
   const location = useLocation();
-  // OIDC callback routes need to render bare — without the shell — so the
-  // redirect-handling component owns the page during token exchange.
-  const bare = location.pathname.startsWith("/auth/");
+  // Routes that render full-page without the editorial shell:
+  //   /auth/*    — OIDC code-exchange handlers
+  //   /login     — custom Direct-Grant login page
+  //   /register  — custom self-registration page
+  const bare =
+    location.pathname.startsWith("/auth/") ||
+    location.pathname === "/login" ||
+    location.pathname === "/register";
 
   return (
     <div

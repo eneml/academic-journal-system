@@ -1,13 +1,14 @@
+import { Link, useLocation } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { useAuth } from "../auth/AuthContext";
 
 /**
- * Inline call to sign in shown by routes that require an authenticated user.
- * Avoids hard redirecting from inside render so the deep-link the user typed
- * is preserved in history if they cancel.
+ * Fallback prompt for routes that render before AppShell's redirect-to-login
+ * fires (or when the gate is bypassed). Now an inline link to /login rather
+ * than a button kicking the OIDC redirect, since we own the login UI.
  */
 export function SignInPrompt(): ReactNode {
-  const { signIn } = useAuth();
+  const location = useLocation();
+  const dest = `${location.pathname}${location.search ?? ""}`;
   return (
     <div style={{ maxWidth: 540 }}>
       <p className="sc" style={{ color: "var(--muted)", marginBottom: 6 }}>
@@ -35,13 +36,14 @@ export function SignInPrompt(): ReactNode {
       >
         This area of the workbench is gated by the journal&rsquo;s identity provider.
       </p>
-      <button
-        type="button"
+      <Link
+        to="/login"
+        search={dest === "/" ? undefined : ({ redirect: dest } as never)}
         className="btn btn-primary"
-        onClick={() => void signIn()}
+        style={{ textDecoration: "none" }}
       >
         Sign in
-      </button>
+      </Link>
     </div>
   );
 }

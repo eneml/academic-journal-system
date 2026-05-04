@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import type { User } from "oidc-client-ts";
-import { getUserManager, signIn, signOut } from "./oidc";
+import { getUserManager, loginWithPassword, signIn, signOut } from "./oidc";
 import { getRolesFromUser, type RealmRole } from "./roles";
 
 export interface AuthState {
@@ -15,7 +15,10 @@ export interface AuthState {
   roles: RealmRole[];
   loading: boolean;
   error: string | null;
+  /** Redirect-based OIDC sign-in (kept for SSO; primary path is loginWithPassword). */
   signIn: () => Promise<void>;
+  /** Direct-Grant in-app sign-in driven by /login. */
+  loginWithPassword: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -84,6 +87,15 @@ export function AuthProvider({ children }: { children: ReactNode }): ReactNode {
       loading,
       error,
       signIn,
+      // Wraps loginWithPassword so the AuthContext picks up the new user
+      // synchronously — `manager.events.load(...)` may race with React's
+      // commit phase, so we also call setUser locally for an immediate
+      // re-render.
+      loginWithPassword: async (email: string, password: string) => {
+        const u = await loginWithPassword(email, password);
+        setUser(u);
+        setError(null);
+      },
       signOut,
     }),
     [user, loading, error],

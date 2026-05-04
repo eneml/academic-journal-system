@@ -52,6 +52,9 @@ class SecurityConfig {
                         // sees the forward as an unauthenticated request and masks any
                         // real 500 with a misleading 401 + WWW-Authenticate: Bearer.
                         .requestMatchers("/error").permitAll()
+                        // Public self-registration — anonymous users POST credentials
+                        // here to create their Keycloak account before signing in.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/v1/journal/config",
                                 "/api/v1/journal/sections",

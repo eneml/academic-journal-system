@@ -17,12 +17,11 @@ export const Route = createFileRoute("/")({
 // --------------------------------------------------------------------------
 
 function Dashboard(): ReactNode {
-  const { user, roles, loading, signIn } = useAuth();
-
-  if (loading) {
-    return <p style={{ color: "var(--muted)", fontSize: 13 }}>Loading session&hellip;</p>;
-  }
-  if (!user) return <UnauthenticatedDashboard signIn={signIn} />;
+  // AppShell handles loading + redirect-to-/login for unauthenticated users,
+  // so by the time this component renders we're guaranteed a signed-in user.
+  // Defensive guard kept just in case the shell is bypassed in tests.
+  const { user, roles } = useAuth();
+  if (!user) return null;
 
   const greeting =
     (user.profile.given_name as string | undefined) ??
@@ -824,49 +823,6 @@ function EmptyHero({
           {cta.label}
         </Link>
       ) : null}
-    </div>
-  );
-}
-
-function UnauthenticatedDashboard({
-  signIn,
-}: {
-  signIn: () => Promise<void>;
-}): ReactNode {
-  return (
-    <div style={{ maxWidth: 540 }}>
-      <p className="sc" style={{ color: "var(--muted)", marginBottom: 6 }}>
-        Editorial workbench
-      </p>
-      <h1
-        style={{
-          fontFamily: "var(--sans)",
-          fontWeight: 600,
-          fontSize: 28,
-          letterSpacing: "-0.015em",
-          margin: "0 0 14px",
-        }}
-      >
-        Sign in to continue
-      </h1>
-      <p
-        style={{
-          fontSize: 14,
-          color: "var(--fg-2)",
-          lineHeight: 1.65,
-          marginBottom: 22,
-        }}
-      >
-        Authenticate with the journal&rsquo;s identity provider to access
-        submissions, reviews, and editorial workflows.
-      </p>
-      <button
-        type="button"
-        className="btn btn-primary"
-        onClick={() => void signIn()}
-      >
-        Sign in with Keycloak
-      </button>
     </div>
   );
 }

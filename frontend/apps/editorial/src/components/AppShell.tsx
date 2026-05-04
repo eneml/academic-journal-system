@@ -1,5 +1,10 @@
 import { type ReactNode, useEffect, useState } from "react";
-import { Link, useLocation, useRouter } from "@tanstack/react-router";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useRouter,
+} from "@tanstack/react-router";
 import { Icon, type IconName } from "@ajs/ui/primitives";
 import { useAuth } from "../auth/AuthContext";
 import { hasRole, isEditorial, type RealmRole } from "../auth/roles";
@@ -150,6 +155,48 @@ const NAV_GROUPS: NavGroup[] = [
 // --------------------------------------------------------------------------
 
 export function AppShell({ children }: { children: ReactNode }): ReactNode {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Route guard: every authenticated route lives inside AppShell, so doing
+  // the gate here covers them all in one shot. Auth resolution is async on
+  // mount — hold the page until {loading} clears so we don't bounce a
+  // signed-in user to /login on the first render.
+  useEffect(() => {
+    if (!loading && !user) {
+      const dest =
+        location.pathname === "/" ? "/" : `${location.pathname}${location.search ?? ""}`;
+      void navigate({
+        to: "/login",
+        search: dest === "/" ? undefined : ({ redirect: dest } as never),
+        replace: true,
+      });
+    }
+  }, [loading, user, navigate, location.pathname, location.search]);
+
+  // While auth resolves, or while the redirect-to-/login is in flight, show
+  // a minimal skeleton — no sidebar, no chrome — so we never flash dashboard
+  // content to an unauthenticated user.
+  if (loading || !user) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "var(--bg-tint)",
+          color: "var(--muted)",
+          fontFamily: "var(--sans)",
+          fontSize: 13,
+        }}
+      >
+        Loading session&hellip;
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
@@ -401,20 +448,19 @@ function SidebarLink({
 }
 
 function UserBadge(): ReactNode {
-  const { user, roles, signIn, signOut } = useAuth();
+  const { user, roles, signOut } = useAuth();
   const [open, setOpen] = useState(false);
 
   if (!user) {
     return (
       <div style={{ padding: 10, borderTop: "1px solid var(--border)" }}>
-        <button
-          type="button"
+        <Link
+          to="/login"
           className="btn btn-primary btn-sm"
-          style={{ width: "100%", justifyContent: "center" }}
-          onClick={() => void signIn()}
+          style={{ width: "100%", justifyContent: "center", textDecoration: "none" }}
         >
           Sign in
-        </button>
+        </Link>
       </div>
     );
   }
@@ -556,7 +602,7 @@ function UserBadge(): ReactNode {
 // --------------------------------------------------------------------------
 
 function Topbar(): ReactNode {
-  const { user, loading, signIn } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const breadcrumb = useBreadcrumb();
 
@@ -605,13 +651,13 @@ function Topbar(): ReactNode {
           <LocaleSwitcher />
         </div>
       ) : (
-        <button
-          type="button"
+        <Link
+          to="/login"
           className="btn btn-primary btn-sm"
-          onClick={() => void signIn()}
+          style={{ textDecoration: "none" }}
         >
           Sign in
-        </button>
+        </Link>
       )}
       {/* Reference router so devtools-route-aware features have a chance to
           mount, even when the topbar itself doesn't navigate. */}
