@@ -129,6 +129,26 @@ export const fetchActiveSectionsMap = async (): Promise<Map<number, SectionSumma
 export const fetchArticle = (slugOrId: string) =>
   getJson<Article>(`/api/v1/articles/${encodeURIComponent(slugOrId)}`);
 
+export type SearchHit = {
+  publication: PublicationSummary;
+  score: number;
+  snippet: string | null;
+};
+
+export const search = (q: string, opts?: {
+  section?: number;
+  year?: number;
+  page?: number;
+  size?: number;
+}) => {
+  const params = new URLSearchParams({ q });
+  if (opts?.section != null) params.set("section", String(opts.section));
+  if (opts?.year != null) params.set("year", String(opts.year));
+  if (opts?.page != null) params.set("page", String(opts.page));
+  if (opts?.size != null) params.set("size", String(opts.size));
+  return getJson<SearchHit[]>(`/api/v1/search?${params.toString()}`);
+};
+
 /**
  * Pick the best translation for the active locale, falling back to
  * the journal's default and finally any value present.

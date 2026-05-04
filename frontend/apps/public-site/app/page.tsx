@@ -54,10 +54,16 @@ export default async function HomePage(): Promise<ReactNode> {
             <Link href="/" className="text-fg-2 hover:text-cobalt">
               Home
             </Link>
+            <Link href="/issues" className="text-fg-2 hover:text-cobalt">
+              Archive
+            </Link>
+            <Link href="/search" className="text-fg-2 hover:text-cobalt">
+              Search
+            </Link>
             <Link href="/about" className="text-fg-2 hover:text-cobalt">
               About
             </Link>
-            {(sections ?? []).slice(0, 3).map((s) => (
+            {(sections ?? []).slice(0, 2).map((s) => (
               <Link
                 key={s.id}
                 href={`/sections/${s.code}`}
