@@ -11,6 +11,9 @@ public record MastheadEntryResponse(
         int displayOrder,
         boolean visible,
         long version,
-        Instant updatedAt
+        Instant updatedAt,
+        String givenName,
+        String familyName,
+        String orcidId
 ) {
 }

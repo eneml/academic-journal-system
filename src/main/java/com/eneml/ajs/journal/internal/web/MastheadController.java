@@ -1,5 +1,7 @@
 package com.eneml.ajs.journal.internal.web;
 
+import com.eneml.ajs.identity.api.UserDirectoryService;
+import com.eneml.ajs.identity.api.UserSummary;
 import com.eneml.ajs.journal.internal.application.MastheadService;
 import com.eneml.ajs.journal.internal.domain.MastheadEntry;
 import com.eneml.ajs.journal.internal.web.dto.MastheadEntryResponse;
@@ -25,6 +27,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/journal/masthead")
@@ -34,17 +37,41 @@ class MastheadController {
 
     private final MastheadService service;
     private final MastheadMapper mapper;
+    private final UserDirectoryService userDirectory;
 
     @GetMapping
-    @Operation(summary = "List masthead entries (public)")
+    @Operation(summary = "List masthead entries (public, enriched with author info)")
     List<MastheadEntryResponse> list(@RequestParam(defaultValue = "true") boolean visibleOnly) {
-        return mapper.toResponses(service.list(visibleOnly));
+        var entries = service.list(visibleOnly);
+        var users = userDirectory.findByIds(
+                entries.stream().map(MastheadEntry::getUserId).toList());
+        return entries.stream().map(e -> enrich(mapper.toResponse(e), users)).toList();
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get masthead entry by id (public)")
     MastheadEntryResponse get(@PathVariable Long id) {
-        return mapper.toResponse(service.get(id));
+        var entry = service.get(id);
+        var users = userDirectory.findByIds(List.of(entry.getUserId()));
+        return enrich(mapper.toResponse(entry), users);
+    }
+
+    private static MastheadEntryResponse enrich(
+            MastheadEntryResponse base, Map<Long, UserSummary> users) {
+        UserSummary u = users.get(base.userId());
+        if (u == null) return base;
+        return new MastheadEntryResponse(
+                base.id(),
+                base.userId(),
+                base.roleLabel(),
+                base.bioOverride(),
+                base.displayOrder(),
+                base.visible(),
+                base.version(),
+                base.updatedAt(),
+                u.givenName(),
+                u.familyName(),
+                u.orcidId());
     }
 
     @PostMapping

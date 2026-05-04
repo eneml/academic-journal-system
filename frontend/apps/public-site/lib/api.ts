@@ -107,6 +107,21 @@ export const fetchJournalConfig = () =>
 export const fetchActiveSections = () =>
   getJson<SectionSummary[]>("/api/v1/journal/sections");
 
+export type MastheadEntry = {
+  id: number;
+  userId: number;
+  roleLabel: Record<string, string>;
+  bioOverride: Record<string, string>;
+  displayOrder: number;
+  visible: boolean;
+  givenName: string | null;
+  familyName: string | null;
+  orcidId: string | null;
+};
+
+export const fetchMasthead = () =>
+  getJson<MastheadEntry[]>("/api/v1/journal/masthead?visibleOnly=true");
+
 export const fetchRecentPublications = (limit = 6) =>
   getJson<PublicationSummary[]>(`/api/v1/publications/recent?limit=${limit}`);
 

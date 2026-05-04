@@ -4,9 +4,10 @@
  *
  * <p>Owns: JournalConfig (singleton), Section, Genre, MastheadEntry.
  * <br>Emits: SectionCreated, SectionUpdated, GenreCreated, JournalConfigUpdated.
- * <br>Consumes: nothing.
+ * <br>Consumes: identity::api (used to enrich masthead entries with user info).
  */
 @org.springframework.modulith.ApplicationModule(
-    displayName = "Journal"
+    displayName = "Journal",
+    allowedDependencies = { "shared", "identity::api" }
 )
 package com.eneml.ajs.journal;

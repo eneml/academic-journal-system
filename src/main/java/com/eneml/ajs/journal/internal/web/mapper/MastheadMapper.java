@@ -12,6 +12,9 @@ import java.util.List;
 @Mapper
 public interface MastheadMapper {
 
+    @Mapping(target = "givenName",  ignore = true)
+    @Mapping(target = "familyName", ignore = true)
+    @Mapping(target = "orcidId",    ignore = true)
     MastheadEntryResponse toResponse(MastheadEntry entity);
 
     List<MastheadEntryResponse> toResponses(List<MastheadEntry> entities);

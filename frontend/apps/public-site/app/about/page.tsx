@@ -48,10 +48,70 @@ export default function AboutPage(): ReactNode {
             }}
           >
             <p>
-              Mission, scope, and editorial board content will be sourced from the backend in a
-              later iteration.
+              An open-access scholarly journal publishing peer-reviewed
+              research. Articles are released as soon as they clear
+              production — there is no embargo and no article-processing
+              charge for authors.
+            </p>
+            <p style={{ marginTop: 18 }}>
+              Mission, scope, and section descriptions will be sourced from
+              the backend in a later iteration.
             </p>
           </div>
+
+          <ul
+            style={{
+              listStyle: "none",
+              margin: "32px 0 0",
+              padding: 0,
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 12,
+            }}
+          >
+            {[
+              { href: "/about/editorial-board", title: "Editorial Board", body: "Editors, advisors, and section editors." },
+              { href: "/for-authors", title: "For Authors", body: "How to submit, peer review, open access." },
+              { href: "/contact", title: "Contact", body: "How to reach the editorial office." },
+              { href: "/issues", title: "Archive", body: "Browse all published issues." },
+            ].map((card) => (
+              <li key={card.href}>
+                <Link
+                  href={card.href}
+                  style={{
+                    display: "block",
+                    padding: "14px 16px",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--r-2)",
+                    background: "var(--surface)",
+                    textDecoration: "none",
+                  }}
+                >
+                  <p
+                    style={{
+                      margin: 0,
+                      fontFamily: "var(--serif-display)",
+                      fontWeight: 600,
+                      fontSize: 17,
+                      color: "var(--fg)",
+                    }}
+                  >
+                    {card.title}
+                  </p>
+                  <p
+                    style={{
+                      margin: "4px 0 0",
+                      fontFamily: "var(--sans)",
+                      fontSize: 13,
+                      color: "var(--muted)",
+                    }}
+                  >
+                    {card.body}
+                  </p>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </article>
       </main>
 
