@@ -32,23 +32,32 @@ class PublicationDoiListener {
 
     @ApplicationModuleListener
     void onPublished(PublicationPublished event) {
-        if (!properties.crossref().enabled()) return;
         publicationLookup.findById(event.publicationId())
                 .filter(p -> p.doiId() != null)
-                .ifPresent(this::enqueueCrossRef);
+                .ifPresent(this::enqueueAll);
     }
 
     @ApplicationModuleListener
     void onDoiAssigned(DoiAssigned event) {
-        if (!properties.crossref().enabled()) return;
         if (!"publication".equalsIgnoreCase(event.assocType())) return;
         publicationLookup.findById(event.assocId())
                 .filter(p -> p.status() == PublicationStatus.PUBLISHED)
-                .ifPresent(this::enqueueCrossRef);
+                .ifPresent(this::enqueueAll);
     }
 
-    private void enqueueCrossRef(PublicationSummary publication) {
-        depositService.enqueue(DepositTarget.CROSSREF,
-                DepositSubject.PUBLICATION, publication.id());
+    private void enqueueAll(PublicationSummary publication) {
+        if (properties.crossref().enabled()) {
+            depositService.enqueue(DepositTarget.CROSSREF,
+                    DepositSubject.PUBLICATION, publication.id());
+        }
+        if (properties.orcid().enabled()) {
+            // One deposit per author whose ORCID account is linked + has stored
+            // OAuth credentials. The dispatcher routes each row to that
+            // author's bearer token when the work record is pushed.
+            for (Long actorUserId : depositService.linkedAuthorsFor(publication.id())) {
+                depositService.enqueue(DepositTarget.ORCID,
+                        DepositSubject.PUBLICATION, publication.id(), actorUserId);
+            }
+        }
     }
 }

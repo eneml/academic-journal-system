@@ -50,14 +50,23 @@ public class DepositService {
 
     @Transactional
     public DepositRecord enqueue(DepositTarget target, DepositSubject subject, Long subjectId) {
+        return enqueue(target, subject, subjectId, null);
+    }
+
+    @Transactional
+    public DepositRecord enqueue(DepositTarget target,
+                                 DepositSubject subject,
+                                 Long subjectId,
+                                 Long actorUserId) {
         DepositRecord r = new DepositRecord();
         r.setTarget(target);
         r.setSubjectType(subject);
         r.setSubjectId(subjectId);
+        r.setActorUserId(actorUserId);
         r.setStatus(DepositStatus.PENDING);
         DepositRecord saved = repository.save(r);
-        log.info("enqueued {} deposit for {} {} as record {}",
-                target, subject, subjectId, saved.getId());
+        log.info("enqueued {} deposit for {} {} (actor={}) as record {}",
+                target, subject, subjectId, actorUserId, saved.getId());
         return saved;
     }
 
@@ -125,9 +134,20 @@ public class DepositService {
             r.markSkipped("ORCID push only supported for PUBLICATION subjects");
             return;
         }
-        Optional<OrcidCredentials> creds = findCredentialsForPublication(r.getSubjectId());
+        Long actorUserId = r.getActorUserId();
+        if (actorUserId == null) {
+            // Legacy / manually-enqueued ORCID deposit without an actor —
+            // fall back to "first linked author" so manual triggers still work.
+            Optional<Long> first = firstLinkedAuthor(r.getSubjectId());
+            if (first.isEmpty()) {
+                r.markSkipped("No ORCID-linked author with stored OAuth credentials");
+                return;
+            }
+            actorUserId = first.get();
+        }
+        Optional<OrcidCredentials> creds = orcidAuthService.findFor(actorUserId);
         if (creds.isEmpty()) {
-            r.markSkipped("No ORCID-linked author with stored OAuth credentials");
+            r.markSkipped("No ORCID credentials on file for user " + actorUserId);
             return;
         }
         String xml = orcidWorkGenerator.generate(r.getSubjectId());
@@ -142,24 +162,34 @@ public class DepositService {
     }
 
     /**
-     * For each contributor on the publication, look up their local user
-     * record by ORCID iD and check whether we hold OAuth credentials.
-     * Returns the first match — when multiple authors are linked we send
-     * separate deposit_record rows per author (a future enhancement).
+     * Resolve all local user ids who appear on the publication's author
+     * list AND have stored ORCID credentials. Used by the listener to
+     * enqueue one deposit per linked author.
      */
-    private Optional<OrcidCredentials> findCredentialsForPublication(Long publicationId) {
+    public List<Long> linkedAuthorsFor(Long publicationId) {
         var pub = publicationLookup.findById(publicationId).orElse(null);
-        if (pub == null) return Optional.empty();
-        for (SubmissionAuthorSummary author : submissionLookup.authorsOf(pub.submissionId())) {
-            if (author.orcidId() == null || author.orcidId().isBlank()) continue;
-            UserSummary user = author.userId() == null
-                    ? userDirectory.findByEmail(author.email() == null ? "" : author.email()).orElse(null)
-                    : userDirectory.findById(author.userId()).orElse(null);
-            if (user == null) continue;
-            Optional<OrcidCredentials> c = orcidAuthService.findFor(user.id());
-            if (c.isPresent()) return c;
+        if (pub == null) return List.of();
+        return submissionLookup.authorsOf(pub.submissionId()).stream()
+                .filter(a -> a.orcidId() != null && !a.orcidId().isBlank())
+                .map(a -> resolveUser(a))
+                .filter(java.util.Objects::nonNull)
+                .filter(uid -> orcidAuthService.findFor(uid).isPresent())
+                .distinct()
+                .toList();
+    }
+
+    private Long resolveUser(SubmissionAuthorSummary author) {
+        if (author.userId() != null) {
+            return userDirectory.findById(author.userId()).map(UserSummary::id).orElse(null);
         }
-        return Optional.empty();
+        if (author.email() != null && !author.email().isBlank()) {
+            return userDirectory.findByEmail(author.email()).map(UserSummary::id).orElse(null);
+        }
+        return null;
+    }
+
+    private Optional<Long> firstLinkedAuthor(Long publicationId) {
+        return linkedAuthorsFor(publicationId).stream().findFirst();
     }
 
     private static DepositSummary toSummary(DepositRecord e) {

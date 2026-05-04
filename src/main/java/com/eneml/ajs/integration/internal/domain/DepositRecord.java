@@ -38,6 +38,13 @@ public class DepositRecord extends AuditableEntity {
     @Column(name = "subject_id", nullable = false)
     private Long subjectId;
 
+    /**
+     * Which member's credentials drive this deposit (ORCID only). For
+     * CrossRef deposits this is null — the journal-wide depositor is used.
+     */
+    @Column(name = "actor_user_id")
+    private Long actorUserId;
+
     /** External reference returned by the remote system (e.g. CrossRef batch id, ORCID put-code). */
     @Column(name = "external_ref", length = 255)
     private String externalRef;
