@@ -1,10 +1,9 @@
 /**
- * Issue module — journal issues, table-of-contents ordering, issue galleys.
+ * Issue module — journal issues that group publications.
  *
- * <p>Owns: Issue, IssueGalley, CustomIssueOrder, CustomSectionOrder.
- * <br>Emits: IssueCreated, IssuePublished, IssueUnpublished,
- * PublicationScheduled.
- * <br>Consumes: PublicationPublished (to refresh TOC projections).
+ * <p>Owns: Issue.
+ * <br>Emits: IssueCreated, IssuePublished, IssueUnpublished.
+ * <br>Consumes: nothing.
  */
 @org.springframework.modulith.ApplicationModule(
     displayName = "Issue",
