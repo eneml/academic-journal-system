@@ -56,6 +56,14 @@ export type PublicationSummary = {
   datePublished: string | null;
 };
 
+export type ArticleAuthor = {
+  givenName: string | null;
+  familyName: string | null;
+  orcidId: string | null;
+  affiliation: string | null;
+  corresponding: boolean;
+};
+
 export type Article = {
   id: number;
   submissionId: number;
@@ -64,7 +72,6 @@ export type Article = {
   accessStatus: PublicationSummary["accessStatus"];
   sectionId: number;
   issueId: number | null;
-  primaryAuthorEmail: string | null;
   urlPath: string | null;
   licenseUrl: string | null;
   copyrightHolder: string | null;
@@ -76,6 +83,8 @@ export type Article = {
   disciplines: string[];
   locale: string;
   datePublished: string | null;
+  doi: string | null;
+  authors: ArticleAuthor[];
 };
 
 async function getJson<T>(path: string): Promise<T | null> {

@@ -1,9 +1,13 @@
 package com.eneml.ajs.publication.internal.web;
 
+import com.eneml.ajs.publication.api.DoiLookup;
 import com.eneml.ajs.publication.internal.application.PublicationService;
+import com.eneml.ajs.publication.internal.domain.Publication;
+import com.eneml.ajs.publication.internal.web.dto.PublicArticleResponse;
 import com.eneml.ajs.publication.internal.web.dto.PublicationResponse;
 import com.eneml.ajs.publication.internal.web.dto.PublicationUpsertRequest;
 import com.eneml.ajs.publication.internal.web.mapper.PublicationMapper;
+import com.eneml.ajs.submission.api.SubmissionLookup;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -29,6 +33,8 @@ class PublicationController {
     private final PublicationService service;
     private final PublicationMapper mapper;
     private final com.eneml.ajs.publication.api.PublicationLookup lookup;
+    private final SubmissionLookup submissionLookup;
+    private final DoiLookup doiLookup;
 
     @GetMapping("/publications/recent")
     @Operation(summary = "Most recently published publications (public)")
@@ -39,7 +45,7 @@ class PublicationController {
 
     @GetMapping("/articles/{slugOrId}")
     @Operation(summary = "Public article view by url-path slug or numeric id (PUBLISHED only)")
-    PublicationResponse articleBySlugOrId(@PathVariable String slugOrId) {
+    PublicArticleResponse articleBySlugOrId(@PathVariable String slugOrId) {
         var byPath = lookup.findByUrlPath(slugOrId);
         var summary = byPath.orElseGet(() -> tryNumeric(slugOrId)
                 .flatMap(lookup::findById)
@@ -48,7 +54,38 @@ class PublicationController {
                 || summary.status() != com.eneml.ajs.publication.api.PublicationStatus.PUBLISHED) {
             throw com.eneml.ajs.shared.exception.NotFoundException.of("Article", slugOrId);
         }
-        return mapper.toResponse(service.get(summary.id()));
+        Publication entity = service.get(summary.id());
+        String doi = entity.getDoiId() == null ? null
+                : doiLookup.findById(entity.getDoiId()).map(d -> d.doi()).orElse(null);
+        var authors = submissionLookup.authorsOf(entity.getSubmissionId()).stream()
+                .map(a -> new PublicArticleResponse.PublicAuthorRef(
+                        a.givenName(),
+                        a.familyName(),
+                        a.orcidId(),
+                        a.affiliation(),
+                        a.corresponding()))
+                .toList();
+        return new PublicArticleResponse(
+                entity.getId(),
+                entity.getSubmissionId(),
+                entity.getVersionNumber(),
+                entity.getStatus(),
+                entity.getAccessStatus(),
+                entity.getSectionId(),
+                entity.getIssueId(),
+                entity.getUrlPath(),
+                entity.getLicenseUrl(),
+                entity.getCopyrightHolder(),
+                entity.getCopyrightYear(),
+                entity.getPages(),
+                entity.getTitle(),
+                entity.getAbstractText(),
+                entity.getKeywords(),
+                entity.getDisciplines(),
+                entity.getLocale(),
+                entity.getDatePublished(),
+                doi,
+                authors);
     }
 
     private static java.util.Optional<Long> tryNumeric(String s) {

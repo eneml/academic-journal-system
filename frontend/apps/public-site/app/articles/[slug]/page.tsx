@@ -7,7 +7,10 @@ import {
   fetchJournalConfig,
   fetchActiveSections,
   pickLocale,
+  type Article,
 } from "@/lib/api";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 export const revalidate = 60;
 
@@ -67,8 +70,15 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
     ? new Date(article.datePublished)
     : null;
 
+  const jsonLd = buildScholarlyArticleJsonLd(article, journalName, slug, locale);
+
   return (
     <div className="min-h-screen flex flex-col">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <header className="border-b border-border">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link
@@ -237,4 +247,65 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
       </footer>
     </div>
   );
+}
+
+function buildScholarlyArticleJsonLd(
+  article: Article,
+  journalName: string,
+  slug: string,
+  locale: string,
+): Record<string, unknown> {
+  const url = `${SITE_URL.replace(/\/$/, "")}/articles/${encodeURIComponent(slug)}`;
+  const headline = pickLocale(article.title, locale) || "Untitled";
+  const abstractText = pickLocale(article.abstractText, locale) || undefined;
+  const authors = article.authors.map((a) => {
+    const node: Record<string, unknown> = { "@type": "Person" };
+    const name = [a.givenName, a.familyName].filter(Boolean).join(" ").trim();
+    if (name) node.name = name;
+    if (a.givenName) node.givenName = a.givenName;
+    if (a.familyName) node.familyName = a.familyName;
+    if (a.affiliation) {
+      node.affiliation = { "@type": "Organization", name: a.affiliation };
+    }
+    if (a.orcidId) {
+      node.identifier = a.orcidId.startsWith("http")
+        ? a.orcidId
+        : `https://orcid.org/${a.orcidId}`;
+    }
+    return node;
+  });
+
+  const ld: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "ScholarlyArticle",
+    "@id": url,
+    url,
+    headline,
+    name: headline,
+    inLanguage: article.locale ?? locale,
+    isAccessibleForFree: article.accessStatus === "OPEN",
+    isPartOf: {
+      "@type": "Periodical",
+      name: journalName,
+    },
+  };
+
+  if (abstractText) ld.abstract = abstractText;
+  if (article.datePublished) ld.datePublished = article.datePublished;
+  if (article.keywords && article.keywords.length > 0) ld.keywords = article.keywords.join(", ");
+  if (article.copyrightHolder) {
+    ld.copyrightHolder = { "@type": "Organization", name: article.copyrightHolder };
+  }
+  if (article.copyrightYear) ld.copyrightYear = article.copyrightYear;
+  if (article.licenseUrl) ld.license = article.licenseUrl;
+  if (article.pages) ld.pagination = article.pages;
+  if (article.doi) {
+    ld.identifier = [
+      { "@type": "PropertyValue", propertyID: "DOI", value: article.doi },
+    ];
+    ld.sameAs = `https://doi.org/${article.doi}`;
+  }
+  if (authors.length > 0) ld.author = authors;
+
+  return ld;
 }
