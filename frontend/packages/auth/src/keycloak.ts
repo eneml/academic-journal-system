@@ -24,7 +24,12 @@ export interface KeycloakClientConfig {
  * passing to UserManager.
  */
 export function buildKeycloakSettings(cfg: KeycloakClientConfig): UserManagerSettings {
-  const scope = cfg.scope ?? "openid profile email offline_access";
+  // Default scope intentionally OMITS `offline_access`. The realm's public
+  // SPA client doesn't grant offline tokens, and including the scope makes
+  // Keycloak fail the code-to-token exchange with `not_allowed`. For
+  // session-bound refresh, `automaticSilentRenew` below uses the normal
+  // refresh_token issued alongside the access token.
+  const scope = cfg.scope ?? "openid profile email";
   return {
     authority: cfg.issuer,
     client_id: cfg.clientId,
