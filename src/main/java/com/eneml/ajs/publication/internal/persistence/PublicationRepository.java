@@ -38,4 +38,12 @@ public interface PublicationRepository extends JpaRepository<Publication, Long> 
             ORDER BY p.datePublished DESC
             """)
     List<Publication> findRecentPublishedInSection(Long sectionId, Pageable pageable);
+
+    @Query("""
+            SELECT p FROM Publication p
+            WHERE p.status = com.eneml.ajs.publication.api.PublicationStatus.PUBLISHED
+              AND p.issueId = :issueId
+            ORDER BY p.sectionId ASC, p.datePublished ASC, p.id ASC
+            """)
+    List<Publication> findPublishedInIssue(Long issueId);
 }

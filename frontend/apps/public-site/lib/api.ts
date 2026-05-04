@@ -103,6 +103,20 @@ export const fetchRecentPublications = (limit = 6) =>
 
 export const fetchIssues = () => getJson<IssueSummary[]>("/api/v1/issues");
 
+export const fetchIssueBySlug = (slug: string) =>
+  getJson<IssueSummary>(`/api/v1/issues/by-path/${encodeURIComponent(slug)}`);
+
+export const fetchIssueById = (id: number) =>
+  getJson<IssueSummary>(`/api/v1/issues/${id}`);
+
+export const fetchIssueTableOfContents = (issueId: number) =>
+  getJson<PublicationSummary[]>(`/api/v1/issues/${issueId}/publications`);
+
+export const fetchActiveSectionsMap = async (): Promise<Map<number, SectionSummary>> => {
+  const list = (await fetchActiveSections()) ?? [];
+  return new Map(list.map((s) => [s.id, s]));
+};
+
 export const fetchArticle = (slugOrId: string) =>
   getJson<Article>(`/api/v1/articles/${encodeURIComponent(slugOrId)}`);
 

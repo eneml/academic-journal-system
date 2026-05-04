@@ -48,6 +48,11 @@ class PublicationLookupAdapter implements PublicationLookup {
     }
 
     @Override
+    public List<PublicationSummary> publishedInIssue(Long issueId) {
+        return mapper.toSummaries(repository.findPublishedInIssue(issueId));
+    }
+
+    @Override
     public List<PublicationSummary> latestPublished(int limit) {
         return mapper.toSummaries(repository.findRecentPublished(
                 PageRequest.of(0, Math.max(1, limit))));

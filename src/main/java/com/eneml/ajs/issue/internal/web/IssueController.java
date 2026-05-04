@@ -5,6 +5,9 @@ import com.eneml.ajs.issue.internal.domain.Issue;
 import com.eneml.ajs.issue.internal.web.dto.IssueResponse;
 import com.eneml.ajs.issue.internal.web.dto.IssueUpsertRequest;
 import com.eneml.ajs.issue.internal.web.mapper.IssueMapper;
+import com.eneml.ajs.publication.api.PublicationLookup;
+import com.eneml.ajs.publication.api.PublicationSummary;
+import com.eneml.ajs.shared.exception.NotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -23,6 +26,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/issues")
@@ -32,6 +36,7 @@ class IssueController {
 
     private final IssueService service;
     private final IssueMapper mapper;
+    private final PublicationLookup publicationLookup;
 
     @GetMapping
     @Operation(summary = "List all issues")
@@ -43,6 +48,23 @@ class IssueController {
     @Operation(summary = "Get an issue by id")
     IssueResponse get(@PathVariable Long id) {
         return mapper.toResponse(service.get(id));
+    }
+
+    @GetMapping("/by-path/{urlPath}")
+    @Operation(summary = "Get a published issue by its url-path slug (public)")
+    IssueResponse getByPath(@PathVariable String urlPath) {
+        Issue issue = Optional.ofNullable(urlPath)
+                .filter(p -> !p.isBlank())
+                .flatMap(service::findByUrlPath)
+                .filter(Issue::isPublished)
+                .orElseThrow(() -> NotFoundException.of("Issue", urlPath));
+        return mapper.toResponse(issue);
+    }
+
+    @GetMapping("/{id}/publications")
+    @Operation(summary = "List the published articles in an issue (public TOC)")
+    List<PublicationSummary> tableOfContents(@PathVariable Long id) {
+        return publicationLookup.publishedInIssue(id);
     }
 
     @PostMapping

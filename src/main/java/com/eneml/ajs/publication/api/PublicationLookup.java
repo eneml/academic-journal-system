@@ -15,5 +15,7 @@ public interface PublicationLookup {
 
     List<PublicationSummary> publishedInSection(Long sectionId, int limit);
 
+    List<PublicationSummary> publishedInIssue(Long issueId);
+
     List<PublicationSummary> latestPublished(int limit);
 }
