@@ -46,4 +46,9 @@ public interface PublicationRepository extends JpaRepository<Publication, Long> 
             ORDER BY p.sectionId ASC, p.datePublished ASC, p.id ASC
             """)
     List<Publication> findPublishedInIssue(Long issueId);
+
+    /** Used by the scheduled-publication sweep — find SCHEDULED rows whose target time has arrived. */
+    List<Publication> findByStatusAndDatePublishedBefore(
+            com.eneml.ajs.publication.api.PublicationStatus status,
+            java.time.Instant cutoff);
 }

@@ -162,6 +162,15 @@ class PublicationController {
         return mapper.toResponse(service.publish(publicationId));
     }
 
+    @PostMapping("/publications/{publicationId}/schedule")
+    @PreAuthorize("hasAnyRole('EDITOR','ADMIN')")
+    @Operation(summary = "Schedule a draft to auto-publish at a future instant")
+    PublicationResponse schedule(@PathVariable Long publicationId,
+                                  @org.springframework.web.bind.annotation.RequestParam
+                                  java.time.Instant when) {
+        return mapper.toResponse(service.schedule(publicationId, when));
+    }
+
     @PostMapping("/publications/{publicationId}/unpublish")
     @PreAuthorize("hasAnyRole('EDITOR','ADMIN')")
     @Operation(summary = "Unpublish a published publication (becomes hidden)")

@@ -126,6 +126,47 @@ public class PublicationService {
         return p;
     }
 
+    /**
+     * Schedule a draft publication for automatic publication at a future
+     * instant. The {@link com.eneml.ajs.publication.internal.job.ScheduledPublicationJob}
+     * sweeps for due records and flips them to PUBLISHED.
+     */
+    @Transactional
+    public Publication schedule(Long publicationId, Instant when) {
+        Publication p = get(publicationId);
+        if (p.getStatus() != PublicationStatus.DRAFT) {
+            throw new ConflictException("Only DRAFT publications can be scheduled");
+        }
+        if (when == null || when.isBefore(Instant.now())) {
+            throw new ConflictException("Scheduled publish time must be in the future");
+        }
+        if (p.getTitle().isEmpty()) {
+            throw new ConflictException("Cannot schedule without a title");
+        }
+        p.setStatus(PublicationStatus.SCHEDULED);
+        p.setDatePublished(when);
+        return p;
+    }
+
+    /**
+     * Promote every SCHEDULED publication whose target time has arrived.
+     * Returns the number of publications transitioned. Called by the
+     * scheduled job — single SQL sweep, no per-row event refetch.
+     */
+    @Transactional
+    public int promoteDueScheduled(Instant cutoff) {
+        var due = repository.findByStatusAndDatePublishedBefore(
+                PublicationStatus.SCHEDULED, cutoff);
+        for (Publication p : due) {
+            p.setStatus(PublicationStatus.PUBLISHED);
+            // datePublished is already set to the scheduled time, keep it.
+            events.publishEvent(PublicationPublished.of(
+                    p.getId(), p.getSubmissionId(), p.getSectionId(),
+                    p.getIssueId(), p.getVersionNumber()));
+        }
+        return due.size();
+    }
+
     @Transactional
     public Publication unpublish(Long publicationId) {
         Publication p = get(publicationId);
