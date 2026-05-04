@@ -28,6 +28,7 @@ type Assignment = components["schemas"]["ReviewAssignmentResponse"];
 type Decision = components["schemas"]["EditorialDecisionResponse"];
 type UserSummary = components["schemas"]["UserResponse"];
 type Publication = components["schemas"]["PublicationResponse"];
+type AuditEntry = components["schemas"]["EventLogEntrySummary"];
 
 const DECISION_TYPES = [
   "EXTERNAL_REVIEW",
@@ -59,16 +60,18 @@ function EditorialSubmissionDetailPage(): ReactNode {
   const [rounds, setRounds] = useState<ReviewRound[]>([]);
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [publications, setPublications] = useState<Publication[]>([]);
+  const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
   const [errored, setErrored] = useState(false);
 
   const reload = useCallback(async (): Promise<void> => {
-    const [s, a, f, r, d, p] = await Promise.all([
+    const [s, a, f, r, d, p, log] = await Promise.all([
       api<Submission>(`/api/v1/submissions/${submissionId}`),
       api<AuthorRow[]>(`/api/v1/submissions/${submissionId}/authors`),
       api<FileRow[]>(`/api/v1/submissions/${submissionId}/files`),
       api<ReviewRound[]>(`/api/v1/submissions/${submissionId}/review-rounds`),
       api<Decision[]>(`/api/v1/submissions/${submissionId}/decisions`),
       api<Publication[]>(`/api/v1/submissions/${submissionId}/publications`),
+      api<AuditEntry[]>(`/api/v1/submissions/${submissionId}/event-log`),
     ]);
     if (!s) {
       setErrored(true);
@@ -81,6 +84,7 @@ function EditorialSubmissionDetailPage(): ReactNode {
     setRounds(r ?? []);
     setDecisions(d ?? []);
     setPublications(p ?? []);
+    setAuditLog(log ?? []);
   }, [submissionId]);
 
   useEffect(() => {
@@ -175,7 +179,134 @@ function EditorialSubmissionDetailPage(): ReactNode {
         publications={publications}
         onChanged={() => void reload()}
       />
+
+      <AuditLogCard entries={auditLog} />
     </>
+  );
+}
+
+function AuditLogCard({ entries }: { entries: AuditEntry[] }): ReactNode {
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? entries : entries.slice(0, 8);
+  return (
+    <Card padded={false}>
+      <div
+        style={{
+          padding: "16px 22px",
+          borderBottom: entries.length > 0 ? "1px solid var(--border)" : "none",
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <h2 style={{ ...h2Style, marginBottom: 0 }}>
+          Event log ({entries.length})
+        </h2>
+        {entries.length > 8 ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            style={btnSecondary}
+          >
+            {expanded ? "Show recent only" : "Show all"}
+          </button>
+        ) : null}
+      </div>
+      {entries.length === 0 ? (
+        <p style={{ padding: "12px 22px 18px", color: "var(--muted)", fontSize: 13, margin: 0 }}>
+          No events recorded yet.
+        </p>
+      ) : (
+        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+          {visible
+            .slice()
+            .sort((a, b) =>
+              (b.occurredAt ?? "").localeCompare(a.occurredAt ?? ""),
+            )
+            .map((e, idx) => (
+              <li
+                key={e.id}
+                style={{
+                  padding: "10px 22px",
+                  borderBottom:
+                    idx < visible.length - 1 ? "1px solid var(--border)" : "none",
+                  display: "grid",
+                  gridTemplateColumns: "auto 1fr auto",
+                  gap: 12,
+                  alignItems: "baseline",
+                  fontSize: 13,
+                }}
+              >
+                <span
+                  className="tnum"
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: 11,
+                    color: "var(--muted)",
+                    minWidth: 36,
+                  }}
+                >
+                  #{e.id}
+                </span>
+                <div style={{ minWidth: 0 }}>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontFamily: "var(--mono)",
+                      fontSize: 12,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {e.eventType}
+                  </p>
+                  {e.actorUserId ? (
+                    <p
+                      style={{
+                        margin: "2px 0 0",
+                        fontSize: 11,
+                        color: "var(--muted)",
+                        fontFamily: "var(--mono)",
+                      }}
+                    >
+                      actor: user #{e.actorUserId}
+                    </p>
+                  ) : null}
+                  {e.payload && Object.keys(e.payload).length > 0 ? (
+                    <pre
+                      style={{
+                        margin: "4px 0 0",
+                        padding: "6px 8px",
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "var(--r-1)",
+                        fontFamily: "var(--mono)",
+                        fontSize: 10.5,
+                        color: "var(--fg-2)",
+                        overflow: "auto",
+                        maxHeight: 120,
+                      }}
+                    >
+                      {JSON.stringify(e.payload, null, 2)}
+                    </pre>
+                  ) : null}
+                </div>
+                <span
+                  className="tnum"
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: 11,
+                    color: "var(--muted)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {e.occurredAt ? new Date(e.occurredAt).toLocaleString() : ""}
+                </span>
+              </li>
+            ))}
+        </ul>
+      )}
+    </Card>
   );
 }
 
