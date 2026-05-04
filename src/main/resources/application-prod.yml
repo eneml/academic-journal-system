@@ -27,3 +27,26 @@ server:
     include-message: never
     include-binding-errors: never
     include-stacktrace: never
+
+# Rate limit defaults — designed to absorb a determined attacker without
+# breaking real users. Tune via environment variables or override on a
+# per-deployment basis.
+ajs:
+  rate-limit:
+    enabled: true
+    rules:
+      - path-prefix: /api/v1/submissions
+        methods: [POST]
+        key-by: USER
+        capacity: 10
+        refill-per-minute: 10
+      - path-prefix: /api/v1/search
+        methods: [GET]
+        key-by: IP
+        capacity: 60
+        refill-per-minute: 60
+      - path-prefix: /api/v1/articles
+        methods: [GET]
+        key-by: IP
+        capacity: 200
+        refill-per-minute: 200
