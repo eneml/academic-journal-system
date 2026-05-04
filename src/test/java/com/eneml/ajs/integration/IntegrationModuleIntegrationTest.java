@@ -2,6 +2,11 @@ package com.eneml.ajs.integration;
 
 import com.eneml.ajs.identity.api.JwtClaims;
 import com.eneml.ajs.identity.api.UserProvisioning;
+import com.eneml.ajs.integration.api.DepositStatus;
+import com.eneml.ajs.integration.api.DepositSubject;
+import com.eneml.ajs.integration.api.DepositTarget;
+import com.eneml.ajs.integration.internal.application.CrossRefDepositXmlGenerator;
+import com.eneml.ajs.integration.internal.application.DepositService;
 import com.eneml.ajs.integration.internal.application.JatsGenerator;
 import com.eneml.ajs.publication.api.AccessStatus;
 import com.eneml.ajs.publication.internal.application.DoiService;
@@ -42,6 +47,8 @@ class IntegrationModuleIntegrationTest {
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine");
 
     @Autowired JatsGenerator jatsGenerator;
+    @Autowired CrossRefDepositXmlGenerator crossRefGenerator;
+    @Autowired DepositService depositService;
     @Autowired PublicationService publications;
     @Autowired SubmissionService submissionService;
     @Autowired DoiService doiService;
@@ -86,6 +93,64 @@ class IntegrationModuleIntegrationTest {
         assertThat(xml).contains(
                 "<article-id pub-id-type=\"doi\">10.1234/demo.42</article-id>");
         parseXml(xml); // well-formed
+    }
+
+    @Test
+    void crossrefDepositXmlContainsDoiAndLandingUrl() throws Exception {
+        Long actor = provisionUser("kc-cr1", "cr1@test.local");
+        Long submissionId = aSubmission(actor, Map.of("en", "CrossRef Demo"));
+        var draft = publications.draftFirstVersion(submissionId);
+        publications.update(draft.getId(), upsertRequest(
+                "CrossRef Demo", "cr-demo", Map.of(), List.of()));
+        publications.publish(draft.getId());
+        doiService.assignToPublication(draft.getId(), "10.1234/cr.demo.7");
+
+        String xml = crossRefGenerator.generate(draft.getId());
+
+        assertThat(xml).contains("<doi_batch ");
+        assertThat(xml).contains("<doi>10.1234/cr.demo.7</doi>");
+        assertThat(xml).contains("<resource>");
+        assertThat(xml).contains("/articles/cr-demo</resource>");
+        Document doc = parseXml(xml);
+        assertThat(doc.getDocumentElement().getNodeName()).isEqualTo("doi_batch");
+    }
+
+    @Test
+    void dispatchSkipsCrossrefDepositsWhenDisabled() {
+        Long actor = provisionUser("kc-cr2", "cr2@test.local");
+        Long submissionId = aSubmission(actor, Map.of("en", "Skip Me"));
+        var draft = publications.draftFirstVersion(submissionId);
+        publications.update(draft.getId(), upsertRequest(
+                "Skip Me", "skip-me", Map.of(), List.of()));
+        publications.publish(draft.getId());
+
+        depositService.enqueue(DepositTarget.CROSSREF, DepositSubject.PUBLICATION, draft.getId());
+        depositService.dispatchPending(10);
+
+        var history = depositService.historyFor(DepositSubject.PUBLICATION, draft.getId());
+        assertThat(history).singleElement().satisfies(h -> {
+            assertThat(h.target()).isEqualTo(DepositTarget.CROSSREF);
+            assertThat(h.status()).isEqualTo(DepositStatus.SKIPPED);
+            assertThat(h.errorMessage()).contains("disabled");
+        });
+    }
+
+    @Test
+    void orcidDepositSkipsUntilImplemented() {
+        Long actor = provisionUser("kc-or1", "or1@test.local");
+        Long submissionId = aSubmission(actor, Map.of("en", "ORCID"));
+        var draft = publications.draftFirstVersion(submissionId);
+        publications.update(draft.getId(), upsertRequest("ORCID", "orcid-demo", Map.of(), List.of()));
+        publications.publish(draft.getId());
+
+        depositService.enqueue(DepositTarget.ORCID, DepositSubject.PUBLICATION, draft.getId());
+        depositService.dispatchPending(10);
+
+        var history = depositService.historyFor(DepositSubject.PUBLICATION, draft.getId());
+        assertThat(history).singleElement().satisfies(h -> {
+            assertThat(h.target()).isEqualTo(DepositTarget.ORCID);
+            assertThat(h.status()).isEqualTo(DepositStatus.SKIPPED);
+        });
     }
 
     @Test

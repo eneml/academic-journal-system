@@ -179,6 +179,31 @@ app:
       - ro
 
 # ----------------------------------------------------------------
+# Outbound integrations (CrossRef DOI deposit, ORCID work push).
+# Disabled by default — set CROSSREF_ENABLED / ORCID_ENABLED to true
+# in the deployment env, alongside credentials. Sandbox endpoints are
+# the safe defaults so a misconfigured deployment never accidentally
+# hits a live registrar.
+# ----------------------------------------------------------------
+ajs:
+  integration:
+    public-base-url: ${PUBLIC_SITE_URL:http://localhost:3000}
+    dispatch-interval-ms: ${INTEGRATION_DISPATCH_MS:60000}
+    dispatch-initial-delay-ms: ${INTEGRATION_DISPATCH_INITIAL_DELAY_MS:30000}
+    crossref:
+      enabled: ${CROSSREF_ENABLED:false}
+      deposit-url: ${CROSSREF_DEPOSIT_URL:https://test.crossref.org/servlet/deposit}
+      username: ${CROSSREF_USERNAME:}
+      password: ${CROSSREF_PASSWORD:}
+      depositor-name: ${CROSSREF_DEPOSITOR_NAME:}
+      depositor-email: ${CROSSREF_DEPOSITOR_EMAIL:}
+    orcid:
+      enabled: ${ORCID_ENABLED:false}
+      api-url: ${ORCID_API_URL:https://api.sandbox.orcid.org}
+      client-id: ${ORCID_CLIENT_ID:}
+      client-secret: ${ORCID_CLIENT_SECRET:}
+
+# ----------------------------------------------------------------
 # Logging
 # ----------------------------------------------------------------
 logging:
