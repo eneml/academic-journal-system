@@ -102,6 +102,17 @@ public class JatsGenerator {
         out.append("      <journal-title-group>\n");
         out.append("        <journal-title>").append(escape(journalTitle)).append("</journal-title>\n");
         out.append("      </journal-title-group>\n");
+        // ISSNs — print + electronic when configured. JATS requires pub-type
+        // attribute to disambiguate; either or both may be absent for
+        // online-only / unpublished-yet journals.
+        if (config.issnPrint() != null && !config.issnPrint().isBlank()) {
+            out.append("      <issn pub-type=\"ppub\">")
+               .append(escape(config.issnPrint())).append("</issn>\n");
+        }
+        if (config.issnOnline() != null && !config.issnOnline().isBlank()) {
+            out.append("      <issn pub-type=\"epub\">")
+               .append(escape(config.issnOnline())).append("</issn>\n");
+        }
         if (config.contactEmail() != null && !config.contactEmail().isBlank()) {
             out.append("      <publisher>\n");
             out.append("        <publisher-name>").append(escape(journalTitle)).append("</publisher-name>\n");

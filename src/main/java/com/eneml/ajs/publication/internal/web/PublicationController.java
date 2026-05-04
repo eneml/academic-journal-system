@@ -1,5 +1,6 @@
 package com.eneml.ajs.publication.internal.web;
 
+import com.eneml.ajs.metrics.api.MetricsRecorder;
 import com.eneml.ajs.publication.api.DoiLookup;
 import com.eneml.ajs.publication.internal.application.PublicationService;
 import com.eneml.ajs.publication.internal.domain.Publication;
@@ -35,6 +36,7 @@ class PublicationController {
     private final com.eneml.ajs.publication.api.PublicationLookup lookup;
     private final SubmissionLookup submissionLookup;
     private final DoiLookup doiLookup;
+    private final MetricsRecorder metricsRecorder;
 
     @GetMapping("/publications/recent")
     @Operation(summary = "Most recently published publications (public)")
@@ -62,6 +64,11 @@ class PublicationController {
                 || summary.status() != com.eneml.ajs.publication.api.PublicationStatus.PUBLISHED) {
             throw com.eneml.ajs.shared.exception.NotFoundException.of("Article", slugOrId);
         }
+        // Record the page view *before* loading the heavy entity — even if the
+        // counter call has its own (REQUIRES_NEW) tx, doing it first means a
+        // slow counter doesn't delay the user-visible response. The metrics
+        // service swallows its own failures.
+        metricsRecorder.recordView(summary.id());
         Publication entity = service.get(summary.id());
         String doi = entity.getDoiId() == null ? null
                 : doiLookup.findById(entity.getDoiId()).map(d -> d.doi()).orElse(null);
@@ -138,6 +145,11 @@ class PublicationController {
                 .filter(g -> summary.id().equals(g.publicationId()))
                 .filter(com.eneml.ajs.publication.api.GalleySummary::approved)
                 .orElseThrow(() -> com.eneml.ajs.shared.exception.NotFoundException.of("Galley", galleyId));
+        // Count the download as soon as we've resolved a real galley file —
+        // we want the counter even if the storage layer hiccups during URL
+        // generation, since the user clicked download. Metrics service is
+        // best-effort and swallows its own errors.
+        metricsRecorder.recordDownload(summary.id(), galleyId);
         if (galley.remoteUrl() != null && !galley.remoteUrl().isBlank()) {
             return java.util.Map.of("url", galley.remoteUrl());
         }

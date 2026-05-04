@@ -18,8 +18,8 @@ import java.util.Map;
 /**
  * Editorial board listing entry shown on the public site. {@code userId} is a
  * logical reference to a User in the {@code identity} module — verified at
- * write time via {@code identity::api} (currently a TODO until that module
- * exists). No FK is declared on purpose; cross-module FKs leak boundaries.
+ * write time via {@code identity::api}. No FK is declared on purpose;
+ * cross-module FKs leak boundaries.
  */
 @Entity
 @Table(name = "journal_masthead_entry")

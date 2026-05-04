@@ -12,6 +12,8 @@ import java.util.Set;
  * @param defaultLocale     fallback locale when a translation is missing
  * @param supportedLocales  locales this journal publishes in
  * @param contactEmail      address shown on the public site / used as Reply-To
+ * @param issnPrint         ISSN of the print edition (XXXX-XXXX), nullable
+ * @param issnOnline        ISSN of the electronic edition (XXXX-XXXX), nullable
  * @param submissionsOpen   whether the submission form is currently accepting work
  */
 public record JournalConfigSummary(
@@ -19,6 +21,8 @@ public record JournalConfigSummary(
         String defaultLocale,
         Set<String> supportedLocales,
         String contactEmail,
+        String issnPrint,
+        String issnOnline,
         boolean submissionsOpen
 ) {
 }

@@ -81,7 +81,7 @@ public class OrcidWorkXmlGenerator {
             out.append("  </common:publication-date>\n");
         }
 
-        // External identifiers (DOI + journal-issn placeholder)
+        // External identifiers: DOI (primary), journal ISSN (part-of), public landing URL
         out.append("  <common:external-ids>\n");
         doi.ifPresent(d -> {
             out.append("    <common:external-id>\n");
@@ -94,6 +94,21 @@ public class OrcidWorkXmlGenerator {
             out.append("      <common:external-id-relationship>self</common:external-id-relationship>\n");
             out.append("    </common:external-id>\n");
         });
+        // Prefer the electronic ISSN — that's what most readers cite. Fall back
+        // to print if only that is configured. Either is recorded with a
+        // "part-of" relationship since the article is part of the journal,
+        // not identified by the ISSN itself.
+        String journalIssn = config.issnOnline() != null && !config.issnOnline().isBlank()
+                ? config.issnOnline()
+                : (config.issnPrint() != null && !config.issnPrint().isBlank() ? config.issnPrint() : null);
+        if (journalIssn != null) {
+            out.append("    <common:external-id>\n");
+            out.append("      <common:external-id-type>issn</common:external-id-type>\n");
+            out.append("      <common:external-id-value>").append(escape(journalIssn))
+               .append("</common:external-id-value>\n");
+            out.append("      <common:external-id-relationship>part-of</common:external-id-relationship>\n");
+            out.append("    </common:external-id>\n");
+        }
         // Backstop URL pointing at the public site landing page
         String landing = landingUrl(pub);
         out.append("    <common:external-id>\n");

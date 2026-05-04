@@ -11,10 +11,11 @@
  * <br>Emits: PublicationDrafted, PublicationVersioned,
  * PublicationPublished, PublicationUnpublished, GalleyAdded,
  * GalleyApproved, DoiAssigned.
- * <br>Consumes: nothing.
+ * <br>Consumes: metrics::api (bumps view + download counters when
+ * the public article / galley-download-url endpoints are served).
  */
 @org.springframework.modulith.ApplicationModule(
     displayName = "Publication",
-    allowedDependencies = { "shared", "submission::api", "journal::api", "storage::api" }
+    allowedDependencies = { "shared", "submission::api", "journal::api", "storage::api", "metrics::api" }
 )
 package com.eneml.ajs.publication;
