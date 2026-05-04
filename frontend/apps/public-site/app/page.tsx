@@ -16,8 +16,6 @@ import {
 
 export const revalidate = 60;
 
-const TAGLINE = "An open-access scholarly journal";
-
 export default async function HomePage(): Promise<ReactNode> {
   const [config, issues, sections, masthead, announcements] = await Promise.all([
     fetchJournalConfig(),
@@ -60,11 +58,7 @@ export default async function HomePage(): Promise<ReactNode> {
   );
 
   return (
-    <SiteChrome
-      journalName={journalName}
-      active="current"
-      tagline={config?.name ? TAGLINE : undefined}
-    >
+    <SiteChrome journalName={journalName} active="current">
       {/* Hero — current issue */}
       <section
         style={{

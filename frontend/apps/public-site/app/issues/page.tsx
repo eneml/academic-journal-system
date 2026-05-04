@@ -23,115 +23,286 @@ export default async function IssuesPage(): Promise<ReactNode> {
   const journalName = pickLocale(config?.name, locale) || "The Academic Journal";
   const published = (issues ?? []).filter((i) => i.published);
   const byYear = groupByYear(published);
+  const earliestYear =
+    byYear.length > 0
+      ? byYear.map((g) => g.year).filter((y): y is number => y != null).at(-1)
+      : null;
+  const latestYear =
+    byYear.length > 0
+      ? byYear.map((g) => g.year).filter((y): y is number => y != null)[0]
+      : null;
 
   return (
     <SiteChrome journalName={journalName} active="archive">
-      <section className="border-b border-border">
-          <div style={{ padding: "64px 56px" }}>
-            <p
-              className="sc text-cobalt mb-3"
-              style={{
-                textTransform: "uppercase",
-                letterSpacing: "0.12em",
-                fontSize: 11,
-                fontWeight: 600,
-              }}
-            >
-              Archive
-            </p>
-            <h1
-              className="text-fg"
-              style={{
-                fontFamily: "var(--serif-display)",
-                fontWeight: 500,
-                fontSize: "clamp(36px, 5vw, 56px)",
-                lineHeight: 1.1,
-                letterSpacing: "-0.02em",
-              }}
-            >
-              All issues of {journalName}
-            </h1>
-          </div>
-        </section>
+      <section
+        style={{
+          padding: "32px 56px 24px",
+          borderBottom: "1px solid var(--border)",
+        }}
+      >
+        <div className="sc" style={{ color: "var(--cobalt)", marginBottom: 10 }}>
+          Archive
+        </div>
+        <h1
+          style={{
+            fontFamily: "var(--serif-display)",
+            fontWeight: 500,
+            fontSize: "clamp(34px, 4.6vw, 48px)",
+            lineHeight: 1.1,
+            letterSpacing: "-0.02em",
+            margin: "0 0 10px",
+          }}
+        >
+          All issues of {journalName}
+        </h1>
+        <p
+          style={{
+            fontFamily: "var(--serif-body)",
+            fontSize: 17,
+            lineHeight: 1.55,
+            color: "var(--fg-2)",
+            margin: 0,
+            maxWidth: 720,
+            fontStyle: "italic",
+          }}
+        >
+          Every published volume, grouped by year. Click into an issue to see
+          its table of contents.
+        </p>
+      </section>
 
-        <section>
-          <div style={{ padding: "56px 56px" }}>
-            {byYear.length === 0 ? (
-              <p
-                className="text-fg-2"
-                style={{ fontFamily: "var(--serif-body)" }}
+      <section
+        style={{
+          display: "grid",
+          gridTemplateColumns: "240px minmax(0, 1fr)",
+          gap: 56,
+          padding: "32px 56px 80px",
+        }}
+      >
+        {/* Year jump-list */}
+        <aside style={{ position: "sticky", top: 32, alignSelf: "start" }}>
+          <div className="sc" style={{ color: "var(--muted)", marginBottom: 14 }}>
+            Years
+          </div>
+          {byYear.length === 0 ? (
+            <p
+              style={{
+                fontSize: 12,
+                color: "var(--muted)",
+                fontFamily: "var(--serif-body)",
+                fontStyle: "italic",
+              }}
+            >
+              No issues yet.
+            </p>
+          ) : (
+            <nav
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                fontSize: 13,
+              }}
+            >
+              {byYear.map(({ year, items }, i) => (
+                <a
+                  key={year ?? "undated"}
+                  href={`#year-${year ?? "undated"}`}
+                  style={{
+                    textDecoration: "none",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    color: i === 0 ? "var(--fg)" : "var(--fg-2)",
+                    fontWeight: i === 0 ? 600 : 400,
+                    borderLeft:
+                      i === 0
+                        ? "2px solid var(--amber)"
+                        : "2px solid var(--border)",
+                    padding: "1px 0 1px 10px",
+                    fontFamily: "var(--sans)",
+                  }}
+                >
+                  <span>{year ?? "Undated"}</span>
+                  <span
+                    className="tnum"
+                    style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: 11,
+                      color: "var(--muted)",
+                    }}
+                  >
+                    {items.length}
+                  </span>
+                </a>
+              ))}
+            </nav>
+          )}
+
+          <div className="rule" style={{ margin: "20px 0 16px" }} />
+          <div className="sc" style={{ color: "var(--muted)", marginBottom: 8 }}>
+            Span
+          </div>
+          <div
+            style={{
+              fontFamily: "var(--serif-display)",
+              fontSize: 22,
+              fontWeight: 500,
+              color: "var(--fg)",
+              lineHeight: 1.1,
+            }}
+            className="tnum"
+          >
+            {earliestYear && latestYear
+              ? earliestYear === latestYear
+                ? earliestYear
+                : `${earliestYear}–${latestYear}`
+              : "—"}
+          </div>
+          <div
+            style={{
+              fontSize: 12,
+              color: "var(--muted)",
+              fontFamily: "var(--sans)",
+              marginTop: 2,
+            }}
+          >
+            {published.length} {published.length === 1 ? "issue" : "issues"}
+          </div>
+        </aside>
+
+        {/* Main grid */}
+        <div style={{ minWidth: 0 }}>
+          {byYear.length === 0 ? (
+            <p
+              style={{
+                fontFamily: "var(--serif-body)",
+                fontSize: 16,
+                color: "var(--muted)",
+                margin: 0,
+              }}
+            >
+              No issues have been published yet.
+            </p>
+          ) : (
+            byYear.map(({ year, items }) => (
+              <section
+                key={year ?? "undated"}
+                id={`year-${year ?? "undated"}`}
+                style={{ marginBottom: 48 }}
               >
-                No issues have been published yet.
-              </p>
-            ) : (
-              byYear.map(({ year, items }) => (
-                <section key={year} className="mb-14 last:mb-0">
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "baseline",
+                    gap: 14,
+                    marginBottom: 22,
+                  }}
+                >
                   <h2
-                    className="text-fg mb-6"
+                    className="tnum"
                     style={{
                       fontFamily: "var(--serif-display)",
-                      fontWeight: 600,
+                      fontWeight: 500,
                       fontSize: 28,
-                      borderBottom: "1px solid var(--border)",
-                      paddingBottom: 8,
+                      letterSpacing: "-0.01em",
+                      margin: 0,
                     }}
                   >
                     {year ?? "Undated"}
                   </h2>
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-                    {items.map((issue) => {
-                      const slug = issue.urlPath ?? String(issue.id);
-                      const heading = pickLocale(issue.title, locale);
-                      const lineParts = [
-                        issue.volume ? `Vol. ${issue.volume}` : null,
-                        issue.number ? `No. ${issue.number}` : null,
-                      ].filter(Boolean);
-                      return (
-                        <li key={issue.id}>
-                          <p
-                            className="marginalia-num mb-1"
-                            style={{ fontFamily: "var(--serif-display)" }}
+                  <div
+                    style={{
+                      flex: 1,
+                      height: 1,
+                      background: "var(--border)",
+                    }}
+                  />
+                  <span className="sc" style={{ color: "var(--muted)" }}>
+                    {items.length} {items.length === 1 ? "issue" : "issues"}
+                  </span>
+                </div>
+                <ul
+                  style={{
+                    listStyle: "none",
+                    margin: 0,
+                    padding: 0,
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(280px, 1fr))",
+                    gap: 24,
+                  }}
+                >
+                  {items.map((issue) => {
+                    const slug = issue.urlPath ?? String(issue.id);
+                    const heading = pickLocale(issue.title, locale);
+                    const lineParts = [
+                      issue.volume ? `Vol. ${issue.volume}` : null,
+                      issue.number ? `No. ${issue.number}` : null,
+                    ].filter(Boolean);
+                    return (
+                      <li key={issue.id}>
+                        <Link
+                          href={`/issues/${slug}`}
+                          style={{
+                            display: "block",
+                            padding: "16px 18px",
+                            border: "1px solid var(--border)",
+                            borderRadius: 6,
+                            background: "var(--surface)",
+                            textDecoration: "none",
+                            color: "inherit",
+                          }}
+                        >
+                          <div
+                            className="marginalia-num"
+                            style={{ marginBottom: 6 }}
                           >
                             {issue.datePublished
                               ? new Date(issue.datePublished).toLocaleDateString(
                                   locale,
-                                  { day: "numeric", month: "long" },
+                                  {
+                                    day: "numeric",
+                                    month: "long",
+                                  },
                                 )
                               : ""}
-                          </p>
-                          <Link
-                            href={`/issues/${slug}`}
-                            className="text-fg hover:text-cobalt"
+                          </div>
+                          <div
                             style={{
                               fontFamily: "var(--serif-display)",
-                              fontWeight: 600,
-                              fontSize: 22,
+                              fontWeight: 500,
+                              fontSize: 19,
                               lineHeight: 1.25,
-                              display: "inline-block",
+                              color: "var(--fg)",
+                              letterSpacing: "-0.005em",
+                              marginBottom: heading && lineParts.length > 0 ? 4 : 0,
                             }}
                           >
-                            {heading || lineParts.join(" · ") || `Issue ${issue.id}`}
-                          </Link>
+                            {heading ||
+                              lineParts.join(" · ") ||
+                              `Issue ${issue.id}`}
+                          </div>
                           {lineParts.length > 0 && heading ? (
-                            <p
-                              className="text-fg-2 mt-1"
+                            <div
                               style={{
                                 fontFamily: "var(--sans)",
-                                fontSize: 13,
+                                fontSize: 12,
+                                color: "var(--muted)",
                               }}
                             >
                               {lineParts.join(" · ")}
-                            </p>
+                            </div>
                           ) : null}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </section>
-              ))
-            )}
-          </div>
-        </section>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))
+          )}
+        </div>
+      </section>
     </SiteChrome>
   );
 }

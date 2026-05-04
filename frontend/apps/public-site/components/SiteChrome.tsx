@@ -15,11 +15,14 @@ export type ActiveNav =
   | "contact"
   | null;
 
+/** Default tagline shown under the masthead on every page (uniformity). */
+export const DEFAULT_TAGLINE = "An open-access scholarly journal";
+
 export interface SiteChromeProps {
   journalName: string;
   /** Highlights the matching tab. */
   active?: ActiveNav;
-  /** Optional tagline shown under the masthead title. */
+  /** Override the default tagline shown under the masthead title. */
   tagline?: string;
   children: ReactNode;
 }
@@ -40,7 +43,7 @@ const NAV_ITEMS: Array<{ key: ActiveNav; href: string; label: string }> = [
 export async function SiteChrome({
   journalName,
   active = null,
-  tagline,
+  tagline = DEFAULT_TAGLINE,
   children,
 }: SiteChromeProps): Promise<ReactNode> {
   const { locale } = await getT();
@@ -109,11 +112,12 @@ export async function SiteChrome({
           </div>
         </div>
 
-        {/* Masthead */}
+        {/* Masthead — centered typography, full-width container per handoff */}
         <div
           style={{
             padding: "28px 56px 22px",
             borderBottom: "1px solid var(--border)",
+            textAlign: "center",
           }}
         >
           <Link
@@ -147,25 +151,24 @@ export async function SiteChrome({
           ) : null}
         </div>
 
-        {/* Tab nav */}
+        {/* Tab nav — centered group with search anchor on the right */}
         <nav
           style={{
             display: "flex",
+            justifyContent: "center",
             alignItems: "center",
             gap: 0,
             padding: "0 56px",
           }}
         >
-          {NAV_ITEMS.map((n, i) => {
+          {NAV_ITEMS.map((n) => {
             const isActive = active === n.key;
             return (
               <Link
                 key={n.key}
                 href={n.href}
                 style={{
-                  // Flush the first item with the page gutter so the nav
-                  // reads as anchored to the left rather than indented.
-                  padding: i === 0 ? "14px 22px 14px 0" : "14px 22px",
+                  padding: "14px 22px",
                   fontSize: 13,
                   fontWeight: 500,
                   color: isActive ? "var(--fg)" : "var(--fg-2)",
