@@ -14,4 +14,7 @@ public interface SubmissionAuthorRepository extends JpaRepository<SubmissionAuth
     long countBySubmissionId(Long submissionId);
 
     boolean existsBySubmissionIdAndCorrespondingTrue(Long submissionId);
+
+    /** Used by author profile pages — find every contribution under an ORCID iD. */
+    List<SubmissionAuthor> findByOrcidId(String orcidId);
 }

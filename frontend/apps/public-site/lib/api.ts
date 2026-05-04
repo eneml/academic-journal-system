@@ -197,6 +197,18 @@ export const fetchArticleGalleys = (slugOrId: string) =>
     `/api/v1/articles/${encodeURIComponent(slugOrId)}/galleys`,
   );
 
+export type AuthorProfile = {
+  orcidUrl: string;
+  givenName: string | null;
+  familyName: string | null;
+  affiliation: string | null;
+  worksCount: number;
+  works: PublicationSummary[];
+};
+
+export const fetchAuthorByOrcid = (orcid: string) =>
+  getJson<AuthorProfile>(`/api/v1/authors/${encodeURIComponent(orcid)}`);
+
 export type SearchHit = {
   publication: PublicationSummary;
   score: number;

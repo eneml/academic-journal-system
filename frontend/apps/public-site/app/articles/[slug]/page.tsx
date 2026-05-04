@@ -150,6 +150,55 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
             {title}
           </h1>
 
+          {article.authors && article.authors.length > 0 ? (
+            <p
+              className="mb-3"
+              style={{
+                fontFamily: "var(--serif-body)",
+                fontSize: 16,
+                lineHeight: 1.5,
+                color: "var(--fg-2)",
+              }}
+            >
+              {article.authors.map((a, i) => {
+                const fullName = [a.givenName, a.familyName]
+                  .filter(Boolean)
+                  .join(" ")
+                  .trim();
+                if (!fullName) return null;
+                const sep = i === 0
+                  ? null
+                  : i === article.authors.length - 1
+                    ? " & "
+                    : ", ";
+                if (a.orcidId) {
+                  const orcidShort = a.orcidId.replace(
+                    /^https?:\/\/orcid\.org\//,
+                    "",
+                  );
+                  return (
+                    <span key={`${i}-${fullName}`}>
+                      {sep}
+                      <Link
+                        href={`/authors/${encodeURIComponent(orcidShort)}`}
+                        className="text-fg hover:text-cobalt"
+                        style={{ textDecoration: "none" }}
+                      >
+                        {fullName}
+                      </Link>
+                    </span>
+                  );
+                }
+                return (
+                  <span key={`${i}-${fullName}`}>
+                    {sep}
+                    {fullName}
+                  </span>
+                );
+              })}
+            </p>
+          ) : null}
+
           {publishedAt ? (
             <p
               className="text-muted mb-10"

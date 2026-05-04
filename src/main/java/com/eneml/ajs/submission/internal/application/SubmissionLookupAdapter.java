@@ -33,4 +33,10 @@ class SubmissionLookupAdapter implements SubmissionLookup {
     public List<SubmissionAuthorSummary> authorsOf(Long submissionId) {
         return authorMapper.toSummaries(authorRepository.findBySubmissionId(submissionId));
     }
+
+    @Override
+    public List<SubmissionAuthorSummary> contributionsByOrcid(String orcidId) {
+        if (orcidId == null || orcidId.isBlank()) return List.of();
+        return authorMapper.toSummaries(authorRepository.findByOrcidId(orcidId.trim()));
+    }
 }
