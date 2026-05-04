@@ -1,11 +1,11 @@
 /**
- * Messaging module — in-app notifications, email templates, mailables,
- * email log. Pure consumer of domain events from other modules.
+ * Messaging module — in-app notifications. Pure consumer of domain
+ * events from other modules; email delivery + templates ship in a
+ * follow-up phase.
  *
- * <p>Owns: Notification, NotificationSubscription, EmailTemplate, EmailLog.
- * <br>Emits: NotificationCreated, EmailSent.
- * <br>Consumes: nearly every major domain event (SubmissionSubmitted,
- * ReviewerInvited, ReviewSubmitted, DecisionMade, PublicationPublished, ...).
+ * <p>Owns: Notification.
+ * <br>Emits: NotificationCreated.
+ * <br>Consumes: SubmissionSubmitted, DecisionMade, ReviewerInvited.
  */
 @org.springframework.modulith.ApplicationModule(
     displayName = "Messaging",
