@@ -97,6 +97,19 @@ class S3FileStorageService implements FileStorageService {
     }
 
     @Override
+    public InputStream openInputStream(Long fileId) {
+        StoredFile file = repository.findActiveById(fileId)
+                .orElseThrow(() -> NotFoundException.of("StoredFile", fileId));
+        // Returns ResponseInputStream<GetObjectResponse>, which is an InputStream
+        // that the caller must close (try-with-resources). The S3 client keeps the
+        // underlying connection live until close() is invoked.
+        return s3Client.getObject(GetObjectRequest.builder()
+                .bucket(props.bucket())
+                .key(file.getS3Key())
+                .build());
+    }
+
+    @Override
     public Optional<StoredFileMetadata> findById(Long fileId) {
         return repository.findActiveById(fileId).map(this::toMetadata);
     }

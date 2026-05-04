@@ -1,5 +1,6 @@
 package com.eneml.ajs.storage.api;
 
+import java.io.InputStream;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
@@ -23,6 +24,15 @@ public interface FileStorageService {
      *         browser/client. The URL is valid only for {@code ttl}.
      */
     URI downloadUrl(Long fileId, Duration ttl);
+
+    /**
+     * Server-side stream of the underlying object's bytes. Use this when
+     * the server itself needs to read the content (e.g. PDF merge for an
+     * issue download); for browser delivery prefer {@link #downloadUrl}
+     * to avoid proxying through the app. The caller is responsible for
+     * closing the stream.
+     */
+    InputStream openInputStream(Long fileId);
 
     Optional<StoredFileMetadata> findById(Long fileId);
 

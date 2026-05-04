@@ -1,5 +1,6 @@
 package com.eneml.ajs.issue.internal.web;
 
+import com.eneml.ajs.issue.internal.application.IssuePdfService;
 import com.eneml.ajs.issue.internal.application.IssueService;
 import com.eneml.ajs.issue.internal.domain.Issue;
 import com.eneml.ajs.issue.internal.web.dto.IssueResponse;
@@ -12,6 +13,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,6 +42,7 @@ class IssueController {
     private final IssueService service;
     private final IssueMapper mapper;
     private final PublicationLookup publicationLookup;
+    private final IssuePdfService issuePdfService;
 
     @GetMapping
     @Operation(summary = "List all issues")
@@ -65,6 +71,28 @@ class IssueController {
     @Operation(summary = "List the published articles in an issue (public TOC)")
     List<PublicationSummary> tableOfContents(@PathVariable Long id) {
         return publicationLookup.publishedInIssue(id);
+    }
+
+    @GetMapping(value = "/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @Operation(summary = "Combined-issue PDF — every article's approved PDF galley merged in TOC order (public)")
+    ResponseEntity<byte[]> issuePdf(@PathVariable Long id) {
+        IssuePdfService.IssuePdfResult result = issuePdfService.build(id);
+        if (result.isEmpty()) {
+            // Either no articles in the issue, or no approved PDF galleys yet.
+            // Surface as 404 rather than ship a 0-byte download.
+            throw NotFoundException.of("IssuePdf", id);
+        }
+        Issue issue = result.issue();
+        String filename = "issue-" + Optional.ofNullable(issue.getUrlPath())
+                .filter(s -> !s.isBlank())
+                .orElseGet(() -> String.valueOf(issue.getId())) + ".pdf";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(org.springframework.http.ContentDisposition
+                .attachment().filename(filename).build());
+        // Issues are immutable once published — let CDNs cache aggressively.
+        headers.setCacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePublic());
+        return new ResponseEntity<>(result.pdf(), headers, org.springframework.http.HttpStatus.OK);
     }
 
     @PostMapping
