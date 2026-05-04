@@ -1,0 +1,128 @@
+# Production-style compose file. Differences from the dev compose:
+#   * The Spring Boot backend ships as a built image (Dockerfile in repo root).
+#   * Public ports are bound only to localhost — front a reverse proxy
+#     (nginx, Caddy, Traefik) for TLS and to expose what's actually public.
+#   * MinIO is replaced with an Amazon S3 / Cloudflare R2 bucket; if you
+#     still need self-hosted S3 keep the dev minio service.
+#   * Mailpit is replaced by a real SMTP relay (Resend, Postmark, …) — set
+#     MAIL_HOST / MAIL_USERNAME / MAIL_PASSWORD in your .env.
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# All sensitive values come from environment variables — never hardcode them.
+
+services:
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-academic_journal}
+      POSTGRES_USER: ${DB_USERNAME:-journal}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-journal} -d ${DB_NAME:-academic_journal}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # No exposed port: backend talks to it on the internal network.
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    restart: unless-stopped
+    command: start --optimized
+    environment:
+      KC_HOSTNAME: ${KC_HOSTNAME:?Set the public hostname for Keycloak}
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${KC_DB_NAME:-keycloak}
+      KC_DB_USERNAME: ${KC_DB_USERNAME:?KC_DB_USERNAME required}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD:?KC_DB_PASSWORD required}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?KEYCLOAK_ADMIN_PASSWORD required}
+      KC_HEALTH_ENABLED: "true"
+      KC_HTTP_PORT: 8081
+    ports:
+      - "127.0.0.1:8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    image: ${APP_IMAGE:-ajs-backend:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-academic_journal}
+      DB_USERNAME: ${DB_USERNAME:-journal}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD required}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI:?Set the issuer URI for the production realm}
+      # Object storage — point at your S3/R2 bucket
+      S3_ENDPOINT: ${S3_ENDPOINT:?S3_ENDPOINT required}
+      S3_REGION: ${S3_REGION:-auto}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?S3_ACCESS_KEY required}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY required}
+      S3_BUCKET: ${S3_BUCKET:?S3_BUCKET required}
+      S3_PATH_STYLE: ${S3_PATH_STYLE:-false}
+      # Outbound mail (SMTP relay — Resend, Postmark, SES, …)
+      MAIL_HOST: ${MAIL_HOST:?MAIL_HOST required}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:?MAIL_USERNAME required}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:?MAIL_PASSWORD required}
+      MAIL_AUTH: "true"
+      MAIL_STARTTLS: "true"
+      MAIL_FROM: ${MAIL_FROM:?MAIL_FROM required}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Academic Journal}
+      # Public URLs — used by emails, sitemap, CrossRef deposits
+      APP_BASE_URL: ${APP_BASE_URL:?APP_BASE_URL required}
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:?PUBLIC_SITE_URL required}
+      EDITORIAL_APP_URL: ${EDITORIAL_APP_URL:?EDITORIAL_APP_URL required}
+      # External integrations (off unless explicitly enabled)
+      CROSSREF_ENABLED: ${CROSSREF_ENABLED:-false}
+      CROSSREF_DEPOSIT_URL: ${CROSSREF_DEPOSIT_URL:-https://test.crossref.org/servlet/deposit}
+      CROSSREF_USERNAME: ${CROSSREF_USERNAME:-}
+      CROSSREF_PASSWORD: ${CROSSREF_PASSWORD:-}
+      ORCID_ENABLED: ${ORCID_ENABLED:-false}
+      ORCID_API_URL: ${ORCID_API_URL:-https://api.sandbox.orcid.org}
+      ORCID_CLIENT_ID: ${ORCID_CLIENT_ID:-}
+      ORCID_CLIENT_SECRET: ${ORCID_CLIENT_SECRET:-}
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health/readiness | grep -q UP || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+
+volumes:
+  postgres-data:
+  redis-data:
