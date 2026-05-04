@@ -78,14 +78,7 @@ class SubmissionController {
     @Operation(summary = "Get a submission")
     SubmissionResponse get(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         Submission s = service.get(id);
-        // Owner sees their own; editors and admins see anything else.
-        boolean isOwner = s.getSubmittedByUserId().equals(currentUserId(jwt));
-        boolean isEditor = jwt.getClaimAsStringList("realm_access.roles") != null
-                || hasEditorialAuthority(jwt);
-        if (!isOwner && !isEditor) {
-            throw new org.springframework.security.access.AccessDeniedException(
-                    "Not allowed to view submission " + id);
-        }
+        ensureOwnerOrEditor(jwt, s);
         return mapper.toResponse(s);
     }
 
@@ -95,6 +88,7 @@ class SubmissionController {
     SubmissionResponse updateDetails(@AuthenticationPrincipal Jwt jwt,
                                      @PathVariable Long id,
                                      @Valid @RequestBody SubmissionDetailsRequest request) {
+        ensureOwnerOrEditor(jwt, service.get(id));
         return mapper.toResponse(service.updateDetails(id, request, currentUserId(jwt)));
     }
 
@@ -102,6 +96,7 @@ class SubmissionController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Finalize draft and hand off to editorial workflow")
     SubmissionResponse submit(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        ensureOwnerOrEditor(jwt, service.get(id));
         return mapper.toResponse(service.submit(id, currentUserId(jwt)));
     }
 
@@ -109,8 +104,22 @@ class SubmissionController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Delete a draft submission (only DRAFT)")
     ResponseEntity<Void> deleteDraft(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        ensureOwnerOrEditor(jwt, service.get(id));
         service.deleteDraft(id, currentUserId(jwt));
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Either the submission's owner or an editor (any of EDITOR /
+     * SECTION_EDITOR / ADMIN) may proceed. Authors of OTHER submissions
+     * — even if they're authenticated — are forbidden.
+     */
+    private void ensureOwnerOrEditor(Jwt jwt, Submission s) {
+        Long me = currentUserId(jwt);
+        if (s.getSubmittedByUserId() != null && s.getSubmittedByUserId().equals(me)) return;
+        if (hasEditorialAuthority(jwt)) return;
+        throw new org.springframework.security.access.AccessDeniedException(
+                "Not allowed to access submission " + s.getId());
     }
 
     private Long currentUserId(Jwt jwt) {

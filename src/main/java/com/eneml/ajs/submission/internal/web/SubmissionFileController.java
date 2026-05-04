@@ -37,10 +37,13 @@ class SubmissionFileController {
 
     private final SubmissionFileService service;
     private final UserDirectoryService userDirectory;
+    private final SubmissionAccessGuard guard;
 
     @GetMapping
     @Operation(summary = "List files on a submission")
-    List<SubmissionFileResponse> list(@PathVariable Long submissionId) {
+    List<SubmissionFileResponse> list(@AuthenticationPrincipal Jwt jwt,
+                                       @PathVariable Long submissionId) {
+        guard.requireOwnerOrEditor(jwt, submissionId);
         return service.list(submissionId);
     }
 
@@ -53,6 +56,7 @@ class SubmissionFileController {
             @RequestParam("fileStage") @NotNull FileStage fileStage,
             @RequestParam("genreId") @Positive Long genreId,
             @RequestParam(value = "locale", required = false) String locale) throws IOException {
+        guard.requireOwnerOrEditor(jwt, submissionId);
 
         Long userId = userDirectory.findByKeycloakSub(jwt.getSubject())
                 .orElseThrow(() -> new IllegalStateException(
@@ -73,13 +77,19 @@ class SubmissionFileController {
 
     @GetMapping("/{fileId}/download-url")
     @Operation(summary = "Get a short-lived presigned URL to download the file")
-    DownloadUrlResponse downloadUrl(@PathVariable Long submissionId, @PathVariable Long fileId) {
+    DownloadUrlResponse downloadUrl(@AuthenticationPrincipal Jwt jwt,
+                                     @PathVariable Long submissionId,
+                                     @PathVariable Long fileId) {
+        guard.requireOwnerOrEditor(jwt, submissionId);
         return new DownloadUrlResponse(service.downloadUrl(fileId).toString());
     }
 
     @DeleteMapping("/{fileId}")
     @Operation(summary = "Detach a file from the submission")
-    ResponseEntity<Void> remove(@PathVariable Long submissionId, @PathVariable Long fileId) {
+    ResponseEntity<Void> remove(@AuthenticationPrincipal Jwt jwt,
+                                 @PathVariable Long submissionId,
+                                 @PathVariable Long fileId) {
+        guard.requireOwnerOrEditor(jwt, submissionId);
         service.remove(submissionId, fileId);
         return ResponseEntity.noContent().build();
     }
