@@ -110,6 +110,63 @@ public class OrcidAuthService {
         return repository.findById(userId);
     }
 
+    /**
+     * Refresh a near-expired access token using its stored refresh token.
+     * Call right before pushing a work record so the OAuth bearer never
+     * 401s on us. Returns {@code Optional.empty()} if no refresh token is
+     * on file or the rotation fails — caller should mark the deposit SKIPPED.
+     */
+    @Transactional
+    public Optional<OrcidCredentials> refreshIfNeeded(OrcidCredentials creds) {
+        if (creds == null) return Optional.empty();
+        if (!shouldRefresh(creds)) return Optional.of(creds);
+        if (creds.getRefreshToken() == null || creds.getRefreshToken().isBlank()) {
+            log.warn("ORCID credentials for user {} expired but no refresh token on file",
+                    creds.getUserId());
+            return Optional.empty();
+        }
+        IntegrationProperties.Orcid cfg = properties.orcid();
+        try {
+            MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+            form.add("client_id", cfg.clientId());
+            form.add("client_secret", cfg.clientSecret());
+            form.add("grant_type", "refresh_token");
+            form.add("refresh_token", creds.getRefreshToken());
+            TokenResponse token = http.post()
+                    .uri(cfg.apiUrl() + "/oauth/token")
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .body(form)
+                    .retrieve()
+                    .body(TokenResponse.class);
+            if (token == null || token.accessToken() == null) {
+                return Optional.empty();
+            }
+            creds.setAccessToken(token.accessToken());
+            // ORCID may rotate the refresh token; keep the existing one if it doesn't.
+            if (token.refreshToken() != null && !token.refreshToken().isBlank()) {
+                creds.setRefreshToken(token.refreshToken());
+            }
+            if (token.scope() != null && !token.scope().isBlank()) {
+                creds.setScope(token.scope());
+            }
+            creds.setExpiresAt(token.expiresIn() == null ? null
+                    : Instant.now().plusSeconds(token.expiresIn()));
+            return Optional.of(repository.save(creds));
+        } catch (RuntimeException e) {
+            log.warn("ORCID refresh failed for user {}: {}",
+                    creds.getUserId(), e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    private static boolean shouldRefresh(OrcidCredentials creds) {
+        if (creds.getExpiresAt() == null) return false;
+        // Refresh anything that expires within the next 60s — gives a buffer
+        // so a token doesn't go stale mid-flight between the check and the PUT.
+        return creds.getExpiresAt().isBefore(Instant.now().plusSeconds(60));
+    }
+
     private TokenResponse exchangeCodeForToken(String code, IntegrationProperties.Orcid cfg) {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("client_id", cfg.clientId());

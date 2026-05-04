@@ -150,9 +150,15 @@ public class DepositService {
             r.markSkipped("No ORCID credentials on file for user " + actorUserId);
             return;
         }
+        // Rotate the access token if it's about to expire (or already has).
+        Optional<OrcidCredentials> refreshed = orcidAuthService.refreshIfNeeded(creds.get());
+        if (refreshed.isEmpty()) {
+            r.markSkipped("ORCID token expired and refresh failed for user " + actorUserId);
+            return;
+        }
         String xml = orcidWorkGenerator.generate(r.getSubjectId());
         r.setPayload(xml);
-        OrcidClient.Result result = orcidClient.pushWork(creds.get(), xml);
+        OrcidClient.Result result = orcidClient.pushWork(refreshed.get(), xml);
         r.markSent(result.responseBody());
         if (result.accepted()) {
             r.markAccepted(result.putCode());

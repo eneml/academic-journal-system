@@ -33,7 +33,9 @@ class OrcidClient {
             return new Result(false, null, null, "No ORCID credentials on file");
         }
         if (creds.isExpired()) {
-            return new Result(false, null, null, "ORCID access token expired (refresh not yet wired)");
+            // Dispatcher refreshes via OrcidAuthService.refreshIfNeeded before
+            // reaching us. Hitting this branch means the refresh itself failed.
+            return new Result(false, null, null, "ORCID access token expired (refresh failed)");
         }
         IntegrationProperties.Orcid cfg = properties.orcid();
         String url = cfg.apiUrl() + "/v3.0/" + creds.getOrcidId() + "/work";
