@@ -4,6 +4,7 @@ import type { Metadata, ResolvingMetadata } from "next";
 import type { ReactNode } from "react";
 import {
   fetchArticle,
+  fetchArticleGalleys,
   fetchArticleVersions,
   fetchJournalConfig,
   fetchActiveSections,
@@ -62,11 +63,12 @@ export async function generateMetadata(
 
 export default async function ArticlePage({ params }: Props): Promise<ReactNode> {
   const { slug } = await params;
-  const [article, config, sections, versions] = await Promise.all([
+  const [article, config, sections, versions, galleys] = await Promise.all([
     fetchArticle(slug),
     fetchJournalConfig(),
     fetchActiveSections(),
     fetchArticleVersions(slug),
+    fetchArticleGalleys(slug),
   ]);
 
   if (!article) {
@@ -210,14 +212,89 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
             </section>
           ) : null}
 
-          <section className="reading dropcap">
-            <p>
-              Full text and downloadable galleys (PDF, JATS XML, HTML) will
-              appear here once the production phase wires Galley publishing.
-              For now this page renders the metadata captured at publication
-              time so the article is citable and discoverable.
-            </p>
-          </section>
+          {galleys && galleys.length > 0 ? (
+            <section className="mb-12">
+              <p
+                className="sc text-muted mb-3"
+                style={{ fontSize: 10.5, fontWeight: 600 }}
+              >
+                Read the article
+              </p>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  flexWrap: "wrap",
+                  marginBottom: 18,
+                }}
+              >
+                {galleys.map((g) => {
+                  const labelText =
+                    pickLocale(g.label, locale) ||
+                    (g.remoteUrl ? "External link" : "Download");
+                  const downloadUrl =
+                    `${API_BASE_URL}/api/v1/articles/${encodeURIComponent(slug)}/galleys/${g.id}/download-url`;
+                  return (
+                    <a
+                      key={g.id}
+                      href={downloadUrl}
+                      style={{
+                        padding: "8px 14px",
+                        border: "1px solid var(--cobalt)",
+                        borderRadius: "var(--r-2)",
+                        background: "var(--cobalt)",
+                        color: "white",
+                        textDecoration: "none",
+                        fontFamily: "var(--sans)",
+                        fontSize: 13,
+                        fontWeight: 500,
+                      }}
+                    >
+                      {labelText}
+                    </a>
+                  );
+                })}
+              </div>
+              {(() => {
+                const pdfGalley = galleys.find((g) =>
+                  (pickLocale(g.label, locale) || "").toLowerCase().includes("pdf"),
+                );
+                if (!pdfGalley) return null;
+                const previewUrl = `${API_BASE_URL}/api/v1/articles/${encodeURIComponent(slug)}/galleys/${pdfGalley.id}/download-url`;
+                // The presigned URL response is JSON {url}; redirecting via
+                // server-rendered link is the simplest path. Inline preview
+                // requires resolving that redirect — we render a link plus a
+                // hint, leaving the actual viewer to the browser's default.
+                return (
+                  <p
+                    style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: 11,
+                      color: "var(--muted)",
+                      margin: 0,
+                    }}
+                  >
+                    PDF available · open in browser:{" "}
+                    <a
+                      href={previewUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: "var(--cobalt)" }}
+                    >
+                      preview
+                    </a>
+                  </p>
+                );
+              })()}
+            </section>
+          ) : (
+            <section className="reading dropcap">
+              <p>
+                The full text of this article is being prepared. Citation
+                metadata is available below.
+              </p>
+            </section>
+          )}
 
           {versions && versions.length > 1 ? (
             <section

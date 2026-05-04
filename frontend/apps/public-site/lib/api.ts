@@ -178,6 +178,25 @@ export const fetchArticleVersions = (slugOrId: string) =>
     `/api/v1/articles/${encodeURIComponent(slugOrId)}/versions`,
   );
 
+export type GalleySummary = {
+  id: number;
+  publicationId: number;
+  submissionFileId: number | null;
+  remoteUrl: string | null;
+  locale: string | null;
+  label: Record<string, string>;
+  seq: number;
+  approved: boolean;
+  urlPath: string | null;
+  doiId: number | null;
+  updatedAt: string | null;
+};
+
+export const fetchArticleGalleys = (slugOrId: string) =>
+  getJson<GalleySummary[]>(
+    `/api/v1/articles/${encodeURIComponent(slugOrId)}/galleys`,
+  );
+
 export type SearchHit = {
   publication: PublicationSummary;
   score: number;

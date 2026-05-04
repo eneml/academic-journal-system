@@ -101,6 +101,54 @@ class PublicationController {
         catch (NumberFormatException e) { return java.util.Optional.empty(); }
     }
 
+    @GetMapping("/articles/{slugOrId}/galleys")
+    @Operation(summary = "List approved galleys for a published article (public)")
+    java.util.List<com.eneml.ajs.publication.api.GalleySummary> articleGalleys(
+            @PathVariable String slugOrId,
+            @org.springframework.beans.factory.annotation.Autowired
+            com.eneml.ajs.publication.api.GalleyLookup galleyLookup) {
+        var summary = lookup.findByUrlPath(slugOrId)
+                .or(() -> tryNumeric(slugOrId).flatMap(lookup::findById))
+                .orElse(null);
+        if (summary == null
+                || summary.status() != com.eneml.ajs.publication.api.PublicationStatus.PUBLISHED) {
+            throw com.eneml.ajs.shared.exception.NotFoundException.of("Article", slugOrId);
+        }
+        return galleyLookup.approvedGalleysOfPublication(summary.id());
+    }
+
+    @GetMapping("/articles/{slugOrId}/galleys/{galleyId}/download-url")
+    @Operation(summary = "Get a short-lived presigned URL for a galley's underlying file (public for OPEN articles)")
+    java.util.Map<String, String> articleGalleyDownloadUrl(
+            @PathVariable String slugOrId,
+            @PathVariable Long galleyId,
+            @org.springframework.beans.factory.annotation.Autowired
+            com.eneml.ajs.publication.api.GalleyLookup galleyLookup,
+            @org.springframework.beans.factory.annotation.Autowired
+            com.eneml.ajs.storage.api.FileStorageService fileStorage) {
+        var summary = lookup.findByUrlPath(slugOrId)
+                .or(() -> tryNumeric(slugOrId).flatMap(lookup::findById))
+                .orElse(null);
+        if (summary == null
+                || summary.status() != com.eneml.ajs.publication.api.PublicationStatus.PUBLISHED
+                || summary.accessStatus() != com.eneml.ajs.publication.api.AccessStatus.OPEN) {
+            throw com.eneml.ajs.shared.exception.NotFoundException.of("Article", slugOrId);
+        }
+        var galley = galleyLookup.findById(galleyId)
+                .filter(g -> summary.id().equals(g.publicationId()))
+                .filter(com.eneml.ajs.publication.api.GalleySummary::approved)
+                .orElseThrow(() -> com.eneml.ajs.shared.exception.NotFoundException.of("Galley", galleyId));
+        if (galley.remoteUrl() != null && !galley.remoteUrl().isBlank()) {
+            return java.util.Map.of("url", galley.remoteUrl());
+        }
+        if (galley.submissionFileId() == null) {
+            throw com.eneml.ajs.shared.exception.NotFoundException.of("GalleyFile", galleyId);
+        }
+        java.net.URI uri = fileStorage.downloadUrl(galley.submissionFileId(),
+                java.time.Duration.ofMinutes(15));
+        return java.util.Map.of("url", uri.toString());
+    }
+
     @GetMapping("/articles/{slugOrId}/versions")
     @Operation(summary = "List all PUBLISHED versions of an article (public)")
     List<com.eneml.ajs.publication.api.PublicationSummary> articleVersions(
