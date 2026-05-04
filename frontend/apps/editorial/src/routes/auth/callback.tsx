@@ -1,10 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
+import type { User } from "oidc-client-ts";
 import { getUserManager } from "../../auth/oidc";
 
 export const Route = createFileRoute("/auth/callback")({
   component: AuthCallback,
 });
+
+// Module-scoped promise so React StrictMode's double-effect doesn't run the
+// token exchange twice — the second call would hit Keycloak with the same
+// `?code=` and get rejected as "code already used".
+let inflight: Promise<User | void> | null = null;
 
 function AuthCallback(): ReactNode {
   const navigate = useNavigate();
@@ -16,7 +22,10 @@ function AuthCallback(): ReactNode {
 
     async function run(): Promise<void> {
       try {
-        await manager.signinRedirectCallback();
+        if (!inflight) {
+          inflight = manager.signinRedirectCallback();
+        }
+        await inflight;
         if (!cancelled) {
           // Token exchange done; bounce to the dashboard. The AuthProvider's
           // userLoaded listener has already updated context state.
@@ -24,7 +33,7 @@ function AuthCallback(): ReactNode {
         }
       } catch (err) {
         if (!cancelled) {
-           
+          // eslint-disable-next-line no-console
           console.error("OIDC callback failed:", err);
           setError(err instanceof Error ? err.message : "Sign-in failed");
         }
