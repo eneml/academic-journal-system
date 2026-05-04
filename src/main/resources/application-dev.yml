@@ -1,9 +1,11 @@
 spring:
   jpa:
-    show-sql: true
+    # show-sql + format_sql off by default to keep the dev console readable.
+    # Flip to true when you actually want to inspect SQL.
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
   flyway:
     baseline-on-migrate: true
 
@@ -11,13 +13,25 @@ logging:
   level:
     com.eneml.ajs: DEBUG
     org.springframework.web: INFO
-    org.hibernate.SQL: DEBUG
-    org.hibernate.orm.jdbc.bind: TRACE
+    # Hibernate SQL/bind logging only when explicitly asked. Setting these to
+    # DEBUG/TRACE multiplies the dev log volume by ~10x and drowns out actual
+    # errors. Leave them at INFO; flip on a per-class basis when debugging.
+    org.hibernate.SQL: INFO
+    org.hibernate.orm.jdbc.bind: INFO
+    # OpenTelemetry exporter complains every cycle when no OTLP collector is
+    # running locally — silence its noisy stack-trace ERRORs since they aren't
+    # actionable in dev. Re-enable by setting OTEL_ENDPOINT to a real collector
+    # and letting Spring Boot pick it up via management.otlp.tracing.endpoint.
+    io.opentelemetry.exporter.internal.http.HttpExporter: "OFF"
+    io.opentelemetry.exporter.sender.okhttp.internal.RetryInterceptor: "OFF"
 
 management:
   endpoint:
     health:
       show-details: always
   tracing:
+    # No collector in dev by default — leave sampling at 0 so we don't spam
+    # the OTel exporter with spans it can't deliver. Override per-developer
+    # by exporting OTEL_TRACING_SAMPLING_PROBABILITY=1.0 + a real endpoint.
     sampling:
-      probability: 1.0
+      probability: ${OTEL_TRACING_SAMPLING_PROBABILITY:0}

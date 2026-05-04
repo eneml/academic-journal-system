@@ -185,7 +185,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
 
 function Sidebar(): ReactNode {
   const { roles, user } = useAuth();
-  const badges = useBadgeCounts(user != null);
+  const badges = useBadgeCounts(user != null, roles);
 
   return (
     <aside
@@ -725,27 +725,43 @@ function useBreadcrumb(): Array<{ label: string; href?: string }> {
 }
 
 /**
- * Lightweight badge counter — fires four optional API calls on shell mount,
- * each non-blocking and best-effort. A failed call leaves the badge
- * undefined (no number shown). Re-runs only when the user changes (sign in /
- * sign out), not on every navigation.
+ * Lightweight badge counter — fires up-to-four optional API calls on shell
+ * mount, each non-blocking and best-effort. A failed call leaves the badge
+ * undefined (no number shown). Re-runs only when sign-in state changes.
+ *
+ * <p>Each call is gated by the role(s) that can actually use the endpoint
+ * — querying /submissions?status=QUEUED as a plain author would 403, which
+ * is correct backend behaviour but pollutes the dev console for nothing.
  */
-function useBadgeCounts(authenticated: boolean): Record<BadgeSource, number | undefined> {
+function useBadgeCounts(
+  authenticated: boolean,
+  roles: RealmRole[],
+): Record<BadgeSource, number | undefined> {
   const [state, setState] = useState<Record<BadgeSource, number | undefined>>({
     MY_SUBMISSIONS: undefined,
     MY_REVIEWS: undefined,
     EDITOR_QUEUE: undefined,
     NOTIFICATIONS: undefined,
   });
+  // Stable string identity for the role array so the effect doesn't churn on
+  // every render — useAuth() can return a fresh array even when membership
+  // is unchanged.
+  const rolesKey = roles.slice().sort().join(",");
   useEffect(() => {
     if (!authenticated) return;
     let cancelled = false;
-    const runs: Array<[BadgeSource, string]> = [
-      ["MY_SUBMISSIONS", "/api/v1/submissions/me?size=1"],
-      ["MY_REVIEWS", "/api/v1/reviewer/assignments?size=1"],
-      ["EDITOR_QUEUE", "/api/v1/submissions?status=QUEUED&size=1"],
-      ["NOTIFICATIONS", "/api/v1/notifications?unread=true&size=1"],
-    ];
+    const runs: Array<[BadgeSource, string]> = [];
+    if (hasRole(roles, "AUTHOR")) {
+      runs.push(["MY_SUBMISSIONS", "/api/v1/submissions/me?size=1"]);
+    }
+    if (hasRole(roles, "REVIEWER")) {
+      runs.push(["MY_REVIEWS", "/api/v1/reviewer/assignments?size=1"]);
+    }
+    if (isEditorial(roles)) {
+      runs.push(["EDITOR_QUEUE", "/api/v1/submissions?status=QUEUED&size=1"]);
+    }
+    // Notifications are per-user, so always available for any signed-in user.
+    runs.push(["NOTIFICATIONS", "/api/v1/notifications?unread=true&size=1"]);
     void Promise.all(
       runs.map(async ([key, url]) => {
         const data = await api<{ totalElements?: number; total?: number }>(url);
@@ -759,7 +775,8 @@ function useBadgeCounts(authenticated: boolean): Record<BadgeSource, number | un
     return () => {
       cancelled = true;
     };
-  }, [authenticated]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authenticated, rolesKey]);
   return state;
 }
 
