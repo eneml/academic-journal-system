@@ -28,6 +28,14 @@ class PublicationController {
 
     private final PublicationService service;
     private final PublicationMapper mapper;
+    private final com.eneml.ajs.publication.api.PublicationLookup lookup;
+
+    @GetMapping("/publications/recent")
+    @Operation(summary = "Most recently published publications (public)")
+    java.util.List<com.eneml.ajs.publication.api.PublicationSummary> recent(
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "12") int limit) {
+        return lookup.latestPublished(limit);
+    }
 
     @GetMapping("/submissions/{submissionId}/publications")
     @PreAuthorize("isAuthenticated()")

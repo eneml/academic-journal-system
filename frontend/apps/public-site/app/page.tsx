@@ -1,7 +1,40 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import {
+  fetchActiveSections,
+  fetchIssues,
+  fetchJournalConfig,
+  fetchRecentPublications,
+  pickLocale,
+} from "@/lib/api";
 
-export default function HomePage(): ReactNode {
+export const revalidate = 60;
+
+export default async function HomePage(): Promise<ReactNode> {
+  const [config, sections, recent, issues] = await Promise.all([
+    fetchJournalConfig(),
+    fetchActiveSections(),
+    fetchRecentPublications(6),
+    fetchIssues(),
+  ]);
+
+  const locale = config?.defaultLocale ?? "en";
+  const journalName = pickLocale(config?.name, locale) || "Academic Journal";
+  const currentIssue = (issues ?? [])
+    .filter((i) => i.published)
+    .sort((a, b) =>
+      (b.datePublished ?? "").localeCompare(a.datePublished ?? ""),
+    )[0];
+  const currentIssueLine = currentIssue
+    ? [
+        currentIssue.volume ? `Vol. ${currentIssue.volume}` : null,
+        currentIssue.number ? `No. ${currentIssue.number}` : null,
+        currentIssue.year ? `${currentIssue.year}` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "Forthcoming";
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-border">
@@ -9,9 +42,13 @@ export default function HomePage(): ReactNode {
           <Link
             href="/"
             className="text-fg"
-            style={{ fontFamily: "var(--serif-display)", fontWeight: 600, fontSize: 18 }}
+            style={{
+              fontFamily: "var(--serif-display)",
+              fontWeight: 600,
+              fontSize: 18,
+            }}
           >
-            Academic Journal
+            {journalName}
           </Link>
           <nav className="flex gap-6 text-sm">
             <Link href="/" className="text-fg-2 hover:text-cobalt">
@@ -20,6 +57,15 @@ export default function HomePage(): ReactNode {
             <Link href="/about" className="text-fg-2 hover:text-cobalt">
               About
             </Link>
+            {(sections ?? []).slice(0, 3).map((s) => (
+              <Link
+                key={s.id}
+                href={`/sections/${s.code}`}
+                className="text-fg-2 hover:text-cobalt"
+              >
+                {pickLocale(s.title, locale) || s.code}
+              </Link>
+            ))}
           </nav>
         </div>
       </header>
@@ -37,7 +83,7 @@ export default function HomePage(): ReactNode {
                 fontWeight: 600,
               }}
             >
-              Volume 12 &middot; 2026
+              {currentIssueLine}
             </p>
             <h1
               className="text-fg"
@@ -50,7 +96,7 @@ export default function HomePage(): ReactNode {
                 maxWidth: "16ch",
               }}
             >
-              Academic Journal
+              {journalName}
             </h1>
             <p
               className="text-fg-2 mt-6"
@@ -62,58 +108,103 @@ export default function HomePage(): ReactNode {
               }}
             >
               A scholarly journal of original peer-reviewed research.
+              {config?.submissionsOpen ? " Submissions are open." : ""}
             </p>
           </div>
         </section>
 
         <section className="border-b border-border">
-          <div className="max-w-6xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-3 gap-10">
-            <article>
-              <p className="text-xs uppercase tracking-widest text-muted mb-3">Latest issue</p>
-              <h2
-                className="text-fg mb-2"
-                style={{ fontFamily: "var(--serif-display)", fontWeight: 600, fontSize: 22 }}
-              >
-                Issue placeholder
-              </h2>
-              <p className="text-fg-2" style={{ fontFamily: "var(--serif-body)", fontSize: 15 }}>
-                The most recent issue will be surfaced here once content is wired through the API.
+          <div className="max-w-6xl mx-auto px-6 py-16">
+            <div className="flex items-baseline justify-between mb-8">
+              <p className="text-xs uppercase tracking-widest text-muted">
+                Latest articles
               </p>
-            </article>
-            <article>
-              <p className="text-xs uppercase tracking-widest text-muted mb-3">Featured articles</p>
-              <h2
-                className="text-fg mb-2"
-                style={{ fontFamily: "var(--serif-display)", fontWeight: 600, fontSize: 22 }}
+              {currentIssue ? (
+                <Link
+                  href={`/issues/${currentIssue.urlPath ?? currentIssue.id}`}
+                  className="text-cobalt text-sm"
+                  style={{ fontFamily: "var(--sans)" }}
+                >
+                  Read the current issue →
+                </Link>
+              ) : null}
+            </div>
+
+            {recent && recent.length > 0 ? (
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-12">
+                {recent.map((p) => (
+                  <li key={p.id}>
+                    <p
+                      className="marginalia-num mb-2"
+                      style={{ fontFamily: "var(--serif-display)" }}
+                    >
+                      {p.datePublished
+                        ? new Date(p.datePublished).getFullYear()
+                        : ""}
+                    </p>
+                    <h2
+                      className="text-fg mb-3"
+                      style={{
+                        fontFamily: "var(--serif-display)",
+                        fontWeight: 600,
+                        fontSize: 22,
+                        lineHeight: 1.25,
+                      }}
+                    >
+                      <Link
+                        href={`/articles/${p.urlPath ?? p.id}`}
+                        className="hover:text-cobalt"
+                      >
+                        {pickLocale(p.title, locale) || "Untitled"}
+                      </Link>
+                    </h2>
+                    <p
+                      className="text-fg-2"
+                      style={{
+                        fontFamily: "var(--serif-body)",
+                        fontSize: 15,
+                        lineHeight: 1.55,
+                      }}
+                    >
+                      {truncate(pickLocale(p.abstractText, locale), 220)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p
+                className="text-fg-2"
+                style={{ fontFamily: "var(--serif-body)" }}
               >
-                Article placeholder
-              </h2>
-              <p className="text-fg-2" style={{ fontFamily: "var(--serif-body)", fontSize: 15 }}>
-                Editor-curated articles will appear in this slot.
+                No articles published yet. Check back soon.
               </p>
-            </article>
-            <article>
-              <p className="text-xs uppercase tracking-widest text-muted mb-3">About</p>
-              <h2
-                className="text-fg mb-2"
-                style={{ fontFamily: "var(--serif-display)", fontWeight: 600, fontSize: 22 }}
-              >
-                About the journal
-              </h2>
-              <p className="text-fg-2" style={{ fontFamily: "var(--serif-body)", fontSize: 15 }}>
-                Mission statement, scope, and editorial board will live here.
-              </p>
-            </article>
+            )}
           </div>
         </section>
       </main>
 
       <footer className="border-t border-border">
         <div className="max-w-6xl mx-auto px-6 py-8 flex flex-wrap items-center justify-between gap-4 text-sm text-muted">
-          <p>© {new Date().getFullYear()} Academic Journal. All rights reserved.</p>
-          <p style={{ fontFamily: "var(--mono)", fontSize: 12 }}>ISSN placeholder</p>
+          <p>
+            © {new Date().getFullYear()} {journalName}. All rights reserved.
+          </p>
+          {config?.contactEmail ? (
+            <a
+              href={`mailto:${config.contactEmail}`}
+              className="hover:text-cobalt"
+              style={{ fontFamily: "var(--mono)", fontSize: 12 }}
+            >
+              {config.contactEmail}
+            </a>
+          ) : null}
         </div>
       </footer>
     </div>
   );
+}
+
+function truncate(s: string, max: number): string {
+  if (!s) return "";
+  if (s.length <= max) return s;
+  return s.slice(0, max).replace(/\s+\S*$/, "") + "…";
 }

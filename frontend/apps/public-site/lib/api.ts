@@ -1,0 +1,95 @@
+/**
+ * Typed fetchers for the public reading site. Server-side only —
+ * uses the backend's public read endpoints (no auth required).
+ *
+ * All fetches use Next.js's revalidate so pages stay statically
+ * cacheable while picking up backend changes within a minute.
+ */
+
+const BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+
+const REVALIDATE_SECONDS = 60;
+
+export type JournalConfig = {
+  name: Record<string, string>;
+  defaultLocale: string;
+  supportedLocales: string[];
+  contactEmail: string | null;
+  submissionsOpen: boolean;
+};
+
+export type SectionSummary = {
+  id: number;
+  code: string;
+  seq: number;
+  title: Record<string, string>;
+  abbrev: Record<string, string>;
+  inactive: boolean;
+};
+
+export type IssueSummary = {
+  id: number;
+  volume: number | null;
+  number: string | null;
+  year: number | null;
+  title: Record<string, string>;
+  urlPath: string | null;
+  published: boolean;
+  datePublished: string | null;
+  accessStatus: "OPEN" | "RESTRICTED";
+};
+
+export type PublicationSummary = {
+  id: number;
+  submissionId: number;
+  version: number;
+  status: "DRAFT" | "SCHEDULED" | "PUBLISHED" | "UNPUBLISHED";
+  accessStatus: "OPEN" | "RESTRICTED";
+  sectionId: number;
+  issueId: number | null;
+  urlPath: string | null;
+  title: Record<string, string>;
+  abstractText: Record<string, string>;
+  keywords: string[];
+  locale: string;
+  datePublished: string | null;
+};
+
+async function getJson<T>(path: string): Promise<T | null> {
+  try {
+    const res = await fetch(`${BASE_URL}${path}`, {
+      next: { revalidate: REVALIDATE_SECONDS },
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as T;
+  } catch {
+    // Backend unreachable — return null and let the page fall back to placeholders.
+    return null;
+  }
+}
+
+export const fetchJournalConfig = () =>
+  getJson<JournalConfig>("/api/v1/journal/config");
+
+export const fetchActiveSections = () =>
+  getJson<SectionSummary[]>("/api/v1/journal/sections");
+
+export const fetchRecentPublications = (limit = 6) =>
+  getJson<PublicationSummary[]>(`/api/v1/publications/recent?limit=${limit}`);
+
+export const fetchIssues = () => getJson<IssueSummary[]>("/api/v1/issues");
+
+/**
+ * Pick the best translation for the active locale, falling back to
+ * the journal's default and finally any value present.
+ */
+export function pickLocale(
+  values: Record<string, string> | null | undefined,
+  preferred: string,
+  fallback: string = "en",
+): string {
+  if (!values || Object.keys(values).length === 0) return "";
+  return values[preferred] ?? values[fallback] ?? Object.values(values)[0] ?? "";
+}
