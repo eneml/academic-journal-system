@@ -4,6 +4,7 @@ import type { Metadata, ResolvingMetadata } from "next";
 import type { ReactNode } from "react";
 import {
   fetchArticle,
+  fetchArticleVersions,
   fetchJournalConfig,
   fetchActiveSections,
   pickLocale,
@@ -61,10 +62,11 @@ export async function generateMetadata(
 
 export default async function ArticlePage({ params }: Props): Promise<ReactNode> {
   const { slug } = await params;
-  const [article, config, sections] = await Promise.all([
+  const [article, config, sections, versions] = await Promise.all([
     fetchArticle(slug),
     fetchJournalConfig(),
     fetchActiveSections(),
+    fetchArticleVersions(slug),
   ]);
 
   if (!article) {
@@ -216,6 +218,94 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
               time so the article is citable and discoverable.
             </p>
           </section>
+
+          {versions && versions.length > 1 ? (
+            <section
+              className="mt-12"
+              style={{
+                borderTop: "1px solid var(--border)",
+                paddingTop: 18,
+                fontFamily: "var(--sans)",
+              }}
+            >
+              <p
+                className="sc text-muted mb-3"
+                style={{ fontSize: 10.5, fontWeight: 600 }}
+              >
+                Version history
+              </p>
+              <ul
+                style={{
+                  listStyle: "none",
+                  margin: 0,
+                  padding: 0,
+                  display: "grid",
+                  gap: 6,
+                }}
+              >
+                {versions
+                  .slice()
+                  .sort((a, b) => (b.version ?? 0) - (a.version ?? 0))
+                  .map((v) => {
+                    const vSlug = v.urlPath ?? String(v.id);
+                    const isCurrent = v.id === article.id;
+                    return (
+                      <li
+                        key={v.id}
+                        style={{
+                          display: "flex",
+                          gap: 12,
+                          alignItems: "baseline",
+                          fontSize: 13,
+                        }}
+                      >
+                        <span
+                          className="tnum"
+                          style={{
+                            fontFamily: "var(--mono)",
+                            fontSize: 12,
+                            color: isCurrent ? "var(--cobalt)" : "var(--muted)",
+                            fontWeight: isCurrent ? 600 : 400,
+                            minWidth: 24,
+                          }}
+                        >
+                          v{v.version}
+                        </span>
+                        {isCurrent ? (
+                          <span style={{ color: "var(--fg)" }}>
+                            this version
+                          </span>
+                        ) : (
+                          <Link
+                            href={`/articles/${encodeURIComponent(vSlug)}`}
+                            className="text-cobalt"
+                            style={{ textDecoration: "none" }}
+                          >
+                            {pickLocale(v.title, locale) || `Version ${v.version}`}
+                          </Link>
+                        )}
+                        {v.datePublished ? (
+                          <span
+                            style={{
+                              marginLeft: "auto",
+                              color: "var(--muted)",
+                              fontFamily: "var(--mono)",
+                              fontSize: 11,
+                            }}
+                          >
+                            {new Date(v.datePublished).toLocaleDateString(locale, {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </span>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+              </ul>
+            </section>
+          ) : null}
 
           <section
             className="mt-12"

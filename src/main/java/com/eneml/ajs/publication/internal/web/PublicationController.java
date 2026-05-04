@@ -101,6 +101,24 @@ class PublicationController {
         catch (NumberFormatException e) { return java.util.Optional.empty(); }
     }
 
+    @GetMapping("/articles/{slugOrId}/versions")
+    @Operation(summary = "List all PUBLISHED versions of an article (public)")
+    List<com.eneml.ajs.publication.api.PublicationSummary> articleVersions(
+            @PathVariable String slugOrId) {
+        var summary = lookup.findByUrlPath(slugOrId)
+                .or(() -> tryNumeric(slugOrId).flatMap(lookup::findById))
+                .orElse(null);
+        if (summary == null
+                || summary.status() != com.eneml.ajs.publication.api.PublicationStatus.PUBLISHED) {
+            throw com.eneml.ajs.shared.exception.NotFoundException.of("Article", slugOrId);
+        }
+        // Only published versions visible to the public; drafts and unpublished
+        // ones never leak through this endpoint.
+        return lookup.versionsOf(summary.submissionId()).stream()
+                .filter(p -> p.status() == com.eneml.ajs.publication.api.PublicationStatus.PUBLISHED)
+                .toList();
+    }
+
     @GetMapping("/submissions/{submissionId}/publications")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List all versions of a submission's publication")

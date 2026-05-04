@@ -173,6 +173,11 @@ export const fetchActiveSectionsMap = async (): Promise<Map<number, SectionSumma
 export const fetchArticle = (slugOrId: string) =>
   getJson<Article>(`/api/v1/articles/${encodeURIComponent(slugOrId)}`);
 
+export const fetchArticleVersions = (slugOrId: string) =>
+  getJson<PublicationSummary[]>(
+    `/api/v1/articles/${encodeURIComponent(slugOrId)}/versions`,
+  );
+
 export type SearchHit = {
   publication: PublicationSummary;
   score: number;
