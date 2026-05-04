@@ -7,17 +7,20 @@
     ".": {
       "types": "./src/index.ts",
       "import": "./src/index.ts"
+    },
+    "./schema": {
+      "types": "./src/schema.d.ts"
     }
   },
   "scripts": {
-    "generate": "openapi --input http://localhost:8080/v3/api-docs --output src/generated --client fetch",
+    "generate": "openapi-typescript ${OPENAPI_URL:-http://localhost:8080/v3/api-docs} --output src/schema.d.ts",
     "type-check": "tsc --noEmit",
     "build": "tsc --noEmit",
-    "clean": "rm -rf dist .turbo src/generated *.tsbuildinfo"
+    "clean": "rm -rf dist .turbo src/schema.d.ts *.tsbuildinfo"
   },
   "devDependencies": {
     "@ajs/tsconfig": "workspace:*",
-    "openapi-typescript-codegen": "^0.29.0",
+    "openapi-typescript": "^7.5.0",
     "typescript": "^5.7.2"
   }
 }
