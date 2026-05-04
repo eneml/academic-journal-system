@@ -1,9 +1,11 @@
 /**
- * Scheduling module — cron jobs: reviewer reminders, editorial digest,
- * scheduled-issue publication, search reindex, OAI-PMH sitemap regen.
+ * Scheduling module — cron-driven sweeps that emit domain events for
+ * downstream listeners (messaging, integration). Currently runs the
+ * reviewer reminder pass; editorial digest and scheduled-issue
+ * publication land in follow-up commits.
  *
- * <p>Owns: ScheduledJob, JobExecution.
- * <br>Emits: ReminderDispatched.
+ * <p>Owns: nothing.
+ * <br>Emits: ReviewerReminderDue.
  * <br>Consumes: timer-based (no domain events).
  */
 @org.springframework.modulith.ApplicationModule(
