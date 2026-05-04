@@ -73,8 +73,6 @@ export default async function HomePage(): Promise<ReactNode> {
           gridTemplateColumns: "1fr 280px",
           gap: 56,
           alignItems: "start",
-          maxWidth: 1280,
-          margin: "0 auto",
         }}
       >
         <div>
@@ -189,7 +187,7 @@ export default async function HomePage(): Promise<ReactNode> {
         </div>
       </section>
 
-      <div style={{ padding: "0 56px", maxWidth: 1280, margin: "0 auto" }}>
+      <div style={{ padding: "0 56px" }}>
         <div className="double-rule" />
       </div>
 
@@ -200,8 +198,6 @@ export default async function HomePage(): Promise<ReactNode> {
           display: "grid",
           gridTemplateColumns: "200px 1fr",
           gap: 56,
-          maxWidth: 1280,
-          margin: "0 auto",
         }}
       >
         <aside style={{ position: "sticky", top: 32, alignSelf: "start" }}>
@@ -334,8 +330,6 @@ export default async function HomePage(): Promise<ReactNode> {
           gridTemplateColumns: "1fr 1fr 1fr",
           gap: 1,
           background: "var(--border)",
-          maxWidth: 1280,
-          margin: "0 auto",
         }}
       >
         <ThreeUpCard title="Scope">
@@ -445,8 +439,6 @@ export default async function HomePage(): Promise<ReactNode> {
         <section
           style={{
             padding: "56px 56px 0",
-            maxWidth: 1280,
-            margin: "0 auto",
           }}
         >
           <Link

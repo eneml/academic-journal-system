@@ -104,7 +104,7 @@ export default async function SearchPage({
 
   return (
     <SiteChrome journalName={journalName}>
-      <section style={{ padding: "32px 56px", maxWidth: 1280, margin: "0 auto" }}>
+      <section style={{ padding: "32px 56px" }}>
         {/* Search bar */}
         <form
           method="get"

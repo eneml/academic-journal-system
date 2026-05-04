@@ -101,8 +101,6 @@ export default async function SingleIssuePage({ params }: Props): Promise<ReactN
       <div
         style={{
           padding: "20px 56px 0",
-          maxWidth: 1280,
-          margin: "0 auto",
           display: "flex",
           gap: 6,
           alignItems: "center",
@@ -143,8 +141,6 @@ export default async function SingleIssuePage({ params }: Props): Promise<ReactN
           gridTemplateColumns: "260px 1fr",
           gap: 56,
           alignItems: "start",
-          maxWidth: 1280,
-          margin: "0 auto",
         }}
       >
         <div>
@@ -259,7 +255,7 @@ export default async function SingleIssuePage({ params }: Props): Promise<ReactN
         </div>
       </section>
 
-      <div style={{ padding: "0 56px", maxWidth: 1280, margin: "0 auto" }}>
+      <div style={{ padding: "0 56px" }}>
         <div className="double-rule" />
       </div>
 
@@ -270,8 +266,6 @@ export default async function SingleIssuePage({ params }: Props): Promise<ReactN
           display: "grid",
           gridTemplateColumns: "200px 1fr",
           gap: 56,
-          maxWidth: 1280,
-          margin: "0 auto",
         }}
       >
         <aside style={{ position: "sticky", top: 32, alignSelf: "start" }}>

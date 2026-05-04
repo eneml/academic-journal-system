@@ -115,8 +115,6 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
       <div
         style={{
           padding: "20px 56px 0",
-          maxWidth: 1280,
-          margin: "0 auto",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -201,12 +199,10 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
       <article
         style={{
           display: "grid",
-          gridTemplateColumns: "240px minmax(0, 720px) 240px",
+          gridTemplateColumns: "240px minmax(0, 720px) 1fr",
           gap: 56,
           padding: "32px 56px 80px",
-          justifyContent: "center",
-          maxWidth: 1280,
-          margin: "0 auto",
+          alignItems: "start",
         }}
       >
         {/* Left: On this page */}

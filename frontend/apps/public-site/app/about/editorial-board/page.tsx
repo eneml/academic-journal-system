@@ -55,9 +55,6 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
       <section
         style={{
           padding: "40px 56px 24px",
-          textAlign: "center",
-          maxWidth: 760,
-          margin: "0 auto",
         }}
       >
         <div
@@ -86,6 +83,7 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
             color: "var(--fg-2)",
             margin: 0,
             fontStyle: "italic",
+            maxWidth: 720,
           }}
         >
           {totalDescription} oversee peer review across all sections of {journalName}.
@@ -93,7 +91,7 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
       </section>
 
       {all.length === 0 ? (
-        <section style={{ padding: "32px 56px 80px", maxWidth: 1200, margin: "0 auto" }}>
+        <section style={{ padding: "32px 56px 80px" }}>
           <p
             style={{
               fontFamily: "var(--serif-body)",
@@ -109,7 +107,7 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
         <>
           {senior.length > 0 ? (
             <section
-              style={{ padding: "32px 56px 0", maxWidth: 1200, margin: "0 auto" }}
+              style={{ padding: "32px 56px 0" }}
             >
               <SectionHead title="Senior editors" count={`${senior.length} editors`} />
               <div
@@ -128,7 +126,7 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
 
           {associate.length > 0 ? (
             <section
-              style={{ padding: "44px 56px 0", maxWidth: 1200, margin: "0 auto" }}
+              style={{ padding: "44px 56px 0" }}
             >
               <SectionHead
                 title="Associate editors"
@@ -150,7 +148,7 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
 
           {advisory.length > 0 ? (
             <section
-              style={{ padding: "44px 56px 0", maxWidth: 1200, margin: "0 auto" }}
+              style={{ padding: "44px 56px 0" }}
             >
               <SectionHead
                 title="Editorial advisory board"
