@@ -3,6 +3,9 @@ import type { ReactNode } from "react";
 import { locales, type Locale } from "@ajs/i18n";
 import { getT } from "@/lib/locale";
 
+const EDITORIAL_APP_URL =
+  process.env.NEXT_PUBLIC_EDITORIAL_APP_URL ?? "http://localhost:5173";
+
 export interface SiteChromeProps {
   journalName: string;
   /** Highlights the matching nav item. */
@@ -37,7 +40,7 @@ export async function SiteChrome({
           >
             {journalName}
           </Link>
-          <nav className="flex gap-6 text-sm">
+          <nav style={{ display: "flex", gap: 22, alignItems: "center", fontSize: 14 }}>
             <NavLink href="/" active={active === "home"}>
               {t("nav.home")}
             </NavLink>
@@ -53,6 +56,22 @@ export async function SiteChrome({
             <NavLink href="/about" active={active === "about"}>
               {t("nav.about")}
             </NavLink>
+            <a
+              href={EDITORIAL_APP_URL}
+              style={{
+                marginLeft: 4,
+                padding: "7px 14px",
+                background: "var(--cobalt)",
+                color: "white",
+                borderRadius: "var(--r-2)",
+                textDecoration: "none",
+                fontFamily: "var(--sans)",
+                fontSize: 13,
+                fontWeight: 500,
+              }}
+            >
+              {t("common.signIn")}
+            </a>
           </nav>
         </div>
       </header>

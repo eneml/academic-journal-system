@@ -109,7 +109,7 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
           >
             {journalName}
           </Link>
-          <nav className="flex gap-6 text-sm">
+          <nav style={{ display: "flex", gap: 22, alignItems: "center", fontSize: 14 }}>
             <Link href="/" className="text-fg-2 hover:text-cobalt">
               Home
             </Link>
@@ -125,6 +125,22 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
             <Link href="/about" className="text-fg-2 hover:text-cobalt">
               About
             </Link>
+            <a
+              href={process.env.NEXT_PUBLIC_EDITORIAL_APP_URL ?? "http://localhost:5173"}
+              style={{
+                marginLeft: 4,
+                padding: "7px 14px",
+                background: "var(--cobalt)",
+                color: "white",
+                borderRadius: "var(--r-2)",
+                textDecoration: "none",
+                fontFamily: "var(--sans)",
+                fontSize: 13,
+                fontWeight: 500,
+              }}
+            >
+              Sign in
+            </a>
           </nav>
         </div>
       </header>
