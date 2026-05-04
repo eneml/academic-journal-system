@@ -11,6 +11,19 @@ import {
 } from "@/lib/api";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+
+const citeBtnStyle: React.CSSProperties = {
+  padding: "6px 12px",
+  border: "1px solid var(--border)",
+  borderRadius: "var(--r-1)",
+  background: "var(--surface)",
+  color: "var(--fg-2)",
+  fontFamily: "var(--mono)",
+  fontSize: 11,
+  textDecoration: "none",
+  letterSpacing: "0.04em",
+};
 
 export const revalidate = 60;
 
@@ -202,6 +215,45 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
               For now this page renders the metadata captured at publication
               time so the article is citable and discoverable.
             </p>
+          </section>
+
+          <section
+            className="mt-12"
+            style={{
+              borderTop: "1px solid var(--border)",
+              paddingTop: 18,
+              fontFamily: "var(--sans)",
+            }}
+          >
+            <p
+              className="sc text-muted mb-3"
+              style={{ fontSize: 10.5, fontWeight: 600 }}
+            >
+              Cite this article
+            </p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <a
+                href={`${API_BASE_URL}/api/v1/articles/${encodeURIComponent(slug)}/citation?format=BIBTEX`}
+                className="hover:text-cobalt"
+                style={citeBtnStyle}
+              >
+                BibTeX
+              </a>
+              <a
+                href={`${API_BASE_URL}/api/v1/articles/${encodeURIComponent(slug)}/citation?format=RIS`}
+                className="hover:text-cobalt"
+                style={citeBtnStyle}
+              >
+                RIS / EndNote
+              </a>
+              <a
+                href={`${API_BASE_URL}/api/v1/articles/${encodeURIComponent(slug)}/citation?format=APA`}
+                className="hover:text-cobalt"
+                style={citeBtnStyle}
+              >
+                APA (plain text)
+              </a>
+            </div>
           </section>
 
           {article.licenseUrl || article.copyrightHolder ? (
