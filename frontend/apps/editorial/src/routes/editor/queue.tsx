@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { api, type Page } from "../../lib/api";
@@ -171,16 +171,19 @@ function QueueRow({
         </span>
       </Td>
       <Td>
-        <span
+        <Link
+          to="/editor/submissions/$id"
+          params={{ id: String(submission.id) }}
           style={{
             fontFamily: "var(--serif-display)",
             fontSize: 14,
             fontWeight: 500,
-            color: "var(--fg)",
+            color: "var(--cobalt)",
+            textDecoration: "none",
           }}
         >
           {title}
-        </span>
+        </Link>
       </Td>
       <Td>
         {submission.stage ? (
