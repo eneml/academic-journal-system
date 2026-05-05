@@ -50,7 +50,6 @@ function NotificationsPage(): ReactNode {
   useEffect(() => {
     if (!user) return;
     void reload();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const markAll = async (): Promise<void> => {
