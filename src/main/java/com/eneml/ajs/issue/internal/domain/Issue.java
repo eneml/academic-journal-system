@@ -44,8 +44,21 @@ public class Issue extends AuditableEntity {
     @Column(columnDefinition = "jsonb", nullable = false)
     private Map<String, String> description = new HashMap<>();
 
+    /**
+     * Free-form URL for legacy or externally-hosted covers (e.g. a CDN
+     * URL). Most new issues will leave this null and use {@link #coverFileId}
+     * instead so the cover binary lives inside the journal's storage.
+     */
     @Column(name = "cover_image_path", length = 2048)
     private String coverImagePath;
+
+    /**
+     * FK to {@code stored_file.id}. Populated when an editor uploads a
+     * cover image through {@code POST /api/v1/issues/{id}/cover}; readers
+     * resolve a presigned URL from this id.
+     */
+    @Column(name = "cover_file_id")
+    private Long coverFileId;
 
     @Column(name = "url_path", length = 255)
     private String urlPath;

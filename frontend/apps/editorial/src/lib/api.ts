@@ -98,7 +98,59 @@ export async function api<T>(path: string, opts: ApiOptions = {}): Promise<T | n
   try {
     return (await response.json()) as T;
   } catch (err) {
-     
+
+    console.warn(`API ${path} returned non-JSON body:`, err);
+    return null;
+  }
+}
+
+/**
+ * Multipart variant of {@link api} for endpoints that take file uploads. The
+ * boundary header is left to the browser to fill in correctly — we only set
+ * Authorization + Accept. Same null-on-failure contract as {@link api}.
+ */
+export async function apiMultipart<T>(
+  path: string,
+  formData: FormData,
+  opts: { method?: "POST" | "PUT" | "PATCH"; signal?: AbortSignal } = {},
+): Promise<T | null> {
+  if (!BASE_URL) return null;
+
+  const token = await getAccessToken();
+  const headers = new Headers();
+  headers.set("Accept", "application/json");
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+
+  const url = path.startsWith("http") ? path : `${BASE_URL}${path}`;
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: opts.method ?? "POST",
+      headers,
+      body: formData,
+      signal: opts.signal,
+    });
+  } catch (err) {
+
+    console.warn(`API ${opts.method ?? "POST"} ${path} failed (network):`, err);
+    return null;
+  }
+
+  if (response.status === 204) {
+    return null;
+  }
+
+  if (!response.ok) {
+
+    console.warn(`API ${opts.method ?? "POST"} ${path} -> ${response.status}`);
+    return null;
+  }
+
+  try {
+    return (await response.json()) as T;
+  } catch (err) {
+
     console.warn(`API ${path} returned non-JSON body:`, err);
     return null;
   }

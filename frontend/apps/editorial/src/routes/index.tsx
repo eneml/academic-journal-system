@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
+import { Inbox, BadgeCheck, Plus } from "lucide-react";
 import { Icon, type IconName, StageStepper, type StageIndex } from "@ajs/ui/primitives";
 import { useAuth } from "../auth/AuthContext";
 import {
@@ -9,6 +10,7 @@ import {
 } from "../auth/roles";
 import { api, type Page } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
+import { Button } from "../components/ui/button";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
@@ -67,23 +69,32 @@ function dashboardSubtitle(primary: PrimaryRole): string {
 function dashboardActions(primary: PrimaryRole): ReactNode {
   if (primary === "author") {
     return (
-      <Link to="/author/submissions/new" className="btn btn-primary btn-sm" style={{ textDecoration: "none" }}>
-        <Icon name="plus" size={13} /> New submission
-      </Link>
+      <Button asChild>
+        <Link to="/author/submissions/new">
+          <Plus />
+          New submission
+        </Link>
+      </Button>
     );
   }
   if (primary === "editor") {
     return (
-      <Link to="/editor/queue" className="btn btn-primary btn-sm" style={{ textDecoration: "none" }}>
-        <Icon name="inbox" size={13} /> Open queue
-      </Link>
+      <Button asChild>
+        <Link to="/editor/queue">
+          <Inbox />
+          Open queue
+        </Link>
+      </Button>
     );
   }
   if (primary === "reviewer") {
     return (
-      <Link to="/reviewer/assignments" className="btn btn-primary btn-sm" style={{ textDecoration: "none" }}>
-        <Icon name="badgeCheck" size={13} /> Review queue
-      </Link>
+      <Button asChild>
+        <Link to="/reviewer/assignments">
+          <BadgeCheck />
+          Review queue
+        </Link>
+      </Button>
     );
   }
   return null;

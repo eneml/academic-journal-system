@@ -28,6 +28,27 @@
   --color-danger: var(--danger);
   --color-info: var(--info);
 
+  /* shadcn-style aliases — components from upstream shadcn use these
+     names. We map them onto our own cobalt/warm-white palette so that
+     drop-in components inherit the journal's visual language without
+     bringing along zinc/slate defaults. */
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-primary: var(--cobalt);
+  --color-primary-foreground: white;
+  --color-secondary: var(--surface);
+  --color-secondary-foreground: var(--fg-2);
+  --color-accent: var(--cobalt-soft);
+  --color-accent-foreground: var(--cobalt-deep);
+  --color-destructive: var(--danger);
+  --color-destructive-foreground: white;
+  --color-popover: oklch(99.5% 0.002 90);
+  --color-popover-foreground: var(--fg);
+  --color-card: oklch(99.5% 0.002 90);
+  --color-card-foreground: var(--fg);
+  --color-input: var(--border);
+  --color-ring: var(--cobalt);
+
   --font-serif-display: var(--serif-display);
   --font-serif-body: var(--serif-body);
   --font-sans: var(--sans);
@@ -36,4 +57,28 @@
   --radius-1: var(--r-1);
   --radius-2: var(--r-2);
   --radius-3: var(--r-3);
+  --radius-sm: var(--r-1);
+  --radius-md: var(--r-2);
+  --radius-lg: var(--r-3);
+}
+
+/* Custom keyframes used by shadcn primitives (sheet/dropdown/dialog). */
+@theme inline {
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+}
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+
+/* Focus ring used by every interactive primitive. */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--cobalt-soft);
 }

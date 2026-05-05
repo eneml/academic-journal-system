@@ -8,6 +8,6 @@
  */
 @org.springframework.modulith.ApplicationModule(
     displayName = "Review",
-    allowedDependencies = { "shared", "identity::api", "submission::api" }
+    allowedDependencies = { "shared", "identity::api", "submission::api", "storage::api" }
 )
 package com.eneml.ajs.review;

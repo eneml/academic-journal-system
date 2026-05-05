@@ -1,285 +1,153 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { SiteChrome } from "@/components/SiteChrome";
-import { fetchJournalConfig, pickLocale } from "@/lib/api";
-
-const EDITORIAL_APP_URL =
-  process.env.NEXT_PUBLIC_EDITORIAL_APP_URL ?? "http://localhost:5173";
-
-export const revalidate = 600;
+import { Mail, MapPin, Phone } from "lucide-react";
+import { PublicHeader } from "@/components/PublicHeader";
+import { PublicFooter } from "@/components/PublicFooter";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "How to reach the journal's editorial office.",
+  description:
+    "Editorial office, mailing address, and email contacts for The Academic Journal.",
 };
 
-const SECTIONS: Array<{ id: string; label: string }> = [
-  { id: "editorial", label: "Editorial enquiries" },
-  { id: "what-to-include", label: "What to include" },
-  { id: "submitting", label: "Submitting an article" },
-];
+export const revalidate = 600;
 
-export default async function ContactPage(): Promise<ReactNode> {
-  const config = await fetchJournalConfig();
-  const locale = config?.defaultLocale ?? "en";
-  const journalName = pickLocale(config?.name, locale) || "The Academic Journal";
-  const contactEmail = config?.contactEmail ?? "editors@example.org";
-
+export default async function ContactPage() {
   return (
-    <SiteChrome journalName={journalName} active="contact">
-      <section
-        style={{
-          padding: "32px var(--page-gutter) 24px",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
-        <div className="sc" style={{ color: "var(--cobalt)", marginBottom: 10 }}>
+    <div className="min-h-screen bg-bg">
+      <PublicHeader activePath="/contact" />
+
+      <section className="mx-auto max-w-[760px] px-6 pt-12 pb-6 text-center lg:px-14">
+        <div className="mb-3 font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-amber-deep">
           Contact
         </div>
-        <h1
-          style={{
-            fontFamily: "var(--serif-display)",
-            fontWeight: 500,
-            fontSize: "clamp(34px, 4.6vw, 48px)",
-            lineHeight: 1.1,
-            letterSpacing: "-0.02em",
-            margin: "0 0 10px",
-          }}
-        >
-          Get in touch
+        <h1 className="m-0 mb-3 font-serif-display text-[clamp(36px,5vw,48px)] font-medium leading-[1.05] tracking-[-0.02em]">
+          Get in touch with the editorial office
         </h1>
-        <p
-          style={{
-            fontFamily: "var(--serif-body)",
-            fontSize: 17,
-            lineHeight: 1.55,
-            color: "var(--fg-2)",
-            margin: 0,
-            maxWidth: 720,
-            fontStyle: "italic",
-          }}
-        >
-          The editorial office at {journalName} handles everything from
-          submission queries to production timelines. The fastest route is email
-          — we triage the inbox manually.
+        <p className="m-0 font-serif-body text-[18px] italic leading-[1.55] text-fg-2">
+          For matters relating to a specific submission, please use the
+          editorial portal so the message is attached to your file. For all
+          other queries, the channels below reach the editorial office directly.
         </p>
       </section>
 
-      <section
-        style={{
-          display: "grid",
-          gridTemplateColumns: "240px minmax(0, 720px) 1fr",
-          gap: 56,
-          padding: "32px var(--page-gutter) 80px",
-        }}
-      >
-        <aside style={{ position: "sticky", top: 32, alignSelf: "start" }}>
-          <div className="sc" style={{ color: "var(--muted)", marginBottom: 14 }}>
-            On this page
-          </div>
-          <nav
-            style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13 }}
-          >
-            {SECTIONS.map((s, i) => (
-              <a
-                key={s.id}
-                href={`#${s.id}`}
-                style={{
-                  textDecoration: "none",
-                  color: i === 0 ? "var(--fg)" : "var(--fg-2)",
-                  fontWeight: i === 0 ? 600 : 400,
-                  borderLeft:
-                    i === 0
-                      ? "2px solid var(--amber)"
-                      : "2px solid var(--border)",
-                  padding: "1px 0 1px 10px",
-                  fontFamily: "var(--sans)",
-                }}
-              >
-                {s.label}
-              </a>
-            ))}
-          </nav>
-        </aside>
-
-        <article className="reading" style={{ minWidth: 0 }}>
-          <h2 id="editorial" style={h2Style}>Editorial enquiries</h2>
-          <p style={paragraphStyle}>
-            For submission status, peer review, production timelines, or anything
-            else the editorial office can answer, write to the team directly.
-          </p>
-          <div
-            style={{
-              margin: "16px 0 24px",
-              padding: "18px 20px",
-              border: "1px solid var(--border-strong)",
-              borderRadius: 6,
-              background: "var(--surface)",
-              fontFamily: "var(--sans)",
-              fontSize: 15,
-            }}
-          >
-            <div
-              className="sc"
-              style={{ color: "var(--muted)", marginBottom: 6 }}
-            >
-              Email
-            </div>
-            <a
-              href={`mailto:${contactEmail}`}
-              style={{
-                color: "var(--cobalt)",
-                fontWeight: 500,
-                textDecoration: "none",
-                fontFamily: "var(--mono)",
-                fontSize: 15,
-              }}
-            >
-              {contactEmail}
-            </a>
-          </div>
-
-          <h2 id="what-to-include" style={h2Style}>What to include</h2>
-          <ul style={listStyle}>
-            <li>Your full name and institutional affiliation.</li>
-            <li>
-              The submission id or article title, if your message concerns an
-              in-flight manuscript.
-            </li>
-            <li>A clear subject line — we triage the inbox manually.</li>
-          </ul>
-
-          <h2 id="submitting" style={h2Style}>Submitting an article?</h2>
-          <p style={paragraphStyle}>
-            Don&rsquo;t email manuscripts to the editorial inbox. See the{" "}
-            <Link href="/for-authors" style={{ color: "var(--cobalt)" }}>
-              author guide
-            </Link>{" "}
-            for the submission workflow — drafts go through the editorial app so
-            assignments, reviews, and decisions stay tracked in one place.
-          </p>
-        </article>
-
-        {/* Right rail */}
-        <aside style={{ position: "sticky", top: 32, alignSelf: "start" }}>
-          <div
-            style={{
-              border: "1px solid var(--border)",
-              borderRadius: 6,
-              padding: 16,
-              background: "var(--bg)",
-              marginBottom: 14,
-            }}
-          >
-            <div
-              className="sc"
-              style={{ color: "var(--cobalt)", marginBottom: 8 }}
-            >
-              Quick links
-            </div>
-            <ul
-              style={{
-                listStyle: "none",
-                margin: 0,
-                padding: 0,
-                fontSize: 13,
-                lineHeight: 1.8,
-                color: "var(--fg-2)",
-                fontFamily: "var(--sans)",
-              }}
-            >
-              <li>
-                <Link
-                  href="/for-authors"
-                  style={{ color: "var(--cobalt)", textDecoration: "none" }}
-                >
-                  Submission guidelines →
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/policies"
-                  style={{ color: "var(--cobalt)", textDecoration: "none" }}
-                >
-                  Editorial policies →
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/about/editorial-board"
-                  style={{ color: "var(--cobalt)", textDecoration: "none" }}
-                >
-                  Editorial board →
-                </Link>
-              </li>
-              <li>
-                <a
-                  href={EDITORIAL_APP_URL}
-                  style={{ color: "var(--cobalt)", textDecoration: "none" }}
-                >
-                  Editorial app →
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          <div
-            style={{
-              border: "1px solid var(--border)",
-              borderRadius: 6,
-              padding: 16,
-              background: "var(--bg)",
-            }}
-          >
-            <div
-              className="sc"
-              style={{ color: "var(--muted)", marginBottom: 8 }}
-            >
-              Response time
-            </div>
-            <p
-              style={{
-                fontFamily: "var(--serif-body)",
-                fontSize: 13.5,
-                lineHeight: 1.55,
-                color: "var(--fg-2)",
-                margin: 0,
-              }}
-            >
-              We aim to respond within five working days. Status updates on
-              in-flight submissions are also visible in the editorial app.
-            </p>
-          </div>
-        </aside>
+      <section className="mx-auto grid max-w-[920px] gap-5 px-6 pb-14 sm:grid-cols-2 lg:px-14">
+        <ContactCard
+          eyebrow="Editorial office"
+          title="General enquiries"
+          icon={<Mail className="h-4 w-4" />}
+          line1="editor@academic-journal.example"
+          line2="Replies within two working days"
+          href="mailto:editor@academic-journal.example"
+          external
+        />
+        <ContactCard
+          eyebrow="Submissions"
+          title="Submitting a manuscript"
+          icon={<Mail className="h-4 w-4" />}
+          line1="submissions@academic-journal.example"
+          line2="Use the editorial portal whenever possible"
+          href="/for-authors"
+        />
+        <ContactCard
+          eyebrow="Mailing address"
+          title="Editorial office"
+          icon={<MapPin className="h-4 w-4" />}
+          line1="University of Bucharest, Faculty of Mathematics and Computer Science"
+          line2="14 Academiei Street, Bucharest 010014, Romania"
+        />
+        <ContactCard
+          eyebrow="Press"
+          title="Media enquiries"
+          icon={<Phone className="h-4 w-4" />}
+          line1="+40 21 314 35 08"
+          line2="Open weekdays, 09:00–17:00 EET"
+        />
       </section>
-    </SiteChrome>
+
+      <section className="mx-auto max-w-[760px] px-6 pb-14 lg:px-14">
+        <div className="rounded-md border border-border bg-surface p-6 text-center">
+          <h2 className="m-0 mb-2 font-serif-display text-[22px] font-medium">
+            Looking for the right person?
+          </h2>
+          <p className="m-0 mb-3.5 font-serif-body text-[14.5px] leading-[1.6] text-fg-2">
+            Our editorial board lists each editor with the topics they oversee.
+            For domain-specific queries it&rsquo;s faster to write to the
+            relevant section editor than the general office.
+          </p>
+          <Link
+            href="/editorial"
+            className="inline-flex items-center gap-1 font-medium text-cobalt hover:text-cobalt-deep no-underline"
+          >
+            View the editorial board →
+          </Link>
+        </div>
+      </section>
+
+      <PublicFooter />
+    </div>
   );
 }
 
-const h2Style: React.CSSProperties = {
-  fontFamily: "var(--serif-display)",
-  fontWeight: 500,
-  fontSize: 24,
-  lineHeight: 1.25,
-  letterSpacing: "-0.005em",
-  margin: "32px 0 12px",
-  color: "var(--fg)",
-};
+function ContactCard({
+  eyebrow,
+  title,
+  icon,
+  line1,
+  line2,
+  href,
+  external,
+}: {
+  eyebrow: string;
+  title: string;
+  icon: ReactNode;
+  line1: string;
+  line2?: string;
+  href?: string;
+  external?: boolean;
+}) {
+  const Body = (
+    <>
+      <div className="mb-2 flex items-center gap-2 text-cobalt">
+        {icon}
+        <span className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em]">
+          {eyebrow}
+        </span>
+      </div>
+      <h3 className="m-0 mb-2 font-serif-display text-[20px] font-medium tracking-[-0.005em]">
+        {title}
+      </h3>
+      <div className="font-serif-body text-[14.5px] leading-[1.55] text-fg-2">
+        <div>{line1}</div>
+        {line2 ? (
+          <div className="mt-1 text-[12.5px] italic text-muted">{line2}</div>
+        ) : null}
+      </div>
+    </>
+  );
 
-const paragraphStyle: React.CSSProperties = {
-  fontSize: 16,
-  lineHeight: 1.7,
-  color: "var(--fg-2)",
-  margin: "0 0 14px",
-  fontFamily: "var(--serif-body)",
-};
+  if (!href) {
+    return <div className="rounded-md border border-border bg-bg p-6">{Body}</div>;
+  }
 
-const listStyle: React.CSSProperties = {
-  fontSize: 16,
-  lineHeight: 1.7,
-  color: "var(--fg-2)",
-  paddingLeft: 18,
-  marginBottom: 14,
-  fontFamily: "var(--serif-body)",
-};
+  if (external) {
+    return (
+      <a
+        href={href}
+        className="rounded-md border border-border bg-bg p-6 transition-colors hover:border-cobalt no-underline text-inherit block"
+      >
+        {Body}
+      </a>
+    );
+  }
+
+  return (
+    <Link
+      href={href}
+      className="rounded-md border border-border bg-bg p-6 transition-colors hover:border-cobalt no-underline text-inherit block"
+    >
+      {Body}
+    </Link>
+  );
+}

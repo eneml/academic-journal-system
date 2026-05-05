@@ -1,31 +1,67 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState, type ComponentType } from "react";
 import {
   Link,
   useLocation,
   useNavigate,
   useRouter,
 } from "@tanstack/react-router";
-import { Icon, type IconName } from "@ajs/ui/primitives";
+import {
+  ArrowUpRight,
+  BadgeCheck,
+  Bell,
+  BookOpen,
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  Flag,
+  Globe,
+  Home,
+  Inbox,
+  Layers,
+  LogOut,
+  Plus,
+  Search,
+  Settings,
+  Sparkles,
+  User,
+  UserCog,
+  Users,
+} from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { hasRole, isEditorial, type RealmRole } from "../auth/roles";
 import { api } from "../lib/api";
+import { cn } from "../lib/cn";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { NotificationsBell } from "./NotificationsBell";
 
 /**
- * Editorial app shell modeled on the design handoff:
+ * Editorial app shell — premium workbench layout.
  *
- * - 232px sidebar (fixed): logo cube + journal name + version line, quick-find
- *   chip, role label, role-aware nav items with badge counts on the live
- *   queues, user avatar pinned to the bottom.
- * - 48px top bar: breadcrumb derived from the current pathname, locale
- *   switcher, sign in / sign out + bell.
- * - Main column: hosts the page (PageHeader+content). Children render under
- *   the topbar; horizontal padding is the page's responsibility.
+ * - 244px sticky sidebar: brand cube, command-K affordance, role-aware nav
+ *   with live badge counters, user avatar pinned to the bottom (now a
+ *   real DropdownMenu).
+ * - 56px top bar: breadcrumb on the left, locale switcher + working
+ *   notifications dropdown + sign-in CTA on the right.
+ * - Main: page header + content. Background uses the warm-white tint so
+ *   surface cards inside pop with their flat shadow.
  */
+
+type IconComponent = ComponentType<{ className?: string }>;
 
 interface NavItem {
   to: string;
   label: string;
-  icon: IconName;
+  icon: IconComponent;
   /** Predicate against current roles. Items with no `when` are always visible. */
   when?: (roles: RealmRole[]) => boolean;
   /** Optional badge source — fetched once per shell mount. */
@@ -33,7 +69,7 @@ interface NavItem {
 }
 
 interface NavGroup {
-  /** Section heading shown above the items in small caps. Becomes the role label. */
+  /** Section heading shown above the items in small caps. */
   title: string;
   items: NavItem[];
 }
@@ -51,7 +87,7 @@ type BadgeSource =
 const NAV_GROUPS: NavGroup[] = [
   {
     title: "Home",
-    items: [{ to: "/", label: "Dashboard", icon: "home" }],
+    items: [{ to: "/", label: "Dashboard", icon: Home }],
   },
   {
     title: "Authoring",
@@ -59,14 +95,14 @@ const NAV_GROUPS: NavGroup[] = [
       {
         to: "/author/submissions",
         label: "My submissions",
-        icon: "fileText",
+        icon: FileText,
         when: (r) => hasRole(r, "AUTHOR"),
         badgeSource: "MY_SUBMISSIONS",
       },
       {
         to: "/author/submissions/new",
         label: "New submission",
-        icon: "plus",
+        icon: Plus,
         when: (r) => hasRole(r, "AUTHOR"),
       },
     ],
@@ -77,7 +113,7 @@ const NAV_GROUPS: NavGroup[] = [
       {
         to: "/reviewer/assignments",
         label: "My reviews",
-        icon: "badgeCheck",
+        icon: BadgeCheck,
         when: (r) => hasRole(r, "REVIEWER"),
         badgeSource: "MY_REVIEWS",
       },
@@ -89,26 +125,26 @@ const NAV_GROUPS: NavGroup[] = [
       {
         to: "/editor/queue",
         label: "Submissions",
-        icon: "inbox",
+        icon: Inbox,
         when: isEditorial,
         badgeSource: "EDITOR_QUEUE",
       },
       {
         to: "/editor/submissions",
         label: "All submissions",
-        icon: "layers",
+        icon: Layers,
         when: isEditorial,
       },
       {
         to: "/editor/issues",
         label: "Issues",
-        icon: "bookOpen",
+        icon: BookOpen,
         when: isEditorial,
       },
       {
         to: "/editor/deposits",
         label: "Deposits",
-        icon: "arrowUpRight",
+        icon: ArrowUpRight,
         when: isEditorial,
       },
     ],
@@ -119,19 +155,19 @@ const NAV_GROUPS: NavGroup[] = [
       {
         to: "/admin/announcements",
         label: "Announcements",
-        icon: "flag",
+        icon: Flag,
         when: isEditorial,
       },
       {
         to: "/admin/users",
         label: "Users",
-        icon: "users",
+        icon: Users,
         when: (r) => hasRole(r, "ADMIN"),
       },
       {
         to: "/admin/journal",
         label: "Journal config",
-        icon: "settings",
+        icon: Settings,
         when: (r) => hasRole(r, "ADMIN"),
       },
     ],
@@ -142,10 +178,10 @@ const NAV_GROUPS: NavGroup[] = [
       {
         to: "/notifications",
         label: "Notifications",
-        icon: "bell",
+        icon: Bell,
         badgeSource: "NOTIFICATIONS",
       },
-      { to: "/profile", label: "Profile", icon: "user" },
+      { to: "/profile", label: "Profile", icon: User },
     ],
   },
 ];
@@ -166,7 +202,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
   useEffect(() => {
     if (!loading && !user) {
       const dest =
-        location.pathname === "/" ? "/" : `${location.pathname}${location.search ?? ""}`;
+        location.pathname === "/" ? "/" : `${location.pathname}${location.search ? "" : ""}`;
       void navigate({
         to: "/login",
         search: dest === "/" ? undefined : ({ redirect: dest } as never),
@@ -175,50 +211,23 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
     }
   }, [loading, user, navigate, location.pathname, location.search]);
 
-  // While auth resolves, or while the redirect-to-/login is in flight, show
-  // a minimal skeleton — no sidebar, no chrome — so we never flash dashboard
-  // content to an unauthenticated user.
   if (loading || !user) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "var(--bg-tint)",
-          color: "var(--muted)",
-          fontFamily: "var(--sans)",
-          fontSize: 13,
-        }}
-      >
-        Loading session&hellip;
+      <div className="min-h-screen flex items-center justify-center bg-bg-tint text-muted font-sans text-[13px]">
+        <div className="flex items-center gap-2">
+          <Sparkles className="size-4 animate-pulse text-cobalt" />
+          Loading session…
+        </div>
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "232px 1fr",
-        minHeight: "100vh",
-        background: "var(--bg-tint)",
-        fontFamily: "var(--sans)",
-        color: "var(--fg)",
-      }}
-    >
+    <div className="grid grid-cols-[244px_1fr] min-h-screen bg-bg-tint font-sans text-fg">
       <Sidebar />
-      <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+      <div className="flex flex-col min-w-0">
         <Topbar />
-        <main
-          style={{
-            flex: 1,
-            padding: "20px 24px 48px",
-            minWidth: 0,
-            background: "var(--bg-tint)",
-          }}
-        >
+        <main className="flex-1 px-6 py-6 pb-12 min-w-0 bg-bg-tint">
           {children}
         </main>
       </div>
@@ -235,138 +244,51 @@ function Sidebar(): ReactNode {
   const badges = useBadgeCounts(user != null, roles);
 
   return (
-    <aside
-      style={{
-        background: "var(--bg)",
-        borderRight: "1px solid var(--border)",
-        display: "flex",
-        flexDirection: "column",
-        position: "sticky",
-        top: 0,
-        height: "100vh",
-      }}
-    >
+    <aside className="bg-white border-r border-border flex flex-col sticky top-0 h-screen">
       {/* Brand block */}
-      <div
-        style={{
-          padding: "16px 16px 12px",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
+      <div className="px-3 pt-4 pb-3 border-b border-border">
         <Link
           to="/"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            marginBottom: 10,
-            textDecoration: "none",
-            color: "inherit",
-          }}
+          className="flex items-center gap-2.5 mb-3 px-2 py-1 rounded-md hover:bg-bg-tint transition-colors"
         >
-          <span
-            style={{
-              width: 26,
-              height: 26,
-              borderRadius: 5,
-              background: "var(--cobalt)",
-              color: "white",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontFamily: "var(--serif-display)",
-              fontWeight: 600,
-              fontSize: 15,
-              flex: "none",
-            }}
-          >
+          <span className="size-7 rounded-md bg-gradient-to-br from-cobalt to-cobalt-deep text-white flex items-center justify-center font-serif-display font-semibold text-[15px] flex-none shadow-[0_1px_0_0_rgba(255,255,255,0.15)_inset]">
             AJ
           </span>
-          <span style={{ minWidth: 0 }}>
-            <span
-              style={{
-                display: "block",
-                fontSize: 13,
-                fontWeight: 600,
-                letterSpacing: "-0.01em",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
+          <span className="min-w-0">
+            <span className="block text-[13px] font-semibold tracking-tight text-fg truncate">
               The Academic Journal
             </span>
-            <span
-              style={{
-                display: "block",
-                fontSize: 10.5,
-                color: "var(--muted)",
-                fontFamily: "var(--mono)",
-              }}
-            >
+            <span className="block text-[10.5px] text-muted font-mono">
               Editorial workbench
             </span>
           </span>
         </Link>
-        <Link
-          to="/editor/submissions"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "6px 8px",
-            border: "1px solid var(--border)",
-            borderRadius: 5,
-            fontSize: 12,
-            color: "var(--muted)",
-            textDecoration: "none",
-            cursor: "pointer",
-          }}
+
+        {/* Quick-find chip — placeholder, hooks into ⌘K palette later. */}
+        <button
+          type="button"
           aria-label="Quick find"
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-border bg-bg-tint/60 text-[12px] text-muted hover:border-border-strong hover:bg-bg-tint hover:text-fg-2 transition-colors"
         >
-          <Icon name="search" size={13} />
-          <span style={{ flex: 1 }}>Quick find&hellip;</span>
-          <span
-            className="chip chip-mono"
-            style={{ fontSize: 9, height: 14, padding: "0 4px" }}
-          >
+          <Search className="size-3.5" />
+          <span className="flex-1 text-left">Quick find…</span>
+          <kbd className="text-[9.5px] font-mono px-1 py-0.5 rounded bg-white border border-border text-muted">
             ⌘K
-          </span>
-        </Link>
+          </kbd>
+        </button>
       </div>
 
       {/* Nav */}
-      <nav
-        style={{
-          flex: 1,
-          padding: "10px 8px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 1,
-          overflowY: "auto",
-        }}
-      >
+      <nav className="flex-1 px-2 py-2.5 flex flex-col gap-px overflow-y-auto">
         {NAV_GROUPS.map((group) => {
           const visibleItems = group.items.filter(
             (it) => !it.when || it.when(roles),
           );
-          // Hide groups whose only items require a role the user lacks.
           if (visibleItems.length === 0) return null;
-          // Suppress role-gated groups for unauthenticated users.
           if (!user && group.title !== "Home") return null;
           return (
-            <div
-              key={group.title}
-              style={{ display: "flex", flexDirection: "column", gap: 1 }}
-            >
-              <div
-                className="sc"
-                style={{
-                  color: "var(--muted-2)",
-                  padding: "8px 8px 4px",
-                  fontSize: 9.5,
-                }}
-              >
+            <div key={group.title} className="flex flex-col gap-px mb-1">
+              <div className="px-2 pt-2 pb-1 text-[9.5px] uppercase tracking-[0.08em] text-muted-2 font-semibold">
                 {group.title}
               </div>
               {visibleItems.map((item) => (
@@ -383,7 +305,6 @@ function Sidebar(): ReactNode {
         })}
       </nav>
 
-      {/* User card */}
       <UserBadge />
     </aside>
   );
@@ -402,45 +323,35 @@ function SidebarLink({
       ? location.pathname === "/"
       : location.pathname === item.to ||
         location.pathname.startsWith(`${item.to}/`);
+  const Icon = item.icon;
 
   return (
     <Link
       to={item.to}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        padding: "6px 9px",
-        borderRadius: 5,
-        fontSize: 13,
-        color: active ? "var(--fg)" : "var(--fg-2)",
-        fontWeight: active ? 500 : 400,
-        background: active ? "var(--surface)" : "transparent",
-        textDecoration: "none",
-        boxShadow: active ? "inset 0 0 0 1px var(--border)" : "none",
-      }}
+      className={cn(
+        "group flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] transition-colors",
+        active
+          ? "bg-cobalt-soft/60 text-cobalt-deep font-medium"
+          : "text-fg-2 hover:bg-bg-tint hover:text-fg",
+      )}
     >
       <Icon
-        name={item.icon}
-        size={15}
-        color={active ? "var(--cobalt)" : "var(--muted)"}
+        className={cn(
+          "size-4 shrink-0 transition-colors",
+          active ? "text-cobalt" : "text-muted group-hover:text-fg-2",
+        )}
       />
-      <span style={{ flex: 1 }}>{item.label}</span>
+      <span className="flex-1 truncate">{item.label}</span>
       {badge != null && badge > 0 ? (
         <span
-          className="tnum"
-          style={{
-            fontSize: 10.5,
-            fontWeight: 600,
-            background: active ? "var(--cobalt)" : "var(--surface-2)",
-            color: active ? "white" : "var(--muted)",
-            padding: "1px 5px",
-            borderRadius: 3,
-            minWidth: 16,
-            textAlign: "center",
-          }}
+          className={cn(
+            "tnum tabular-nums text-[10.5px] font-semibold px-1.5 rounded min-w-[18px] text-center",
+            active
+              ? "bg-cobalt text-white"
+              : "bg-amber-soft text-amber-deep",
+          )}
         >
-          {badge}
+          {badge > 99 ? "99+" : badge}
         </span>
       ) : null}
     </Link>
@@ -449,18 +360,13 @@ function SidebarLink({
 
 function UserBadge(): ReactNode {
   const { user, roles, signOut } = useAuth();
-  const [open, setOpen] = useState(false);
 
   if (!user) {
     return (
-      <div style={{ padding: 10, borderTop: "1px solid var(--border)" }}>
-        <Link
-          to="/login"
-          className="btn btn-primary btn-sm"
-          style={{ width: "100%", justifyContent: "center", textDecoration: "none" }}
-        >
-          Sign in
-        </Link>
+      <div className="p-3 border-t border-border">
+        <Button asChild className="w-full">
+          <Link to="/login">Sign in</Link>
+        </Button>
       </div>
     );
   }
@@ -469,130 +375,66 @@ function UserBadge(): ReactNode {
   const family = (user.profile.family_name as string | undefined) ?? "";
   const username =
     (user.profile.preferred_username as string | undefined) ?? "user";
+  const email = (user.profile.email as string | undefined) ?? username;
   const fullName = `${given} ${family}`.trim() || username;
   const initials = computeInitials(given, family, username);
   const roleLabel = formatPrimaryRole(roles);
 
   return (
-    <div
-      style={{
-        padding: 8,
-        borderTop: "1px solid var(--border)",
-        position: "relative",
-      }}
-    >
-      {open ? (
-        <div
-          style={{
-            position: "absolute",
-            bottom: "calc(100% + 6px)",
-            left: 8,
-            right: 8,
-            background: "var(--bg)",
-            border: "1px solid var(--border-strong)",
-            borderRadius: 5,
-            padding: 6,
-            boxShadow: "0 4px 16px oklch(20% 0.02 270 / 0.08)",
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-            zIndex: 5,
-          }}
-        >
-          <Link
-            to="/profile"
-            style={{
-              padding: "7px 10px",
-              fontSize: 12.5,
-              color: "var(--fg-2)",
-              textDecoration: "none",
-              borderRadius: 4,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}
-            onClick={() => setOpen(false)}
-          >
-            <Icon name="user" size={13} color="var(--muted)" /> Profile
-          </Link>
+    <div className="p-2 border-t border-border">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <button
             type="button"
-            onClick={() => {
-              setOpen(false);
-              void signOut();
-            }}
-            style={{
-              padding: "7px 10px",
-              fontSize: 12.5,
-              color: "var(--fg-2)",
-              background: "transparent",
-              border: "none",
-              borderRadius: 4,
-              cursor: "pointer",
-              textAlign: "left",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}
+            className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-bg-tint transition-colors text-left"
           >
-            <Icon name="arrowUpRight" size={13} color="var(--muted)" /> Sign out
+            <span className="size-8 rounded-full bg-cobalt-soft text-cobalt-deep border border-cobalt/15 grid place-items-center font-semibold text-[11.5px] flex-none">
+              {initials}
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-[12.5px] font-medium text-fg truncate">
+                {fullName}
+              </span>
+              <span className="block text-[10.5px] text-muted truncate">
+                {roleLabel}
+              </span>
+            </span>
+            <ChevronDown className="size-3.5 text-muted shrink-0" />
           </button>
-        </div>
-      ) : null}
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "6px 8px",
-          borderRadius: 5,
-          background: open ? "var(--surface)" : "transparent",
-          border: "none",
-          width: "100%",
-          cursor: "pointer",
-          textAlign: "left",
-        }}
-      >
-        <span
-          className="avatar"
-          style={{
-            width: 26,
-            height: 26,
-            fontSize: 11,
-            background: "var(--cobalt-soft)",
-            color: "var(--cobalt-deep)",
-            borderColor: "oklch(85% 0.06 255)",
-          }}
-        >
-          {initials}
-        </span>
-        <span style={{ flex: 1, minWidth: 0 }}>
-          <span
-            style={{
-              display: "block",
-              fontSize: 12.5,
-              fontWeight: 500,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" side="top" className="w-[228px]">
+          <DropdownMenuLabel>Signed in as</DropdownMenuLabel>
+          <div className="px-2.5 pb-2">
+            <div className="text-[12.5px] font-medium text-fg truncate">
+              {fullName}
+            </div>
+            <div className="text-[11px] text-muted truncate font-mono">
+              {email}
+            </div>
+          </div>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link to="/profile">
+              <UserCog />
+              Profile settings
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/notifications">
+              <Bell />
+              Notifications
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => void signOut()}
+            className="text-[#b91c1c] focus:text-[#b91c1c] focus:bg-[#fff5f5] [&_svg]:text-[#b91c1c]"
           >
-            {fullName}
-          </span>
-          <span
-            style={{
-              display: "block",
-              fontSize: 10,
-              color: "var(--muted)",
-            }}
-          >
-            {roleLabel}
-          </span>
-        </span>
-        <Icon name="moreH" size={14} color="var(--muted)" />
-      </button>
+            <LogOut />
+            Sign out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
@@ -607,25 +449,10 @@ function Topbar(): ReactNode {
   const breadcrumb = useBreadcrumb();
 
   return (
-    <header
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        padding: "10px 24px",
-        height: 48,
-        borderBottom: "1px solid var(--border)",
-        background: "var(--bg)",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          fontSize: 12.5,
-          color: "var(--muted)",
-        }}
+    <header className="flex items-center gap-3 px-6 h-14 border-b border-border bg-white/80 backdrop-blur sticky top-0 z-40">
+      <nav
+        className="flex items-center gap-1.5 text-[12.5px] text-muted min-w-0"
+        aria-label="Breadcrumb"
       >
         {breadcrumb.map((crumb, i) => (
           <BreadcrumbCrumb
@@ -634,34 +461,21 @@ function Topbar(): ReactNode {
             last={i === breadcrumb.length - 1}
           />
         ))}
-      </div>
-      <div style={{ flex: 1 }} />
+      </nav>
+      <div className="flex-1" />
       {loading ? (
-        <span style={{ color: "var(--muted)", fontSize: 13 }}>Loading…</span>
+        <span className="text-muted text-[13px]">Loading…</span>
       ) : user ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Link
-            to="/notifications"
-            className="btn btn-ghost btn-sm"
-            style={{ padding: 6, textDecoration: "none" }}
-            aria-label="Notifications"
-          >
-            <Icon name="bell" size={14} />
-          </Link>
+        <div className="flex items-center gap-1">
+          <NotificationsBell />
           <LocaleSwitcher />
         </div>
       ) : (
-        <Link
-          to="/login"
-          className="btn btn-primary btn-sm"
-          style={{ textDecoration: "none" }}
-        >
-          Sign in
-        </Link>
+        <Button asChild size="sm">
+          <Link to="/login">Sign in</Link>
+        </Button>
       )}
-      {/* Reference router so devtools-route-aware features have a chance to
-          mount, even when the topbar itself doesn't navigate. */}
-      <span style={{ display: "none" }} aria-hidden>
+      <span className="hidden" aria-hidden>
         {router.state.status}
       </span>
     </header>
@@ -677,10 +491,10 @@ function BreadcrumbCrumb({
 }): ReactNode {
   const text = (
     <span
-      style={{
-        color: last ? "var(--fg)" : "var(--muted)",
-        fontWeight: last ? 500 : 400,
-      }}
+      className={cn(
+        last ? "text-fg font-medium" : "text-muted",
+        "truncate max-w-[180px]",
+      )}
     >
       {crumb.label}
     </span>
@@ -690,38 +504,50 @@ function BreadcrumbCrumb({
       {crumb.href && !last ? (
         <Link
           to={crumb.href}
-          style={{ color: "inherit", textDecoration: "none" }}
+          className="hover:text-fg-2 transition-colors text-inherit"
         >
           {text}
         </Link>
       ) : (
         text
       )}
-      {!last ? <Icon name="chevronRight" size={11} color="var(--border-strong)" /> : null}
+      {!last ? (
+        <ChevronRight className="size-3 text-border-strong" />
+      ) : null}
     </>
   );
 }
 
 function LocaleSwitcher(): ReactNode {
+  const [locale, setLocale] = useState<"en" | "ro">("en");
   return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 5,
-        border: "1px solid var(--border)",
-        borderRadius: 4,
-        padding: "3px 7px",
-        fontSize: 11,
-        color: "var(--fg-2)",
-        cursor: "pointer",
-        fontFamily: "var(--sans)",
-      }}
-    >
-      <Icon name="globe" size={11} color="var(--muted)" />
-      <span style={{ fontWeight: 600 }}>EN</span>
-      <Icon name="chevronDown" size={10} color="var(--muted)" />
-    </span>
+    <DropdownMenu>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-[11.5px] uppercase tracking-wider"
+            >
+              <Globe className="size-3.5" />
+              {locale}
+              <ChevronDown className="size-3" />
+            </Button>
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent>Interface language</TooltipContent>
+      </Tooltip>
+      <DropdownMenuContent align="end" className="min-w-[140px]">
+        <DropdownMenuLabel>Language</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => setLocale("en")}>
+          🇬🇧 English {locale === "en" ? <Badge variant="cobalt" className="ml-auto">on</Badge> : null}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setLocale("ro")}>
+          🇷🇴 Română {locale === "ro" ? <Badge variant="cobalt" className="ml-auto">on</Badge> : null}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -746,6 +572,7 @@ const BREADCRUMB_LABELS: Record<string, string> = {
   journal: "Journal",
   notifications: "Notifications",
   profile: "Profile",
+  publications: "Publications",
 };
 
 function useBreadcrumb(): Array<{ label: string; href?: string }> {
@@ -770,15 +597,6 @@ function useBreadcrumb(): Array<{ label: string; href?: string }> {
   return crumbs;
 }
 
-/**
- * Lightweight badge counter — fires up-to-four optional API calls on shell
- * mount, each non-blocking and best-effort. A failed call leaves the badge
- * undefined (no number shown). Re-runs only when sign-in state changes.
- *
- * <p>Each call is gated by the role(s) that can actually use the endpoint
- * — querying /submissions?status=QUEUED as a plain author would 403, which
- * is correct backend behaviour but pollutes the dev console for nothing.
- */
 function useBadgeCounts(
   authenticated: boolean,
   roles: RealmRole[],
@@ -789,9 +607,6 @@ function useBadgeCounts(
     EDITOR_QUEUE: undefined,
     NOTIFICATIONS: undefined,
   });
-  // Stable string identity for the role array so the effect doesn't churn on
-  // every render — useAuth() can return a fresh array even when membership
-  // is unchanged.
   const rolesKey = roles.slice().sort().join(",");
   useEffect(() => {
     if (!authenticated) return;
@@ -806,13 +621,16 @@ function useBadgeCounts(
     if (isEditorial(roles)) {
       runs.push(["EDITOR_QUEUE", "/api/v1/submissions?status=QUEUED&size=1"]);
     }
-    // Notifications are per-user, so always available for any signed-in user.
-    runs.push(["NOTIFICATIONS", "/api/v1/notifications?unread=true&size=1"]);
+    runs.push(["NOTIFICATIONS", "/api/v1/notifications/unread-count"]);
     void Promise.all(
       runs.map(async ([key, url]) => {
-        const data = await api<{ totalElements?: number; total?: number }>(url);
+        const data = await api<{
+          totalElements?: number;
+          total?: number;
+          unread?: number;
+        }>(url);
         if (cancelled) return;
-        const total = data?.totalElements ?? data?.total;
+        const total = data?.totalElements ?? data?.total ?? data?.unread;
         if (typeof total === "number") {
           setState((prev) => ({ ...prev, [key]: total }));
         }
@@ -835,7 +653,6 @@ function computeInitials(given: string, family: string, username: string): strin
 
 function formatPrimaryRole(roles: RealmRole[]): string {
   if (roles.length === 0) return "Signed in";
-  // Prefer the highest-privilege one for the user-card subtitle.
   const order: RealmRole[] = [
     "ADMIN",
     "EDITOR",

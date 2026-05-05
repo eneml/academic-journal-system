@@ -1,9 +1,12 @@
 package com.eneml.ajs.submission.internal.application;
 
 import com.eneml.ajs.submission.api.SubmissionAuthorSummary;
+import com.eneml.ajs.submission.api.SubmissionContent;
+import com.eneml.ajs.submission.api.SubmissionFileSummary;
 import com.eneml.ajs.submission.api.SubmissionLookup;
 import com.eneml.ajs.submission.api.SubmissionSummary;
 import com.eneml.ajs.submission.internal.persistence.SubmissionAuthorRepository;
+import com.eneml.ajs.submission.internal.persistence.SubmissionFileRepository;
 import com.eneml.ajs.submission.internal.persistence.SubmissionRepository;
 import com.eneml.ajs.submission.internal.web.mapper.SubmissionAuthorMapper;
 import com.eneml.ajs.submission.internal.web.mapper.SubmissionMapper;
@@ -11,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +25,7 @@ class SubmissionLookupAdapter implements SubmissionLookup {
 
     private final SubmissionRepository submissionRepository;
     private final SubmissionAuthorRepository authorRepository;
+    private final SubmissionFileRepository fileRepository;
     private final SubmissionMapper submissionMapper;
     private final SubmissionAuthorMapper authorMapper;
 
@@ -32,6 +37,33 @@ class SubmissionLookupAdapter implements SubmissionLookup {
     @Override
     public List<SubmissionAuthorSummary> authorsOf(Long submissionId) {
         return authorMapper.toSummaries(authorRepository.findBySubmissionId(submissionId));
+    }
+
+    @Override
+    public Optional<SubmissionContent> findContent(Long submissionId) {
+        return submissionRepository.findById(submissionId)
+                .map(s -> new SubmissionContent(
+                        s.getId(),
+                        s.getLocale(),
+                        // Defensive copies — callers shouldn't be able to mutate
+                        // the entity's persistent collections via the API.
+                        new HashMap<>(s.getTitle() == null ? java.util.Map.of() : s.getTitle()),
+                        new HashMap<>(s.getAbstractText() == null
+                                ? java.util.Map.of() : s.getAbstractText()),
+                        s.getKeywords() == null ? List.of() : List.copyOf(s.getKeywords())));
+    }
+
+    @Override
+    public List<SubmissionFileSummary> filesOf(Long submissionId) {
+        return fileRepository.findBySubmissionId(submissionId).stream()
+                .map(f -> new SubmissionFileSummary(
+                        f.getId(),
+                        f.getSubmissionId(),
+                        f.getFileStage(),
+                        f.getStoredFileId(),
+                        f.getUploaderUserId(),
+                        f.getCreatedAt()))
+                .toList();
     }
 
     @Override

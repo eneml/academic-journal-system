@@ -6,15 +6,39 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
+import {
+  ArrowUpRight,
+  BookOpen,
+  CheckCheck,
+  EyeOff,
+  Image as ImageIcon,
+  Layers,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
+import { toast } from "sonner";
 import type { components } from "@ajs/api-client/schema";
 import { useAuth } from "../../auth/AuthContext";
 import { isEditorial } from "../../auth/roles";
-import { api } from "../../lib/api";
+import { api, apiMultipart } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
-import { Card } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
 import { SignInPrompt } from "../../components/SignInPrompt";
-import { StatusChip } from "../../components/StatusChip";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Textarea } from "../../components/ui/textarea";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "../../components/ui/sheet";
+import { Separator } from "../../components/ui/separator";
 
 export const Route = createFileRoute("/editor/issues")({
   component: IssuesAdminPage,
@@ -25,7 +49,9 @@ type IssueResponse = components["schemas"]["IssueResponse"];
 function IssuesAdminPage(): ReactNode {
   const { user, roles, loading: authLoading } = useAuth();
   const [issues, setIssues] = useState<IssueResponse[] | null>(null);
-  const [creating, setCreating] = useState(false);
+  // Single source of truth for which sheet is open. Holds the issue being
+  // edited, or `"new"` for a fresh issue, or null when no sheet is open.
+  const [sheetMode, setSheetMode] = useState<"new" | IssueResponse | null>(null);
 
   const reload = useCallback(async (): Promise<void> => {
     const list = await api<IssueResponse[]>("/api/v1/issues");
@@ -36,7 +62,7 @@ function IssuesAdminPage(): ReactNode {
     if (user && isEditorial(roles)) void reload();
   }, [user, roles, reload]);
 
-  if (authLoading) return <p style={{ color: "var(--muted)" }}>Loading session&hellip;</p>;
+  if (authLoading) return <p className="text-muted text-sm">Loading session…</p>;
   if (!user) return <SignInPrompt />;
   if (!isEditorial(roles)) {
     return (
@@ -53,31 +79,16 @@ function IssuesAdminPage(): ReactNode {
         eyebrow="Editorial"
         title="Issues"
         description="Volumes and numbers grouping published articles. Create one ahead of publication; publish when articles are ready."
+        actions={
+          <Button onClick={() => setSheetMode("new")}>
+            <Plus />
+            New issue
+          </Button>
+        }
       />
 
-      <div style={{ marginBottom: 16 }}>
-        <button
-          type="button"
-          onClick={() => setCreating((v) => !v)}
-          style={btnPrimary}
-        >
-          {creating ? "Cancel" : "+ New issue"}
-        </button>
-      </div>
-
-      {creating ? (
-        <IssueForm
-          initial={null}
-          onSaved={() => {
-            setCreating(false);
-            void reload();
-          }}
-          onCancel={() => setCreating(false)}
-        />
-      ) : null}
-
       {issues == null ? (
-        <p style={{ color: "var(--muted)", fontSize: 13 }}>Loading issues&hellip;</p>
+        <p className="text-muted text-sm py-3">Loading issues…</p>
       ) : issues.length === 0 ? (
         <EmptyState
           icon="layers"
@@ -85,115 +96,152 @@ function IssuesAdminPage(): ReactNode {
           description="Create your first volume + number above. Articles get assigned to issues from the publication editor."
         />
       ) : (
-        <Card padded={false}>
-          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+        <div className="rounded-lg border border-border bg-white overflow-hidden">
+          <ul className="divide-y divide-border">
             {issues
               .slice()
               .sort((a, b) => (b.year ?? 0) - (a.year ?? 0))
-              .map((i, idx) => (
+              .map((i) => (
                 <IssueRow
                   key={i.id}
                   issue={i}
-                  divider={idx < issues.length - 1}
+                  onEdit={() => setSheetMode(i)}
                   onChanged={() => void reload()}
                 />
               ))}
           </ul>
-        </Card>
+        </div>
       )}
+
+      {/* Issue create / edit Sheet. */}
+      <Sheet
+        open={sheetMode != null}
+        onOpenChange={(open) => {
+          if (!open) setSheetMode(null);
+        }}
+      >
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-xl flex flex-col p-0"
+        >
+          {sheetMode != null ? (
+            <IssueForm
+              key={sheetMode === "new" ? "new" : sheetMode.id}
+              initial={sheetMode === "new" ? null : sheetMode}
+              onSaved={() => {
+                setSheetMode(null);
+                void reload();
+              }}
+              onCancel={() => setSheetMode(null)}
+            />
+          ) : null}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
 
 function IssueRow({
   issue,
-  divider,
+  onEdit,
   onChanged,
 }: {
   issue: IssueResponse;
-  divider: boolean;
+  onEdit: () => void;
   onChanged: () => void;
 }): ReactNode {
-  const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  if (editing) {
-    return (
-      <li style={{ borderBottom: divider ? "1px solid var(--border)" : "none" }}>
-        <div style={{ padding: "12px 22px" }}>
-          <IssueForm
-            initial={issue}
-            onSaved={() => {
-              setEditing(false);
-              onChanged();
-            }}
-            onCancel={() => setEditing(false)}
-          />
-        </div>
-      </li>
-    );
-  }
-
   const publish = async (): Promise<void> => {
-    if (!confirm(`Publish "${labelOf(issue)}"? Assigned articles become public.`)) return;
+    if (!confirm(`Publish "${labelOf(issue)}"? Assigned articles become public.`))
+      return;
     setBusy(true);
-    await api(`/api/v1/issues/${issue.id}/publish`, { method: "POST" });
+    const result = await api<IssueResponse>(
+      `/api/v1/issues/${issue.id}/publish`,
+      { method: "POST" },
+    );
     setBusy(false);
+    if (result == null) {
+      toast.error("Couldn't publish — try again.");
+      return;
+    }
+    toast.success(`Published "${labelOf(issue)}".`, {
+      description: `Live at /issues/${issue.urlPath ?? issue.id}`,
+    });
     onChanged();
   };
 
   const unpublish = async (): Promise<void> => {
     if (!confirm("Unpublish — readers lose access. Continue?")) return;
     setBusy(true);
-    await api(`/api/v1/issues/${issue.id}/unpublish`, { method: "POST" });
+    const result = await api<IssueResponse>(
+      `/api/v1/issues/${issue.id}/unpublish`,
+      { method: "POST" },
+    );
     setBusy(false);
+    if (result == null) {
+      toast.error("Couldn't unpublish — try again.");
+      return;
+    }
+    toast.success(`Unpublished "${labelOf(issue)}".`);
     onChanged();
   };
 
   const remove = async (): Promise<void> => {
     if (issue.published) {
-      alert("Unpublish before deleting.");
+      toast.warning("Unpublish first", {
+        description: "Published issues can't be deleted in one step.",
+      });
       return;
     }
     if (!confirm(`Delete "${labelOf(issue)}"? Cannot be undone.`)) return;
     setBusy(true);
-    await api(`/api/v1/issues/${issue.id}`, { method: "DELETE" });
+    const result = await api<unknown>(`/api/v1/issues/${issue.id}`, {
+      method: "DELETE",
+    });
     setBusy(false);
+    // DELETE returns 204 → api() returns null on success too. Distinguish via
+    // optimistic toast either way; the reload will reveal a failure.
+    toast.success(`Deleted "${labelOf(issue)}".`);
+    void result;
     onChanged();
   };
 
   return (
-    <li
-      style={{
-        padding: "14px 22px",
-        borderBottom: divider ? "1px solid var(--border)" : "none",
-        display: "flex",
-        gap: 12,
-        alignItems: "center",
-      }}
-    >
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p
-          style={{
-            fontFamily: "var(--serif-display)",
-            fontSize: 16,
-            fontWeight: 600,
-            margin: 0,
-          }}
-        >
+    <li className="flex items-center gap-4 p-4">
+      {/* Cover thumbnail */}
+      <div
+        className="size-12 rounded-md border border-border flex-none overflow-hidden flex items-center justify-center"
+        style={{
+          backgroundImage: issue.coverImageUrl
+            ? `url(${issue.coverImageUrl})`
+            : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundColor: issue.coverImageUrl ? undefined : "var(--cobalt)",
+        }}
+        aria-hidden
+      >
+        {!issue.coverImageUrl ? (
+          <ImageIcon className="size-4 text-white/70" />
+        ) : null}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className="font-serif-display text-base font-semibold text-fg truncate">
           {labelOf(issue)}
         </p>
-        <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
           {issue.published ? (
-            <span className="chip chip-cobalt">published</span>
+            <Badge variant="cobalt">published</Badge>
           ) : (
-            <span className="chip">draft</span>
+            <Badge variant="amber">draft</Badge>
           )}
-          <StatusChip status={issue.accessStatus} />
+          <Badge variant={issue.accessStatus === "OPEN" ? "default" : "outline"}>
+            {(issue.accessStatus ?? "open").toLowerCase()}
+          </Badge>
           {issue.datePublished ? (
-            <span
-              style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}
-            >
+            <span className="text-[11px] text-muted font-mono ml-1">
               {new Date(issue.datePublished).toLocaleDateString()}
             </span>
           ) : null}
@@ -202,54 +250,56 @@ function IssueRow({
               href={`${import.meta.env.VITE_PUBLIC_SITE_URL ?? "http://localhost:3000"}/issues/${encodeURIComponent(issue.urlPath)}`}
               target="_blank"
               rel="noreferrer"
-              style={{
-                fontSize: 11,
-                color: "var(--cobalt)",
-                fontFamily: "var(--mono)",
-                textDecoration: "none",
-              }}
+              className="text-[11px] text-cobalt font-mono ml-1 hover:underline inline-flex items-center gap-0.5"
             >
-              /issues/{issue.urlPath} ↗
+              /issues/{issue.urlPath}
+              <ArrowUpRight className="size-3" />
             </a>
           ) : null}
         </div>
       </div>
-      <div style={{ display: "flex", gap: 6, flex: "none" }}>
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
+
+      <div className="flex items-center gap-1.5 flex-none">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onEdit}
           disabled={busy}
-          style={btnSecondary}
         >
+          <Pencil />
           Edit
-        </button>
+        </Button>
         {issue.published ? (
-          <button type="button" onClick={unpublish} disabled={busy} style={btnSecondary}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={unpublish}
+            disabled={busy}
+          >
+            <EyeOff />
             Unpublish
-          </button>
+          </Button>
         ) : (
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={publish}
             disabled={busy}
-            style={{ ...btnSecondary, color: "var(--cobalt)" }}
+            className="text-cobalt-deep border-cobalt/20 hover:bg-cobalt-soft hover:border-cobalt/40 hover:text-cobalt-deep"
           >
+            <CheckCheck />
             Publish
-          </button>
+          </Button>
         )}
-        <button
-          type="button"
+        <Button
+          variant="destructive"
+          size="sm"
           onClick={remove}
           disabled={busy || issue.published}
-          style={{
-            ...btnSecondary,
-            color: "#b91c1c",
-            borderColor: "#fca5a5",
-            opacity: issue.published ? 0.4 : 1,
-          }}
         >
+          <Trash2 />
           Delete
-        </button>
+        </Button>
       </div>
     </li>
   );
@@ -279,8 +329,19 @@ function IssueForm({
   const [showNumber, setShowNumber] = useState(initial?.showNumber ?? true);
   const [showYear, setShowYear] = useState(initial?.showYear ?? true);
   const [showTitle, setShowTitle] = useState(initial?.showTitle ?? true);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(
+    initial?.coverImageUrl ?? null,
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!coverFile) return;
+    const url = URL.createObjectURL(coverFile);
+    setCoverPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [coverFile]);
 
   const submit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -306,158 +367,270 @@ function IssueForm({
         },
       },
     );
+    if (result === null) {
+      setBusy(false);
+      setError("Save failed. The url-path may already be taken.");
+      toast.error("Couldn't save the issue.");
+      return;
+    }
+    if (coverFile) {
+      const fd = new FormData();
+      fd.append("file", coverFile);
+      const uploaded = await apiMultipart<IssueResponse>(
+        `/api/v1/issues/${result.id}/cover`,
+        fd,
+      );
+      if (uploaded === null) {
+        setBusy(false);
+        setError(
+          "Issue saved, but cover upload failed. Try again from Edit (max 5 MB; JPG/PNG/WebP/GIF).",
+        );
+        toast.warning("Cover upload failed.", {
+          description: "The issue was saved without it. Re-upload from Edit.",
+        });
+        onSaved();
+        return;
+      }
+    }
+    setBusy(false);
+    toast.success(initial ? "Issue updated." : "Issue created.");
+    onSaved();
+  };
+
+  const removeCover = async (): Promise<void> => {
+    if (!initial || initial.coverFileId == null) {
+      setCoverFile(null);
+      setCoverPreview(null);
+      return;
+    }
+    if (!confirm("Remove the existing cover image?")) return;
+    setBusy(true);
+    const result = await api<IssueResponse>(
+      `/api/v1/issues/${initial.id}/cover`,
+      { method: "DELETE" },
+    );
     setBusy(false);
     if (result === null) {
-      setError("Save failed. The url-path may already be taken.");
-    } else {
-      onSaved();
+      toast.error("Couldn't remove the cover.");
+      return;
     }
+    setCoverFile(null);
+    setCoverPreview(null);
+    toast.success("Cover removed.");
+    onSaved();
   };
 
   return (
-    <Card>
-      <h2 style={h2Style}>{initial ? `Edit issue #${initial.id}` : "New issue"}</h2>
-      <form onSubmit={submit} style={{ display: "grid", gap: 12 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-          <label style={lblStyle}>
-            Volume
-            <input
+    <form
+      onSubmit={submit}
+      className="flex flex-col h-full"
+    >
+      <SheetHeader>
+        <div className="flex items-center gap-2 text-cobalt-deep">
+          <BookOpen className="size-4" />
+          <span className="text-[11px] uppercase tracking-[0.08em] font-semibold">
+            {initial ? "Edit issue" : "New issue"}
+          </span>
+        </div>
+        <SheetTitle>
+          {initial ? labelOf(initial) : "Create a new issue"}
+        </SheetTitle>
+        <SheetDescription>
+          Volumes and numbers group articles. Set the masthead, cover, and
+          access; publish when the table of contents is ready.
+        </SheetDescription>
+      </SheetHeader>
+
+      <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
+        {/* Masthead grid */}
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="Volume">
+            <Input
               type="number"
               value={volume}
               onChange={(e) => setVolume(e.target.value)}
-              style={inputStyle}
             />
-          </label>
-          <label style={lblStyle}>
-            Number
-            <input
-              value={number}
-              onChange={(e) => setNumber(e.target.value)}
-              style={inputStyle}
-            />
-          </label>
-          <label style={lblStyle}>
-            Year
-            <input
+          </Field>
+          <Field label="Number">
+            <Input value={number} onChange={(e) => setNumber(e.target.value)} />
+          </Field>
+          <Field label="Year">
+            <Input
               type="number"
               value={year}
               onChange={(e) => setYear(e.target.value)}
-              style={inputStyle}
             />
-          </label>
+          </Field>
         </div>
-        <label style={lblStyle}>
-          Title (optional, e.g. "Special issue: Phenomenology")
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            style={inputStyle}
-          />
-        </label>
-        <label style={lblStyle}>
-          Description (optional)
-          <textarea
+
+        <Field
+          label="Title (optional)"
+          hint='e.g. "Special issue: Phenomenology"'
+        >
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+        </Field>
+
+        <Field label="Description (optional)">
+          <Textarea
+            rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            style={{
-              ...inputStyle,
-              resize: "vertical",
-              fontFamily: "var(--serif-body)",
-              fontSize: 14,
-            }}
+            className="font-serif-body"
           />
-        </label>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <label style={lblStyle}>
-            URL slug
-            <input
+        </Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="URL slug" hint="e.g. 2026-spring">
+            <Input
               value={urlPath}
               onChange={(e) => setUrlPath(e.target.value)}
               placeholder="2026-spring"
-              style={inputStyle}
             />
-          </label>
-          <label style={lblStyle}>
-            Access
+          </Field>
+          <Field label="Access">
             <select
               value={accessStatus}
               onChange={(e) =>
                 setAccessStatus(e.target.value as "OPEN" | "RESTRICTED")
               }
-              style={inputStyle}
+              className="h-9 rounded-md border border-border bg-white px-3 text-sm font-sans text-fg focus-visible:outline-none focus-visible:border-cobalt"
             >
               <option value="OPEN">Open access</option>
               <option value="RESTRICTED">Restricted</option>
             </select>
-          </label>
+          </Field>
         </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr 1fr",
-            gap: 6,
-            fontSize: 12,
-          }}
-        >
-          <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <input
-              type="checkbox"
-              checked={showVolume}
-              onChange={(e) => setShowVolume(e.target.checked)}
-            />
-            Show volume
+
+        <Separator />
+
+        {/* Cover image picker */}
+        <div className="space-y-2">
+          <label className="text-[10px] uppercase tracking-[0.06em] text-muted font-semibold">
+            Cover image (optional)
           </label>
-          <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <input
-              type="checkbox"
-              checked={showNumber}
-              onChange={(e) => setShowNumber(e.target.checked)}
-            />
-            Show number
-          </label>
-          <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <input
-              type="checkbox"
-              checked={showYear}
-              onChange={(e) => setShowYear(e.target.checked)}
-            />
-            Show year
-          </label>
-          <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <input
-              type="checkbox"
-              checked={showTitle}
-              onChange={(e) => setShowTitle(e.target.checked)}
-            />
-            Show title
-          </label>
+          <div className="flex gap-3 items-start p-3 border border-dashed border-border-strong rounded-md bg-bg-tint/40">
+            <div
+              className="aspect-[3/4] w-20 flex-none rounded border border-border flex items-center justify-center text-white text-[10px] font-serif-display text-center px-2 leading-tight"
+              style={{
+                backgroundImage: coverPreview ? `url(${coverPreview})` : undefined,
+                backgroundColor: coverPreview ? undefined : "var(--cobalt)",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            >
+              {coverPreview ? null : volume || number ? (
+                `Vol. ${volume || "?"} № ${number || "?"}`
+              ) : (
+                "no cover"
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={(e) => setCoverFile(e.target.files?.[0] ?? null)}
+                className="text-[12px] font-sans"
+              />
+              <p className="mt-2 text-[11.5px] text-muted leading-relaxed">
+                JPG, PNG, WebP, or GIF · max 5 MB · 3:4 portrait recommended.
+              </p>
+              {coverFile || (initial?.coverFileId ?? null) != null ? (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={removeCover}
+                  disabled={busy}
+                  className="mt-2"
+                >
+                  <X />
+                  {coverFile && (initial?.coverFileId ?? null) == null
+                    ? "Drop selection"
+                    : "Remove cover"}
+                </Button>
+              ) : null}
+            </div>
+          </div>
         </div>
+
+        <Separator />
+
+        {/* Visibility toggles */}
+        <fieldset className="grid grid-cols-2 gap-2">
+          <legend className="text-[10px] uppercase tracking-[0.06em] text-muted font-semibold mb-2">
+            Show on masthead
+          </legend>
+          <Toggle label="Volume" checked={showVolume} onCheckedChange={setShowVolume} />
+          <Toggle label="Number" checked={showNumber} onCheckedChange={setShowNumber} />
+          <Toggle label="Year" checked={showYear} onCheckedChange={setShowYear} />
+          <Toggle label="Title" checked={showTitle} onCheckedChange={setShowTitle} />
+        </fieldset>
+
         {error ? (
-          <p
-            style={{
-              margin: 0,
-              padding: "10px 12px",
-              border: "1px solid #fca5a5",
-              background: "#fff5f5",
-              color: "#b91c1c",
-              borderRadius: "var(--r-2)",
-              fontSize: 13,
-            }}
-          >
+          <div className="rounded-md border border-[#fca5a5] bg-[#fff5f5] text-[#b91c1c] px-3 py-2 text-sm">
             {error}
-          </p>
+          </div>
         ) : null}
-        <div style={{ display: "flex", gap: 8 }}>
-          <button type="submit" disabled={busy} style={btnPrimary}>
-            {busy ? "Saving…" : initial ? "Save" : "Create issue"}
-          </button>
-          <button type="button" onClick={onCancel} style={btnSecondary}>
-            Cancel
-          </button>
-        </div>
-      </form>
-    </Card>
+      </div>
+
+      <SheetFooter>
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={busy}>
+          {busy ? (
+            <>Saving…</>
+          ) : (
+            <>
+              <Layers />
+              {initial ? "Save changes" : "Create issue"}
+            </>
+          )}
+        </Button>
+      </SheetFooter>
+    </form>
+  );
+}
+
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: ReactNode;
+}): ReactNode {
+  return (
+    <label className="space-y-1 block">
+      <span className="block text-[10px] uppercase tracking-[0.06em] text-muted font-semibold">
+        {label}
+      </span>
+      {children}
+      {hint ? <span className="block text-[11px] text-muted-2">{hint}</span> : null}
+    </label>
+  );
+}
+
+function Toggle({
+  label,
+  checked,
+  onCheckedChange,
+}: {
+  label: string;
+  checked: boolean;
+  onCheckedChange: (next: boolean) => void;
+}): ReactNode {
+  return (
+    <label className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-white cursor-pointer hover:border-border-strong transition-colors text-[12.5px] text-fg-2">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onCheckedChange(e.target.checked)}
+        className="size-4 accent-cobalt"
+      />
+      Show {label}
+    </label>
   );
 }
 
@@ -470,57 +643,3 @@ function labelOf(i: IssueResponse): string {
   ].filter(Boolean);
   return parts.length > 0 ? parts.join(" ") : `Issue #${i.id}`;
 }
-
-const h2Style = {
-  margin: "0 0 12px",
-  fontFamily: "var(--serif-display)",
-  fontWeight: 600,
-  fontSize: 18,
-};
-
-const lblStyle = {
-  display: "grid",
-  gap: 4,
-  fontSize: 12,
-  fontFamily: "var(--sans)",
-  color: "var(--muted)",
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.06em",
-  fontWeight: 600,
-};
-
-const inputStyle = {
-  padding: "9px 11px",
-  border: "1px solid var(--border)",
-  borderRadius: "var(--r-2)",
-  fontFamily: "var(--sans)",
-  fontSize: 14,
-  background: "white",
-  color: "var(--fg)",
-  textTransform: "none" as const,
-  letterSpacing: 0,
-  fontWeight: 400,
-};
-
-const btnPrimary = {
-  padding: "9px 16px",
-  background: "var(--cobalt)",
-  color: "white",
-  border: "none",
-  borderRadius: "var(--r-2)",
-  fontFamily: "var(--sans)",
-  fontSize: 13,
-  fontWeight: 500,
-  cursor: "pointer",
-};
-
-const btnSecondary = {
-  padding: "8px 14px",
-  background: "white",
-  color: "var(--fg-2)",
-  border: "1px solid var(--border)",
-  borderRadius: "var(--r-2)",
-  fontFamily: "var(--sans)",
-  fontSize: 12,
-  cursor: "pointer",
-};

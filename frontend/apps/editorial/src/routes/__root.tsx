@@ -2,6 +2,8 @@ import { Outlet, createRootRoute, useLocation } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { AuthProvider } from "../auth/AuthContext";
 import { AppShell } from "../components/AppShell";
+import { Toaster } from "../components/ui/sonner";
+import { TooltipProvider } from "../components/ui/tooltip";
 
 export const Route = createRootRoute({
   component: RootLayout,
@@ -27,7 +29,12 @@ function RootLayout(): ReactNode {
         fontFamily: "var(--sans)",
       }}
     >
-      <AuthProvider>{bare ? <Outlet /> : <AppShell><Outlet /></AppShell>}</AuthProvider>
+      <AuthProvider>
+        <TooltipProvider delayDuration={200}>
+          {bare ? <Outlet /> : <AppShell><Outlet /></AppShell>}
+        </TooltipProvider>
+      </AuthProvider>
+      <Toaster />
     </div>
   );
 }

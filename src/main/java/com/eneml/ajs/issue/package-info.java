@@ -8,6 +8,6 @@
  */
 @org.springframework.modulith.ApplicationModule(
     displayName = "Issue",
-    allowedDependencies = { "shared", "publication::api", "journal::api", "storage::api" }
+    allowedDependencies = { "shared", "publication::api", "journal::api", "storage::api", "identity::api" }
 )
 package com.eneml.ajs.issue;

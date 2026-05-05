@@ -12,6 +12,16 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
+import {
+  ArrowLeft,
+  Pencil,
+  Save,
+  Send,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
+import { toast } from "sonner";
 import type { components } from "@ajs/api-client/schema";
 import { useAuth } from "../../auth/AuthContext";
 import { api } from "../../lib/api";
@@ -21,6 +31,8 @@ import { Card } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
 import { SignInPrompt } from "../../components/SignInPrompt";
 import { StatusChip } from "../../components/StatusChip";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
 
 export const Route = createFileRoute("/author/submissions/$id")({
   component: SubmissionDetailPage,
@@ -117,24 +129,20 @@ function SubmissionDetailPage(): ReactNode {
 
   return (
     <>
-      <p style={{ margin: "0 0 6px", fontSize: 12 }}>
-        <Link to="/author/submissions" className="hover:text-cobalt">
-          ← Author / submissions
-        </Link>
-      </p>
-      <PageHeader eyebrow="Submission" title={headerTitle} />
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          alignItems: "baseline",
-          marginBottom: 22,
-          flexWrap: "wrap",
-        }}
+      <Link
+        to="/author/submissions"
+        className="text-[12px] text-muted hover:text-cobalt inline-flex items-center gap-1.5 mb-1.5"
       >
+        <ArrowLeft className="size-3" /> Author / submissions
+      </Link>
+      <PageHeader
+        eyebrow={`Submission · AJ-${String(submission.id ?? 0).padStart(4, "0")}`}
+        title={headerTitle}
+      />
+      <div className="flex gap-2 items-baseline mb-6 flex-wrap">
         <StatusChip status={submission.status} />
         <StatusChip status={submission.stage} />
-        <span style={{ color: "var(--muted)", fontSize: 12, fontFamily: "var(--mono)" }}>
+        <span className="text-[12px] text-muted font-mono">
           v{submission.version ?? 0} · last activity{" "}
           {submission.dateLastActivity
             ? new Date(submission.dateLastActivity).toLocaleString()
@@ -317,14 +325,13 @@ function MetadataCard({
               }}
             />
           </label>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <button type="submit" disabled={busy} style={btnPrimary}>
+          <div className="flex gap-2.5 items-center">
+            <Button type="submit" disabled={busy}>
+              <Save />
               {busy ? "Saving…" : "Save metadata"}
-            </button>
+            </Button>
             {savedAt ? (
-              <span
-                style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}
-              >
+              <span className="text-[11px] text-muted font-mono">
                 saved {savedAt.toLocaleTimeString()}
               </span>
             ) : null}
@@ -366,13 +373,14 @@ function AuthorsCard({
           Contributors
         </SectionTitle>
         {editable ? (
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={() => setAdding((v) => !v)}
-            style={btnSecondary}
           >
             {adding ? "Cancel" : "+ Add author"}
-          </button>
+          </Button>
         ) : null}
       </div>
       {adding ? (
@@ -476,7 +484,7 @@ function AuthorRowView({
         ) : null}
         <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
           {author.corresponding ? (
-            <span className="chip chip-cobalt">corresponding</span>
+            <Badge variant="cobalt">corresponding</Badge>
           ) : null}
           {author.includeInBrowse ? null : (
             <span className="chip">hidden in browse</span>
@@ -484,23 +492,32 @@ function AuthorRowView({
         </div>
       </div>
       {editable ? (
-        <div style={{ display: "flex", gap: 6, flex: "none" }}>
-          <button type="button" onClick={() => setEditing(true)} style={btnSecondary}>
-            Edit
-          </button>
-          <button
+        <div className="flex gap-1.5 flex-none">
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => setEditing(true)}
+          >
+            <Pencil />
+            Edit
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
             onClick={async () => {
               if (!confirm(`Remove ${author.givenName ?? "author"}?`)) return;
               await api(`/api/v1/submissions/${submissionId}/authors/${author.id}`, {
                 method: "DELETE",
               });
+              toast.success(`Removed ${author.givenName ?? "author"}.`);
               onChange();
             }}
-            style={{ ...btnSecondary, color: "#b91c1c", borderColor: "#fca5a5" }}
           >
+            <Trash2 />
             Remove
-          </button>
+          </Button>
         </div>
       ) : null}
     </div>
@@ -618,13 +635,14 @@ function AuthorForm({
           Show on public listing
         </label>
       </div>
-      <div style={{ display: "flex", gap: 8 }}>
-        <button type="submit" disabled={busy} style={btnPrimary}>
+      <div className="flex gap-2">
+        <Button type="submit" disabled={busy}>
+          <Save />
           {busy ? "Saving…" : initial ? "Save" : "Add author"}
-        </button>
-        <button type="button" onClick={onCancel} style={btnSecondary}>
+        </Button>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -677,9 +695,11 @@ function FilesCard({
     setBusy(false);
     if (inputRef.current) inputRef.current.value = "";
     if (ok) {
+      toast.success(`Uploaded ${file.name}.`);
       onChange();
     } else {
       setError("Upload failed. Try again.");
+      toast.error("Upload failed.", { description: file.name });
     }
   };
 
@@ -801,32 +821,37 @@ function FilesCard({
                   {formatBytes(f.sizeBytes ?? 0)}
                 </p>
               </div>
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={async () => {
                   const url = await api<{ url: string }>(
                     `/api/v1/submissions/${submissionId}/files/${f.id}/download-url`,
                   );
                   if (url?.url) window.open(url.url, "_blank");
+                  else toast.error("Couldn't generate download URL.");
                 }}
-                style={btnSecondary}
               >
                 Download
-              </button>
+              </Button>
               {editable ? (
-                <button
+                <Button
                   type="button"
+                  variant="destructive"
+                  size="sm"
                   onClick={async () => {
                     if (!confirm(`Remove ${f.originalFilename}?`)) return;
                     await api(`/api/v1/submissions/${submissionId}/files/${f.id}`, {
                       method: "DELETE",
                     });
+                    toast.success(`Removed ${f.originalFilename}.`);
                     onChange();
                   }}
-                  style={{ ...btnSecondary, color: "#b91c1c", borderColor: "#fca5a5" }}
                 >
+                  <Trash2 />
                   Remove
-                </button>
+                </Button>
               ) : null}
             </li>
           ))
@@ -896,11 +921,15 @@ function SubmitCard({
     });
     setBusy(false);
     if (result) {
+      toast.success("Submitted to editors.", {
+        description: "You'll see the editor's first response in Notifications.",
+      });
       onSubmitted();
     } else {
       setError(
         "Submit failed. Make sure title, abstract, at least one contributor, and a manuscript file are present.",
       );
+      toast.error("Couldn't submit.");
     }
   };
 
@@ -921,18 +950,14 @@ function SubmitCard({
         <li>{authors.length > 0 ? "✓" : "·"} At least one contributor ({authors.length})</li>
         <li>{files.length > 0 ? "✓" : "·"} At least one uploaded file ({files.length})</li>
       </ul>
-      <button
+      <Button
         type="button"
         disabled={busy || !ready}
         onClick={submit}
-        style={{
-          ...btnPrimary,
-          opacity: busy || !ready ? 0.5 : 1,
-          cursor: busy || !ready ? "not-allowed" : "pointer",
-        }}
       >
+        <Send />
         {busy ? "Submitting…" : "Submit to editors"}
-      </button>
+      </Button>
       {error ? (
         <p
           style={{

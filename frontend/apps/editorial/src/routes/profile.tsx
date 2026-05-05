@@ -5,6 +5,7 @@ import { api } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
 import { Card } from "../components/Card";
 import { SignInPrompt } from "../components/SignInPrompt";
+import { Badge } from "../components/ui/badge";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -111,11 +112,11 @@ function ProfilePage(): ReactNode {
               No realm roles found in your access token.
             </p>
           ) : (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            <div className="flex flex-wrap gap-1.5">
               {roles.map((r) => (
-                <span key={r} className="chip chip-cobalt">
+                <Badge key={r} variant="cobalt">
                   {r.replace(/_/g, " ").toLowerCase()}
-                </span>
+                </Badge>
               ))}
             </div>
           )}

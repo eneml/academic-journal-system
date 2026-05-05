@@ -283,7 +283,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Editorial queue — list submissions by status / stage */
+        /** Editorial queue / faceted browser — filter by status, stage, section, date, q */
         get: operations["queue"];
         put?: never;
         /** Start a new draft submission */
@@ -532,6 +532,23 @@ export interface paths {
         put?: never;
         /** Unpublish a published publication (becomes hidden) */
         post: operations["unpublish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/publications/{publicationId}/schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Schedule a draft to auto-publish at a future instant */
+        post: operations["schedule"];
         delete?: never;
         options?: never;
         head?: never;
@@ -866,6 +883,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/issues/{id}/cover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Redirect to the issue's cover image (public) */
+        get: operations["coverRedirect"];
+        put?: never;
+        /** Upload or replace the issue's cover image */
+        post: operations["uploadCover"];
+        /** Remove the issue's cover image */
+        delete: operations["removeCover"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/integration/publications/{publicationId}/deposits/{target}": {
         parameters: {
             query?: never;
@@ -877,6 +913,23 @@ export interface paths {
         put?: never;
         /** Manually enqueue a deposit attempt to CrossRef or ORCID */
         post: operations["enqueue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Self-register a new author account (public) */
+        post: operations["register"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1055,6 +1108,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reviewer/assignments/{assignmentId}/manuscript": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the (blinded) manuscript belonging to one of my assignments */
+        get: operations["manuscript"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/publications/{publicationId}/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Per-publication view + download counters */
+        get: operations["metricsForPublication"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/publications/recent": {
         parameters: {
             query?: never;
@@ -1106,6 +1193,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/metrics/top-viewed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Top publications by cumulative view count */
+        get: operations["topViewed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/journal/sections/by-code/{code}": {
         parameters: {
             query?: never;
@@ -1132,6 +1236,23 @@ export interface paths {
         };
         /** List the published articles in an issue (public TOC) */
         get: operations["tableOfContents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/issues/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Combined-issue PDF — every article's approved PDF galley merged in TOC order (public) */
+        get: operations["issuePdf"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1241,6 +1362,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/authors/{orcid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Public profile for an author identified by ORCID iD */
+        get: operations["profile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/articles/{slugOrId}": {
         parameters: {
             query?: never;
@@ -1250,6 +1388,74 @@ export interface paths {
         };
         /** Public article view by url-path slug or numeric id (PUBLISHED only) */
         get: operations["articleBySlugOrId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/articles/{slugOrId}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all PUBLISHED versions of an article (public) */
+        get: operations["articleVersions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/articles/{slugOrId}/galleys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List approved galleys for a published article (public) */
+        get: operations["articleGalleys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/articles/{slugOrId}/galleys/{galleyId}/download-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a short-lived presigned URL for a galley's underlying file (public for OPEN articles) */
+        get: operations["articleGalleyDownloadUrl"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/articles/{slugOrId}/citation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Citation for a published article in BibTeX / RIS / APA format (public) */
+        get: operations["citation"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1766,6 +1972,9 @@ export interface components {
                 [key: string]: string;
             };
             coverImagePath?: string;
+            coverImageUrl?: string;
+            /** Format: int64 */
+            coverFileId?: number;
             urlPath?: string;
             showVolume?: boolean;
             showNumber?: boolean;
@@ -2079,6 +2288,12 @@ export interface components {
             completedAt?: string;
             errorMessage?: string;
         };
+        RegisterRequest: {
+            email: string;
+            password: string;
+            givenName: string;
+            familyName: string;
+        };
         Pageable: {
             /** Format: int32 */
             page?: number;
@@ -2091,10 +2306,10 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            sort?: components["schemas"]["SortObject"];
             pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
-            sort?: components["schemas"]["SortObject"];
             /** Format: int32 */
             numberOfElements?: number;
             /** Format: int32 */
@@ -2105,13 +2320,13 @@ export interface components {
             empty?: boolean;
         };
         PageableObject: {
+            sort?: components["schemas"]["SortObject"];
             paged?: boolean;
             /** Format: int32 */
             pageNumber?: number;
             /** Format: int32 */
             pageSize?: number;
             unpaged?: boolean;
-            sort?: components["schemas"]["SortObject"];
             /** Format: int64 */
             offset?: number;
         };
@@ -2125,10 +2340,10 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            sort?: components["schemas"]["SortObject"];
             pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
-            sort?: components["schemas"]["SortObject"];
             /** Format: int32 */
             numberOfElements?: number;
             /** Format: int32 */
@@ -2190,6 +2405,56 @@ export interface components {
             score?: number;
             snippet?: string;
         };
+        File: {
+            /** Format: int64 */
+            id?: number;
+            /** @enum {string} */
+            stage?: "SUBMISSION" | "REVIEW_FILE" | "REVIEW_ATTACHMENT" | "REVIEW_REVISION" | "FINAL" | "COPYEDIT" | "PROOF" | "PRODUCTION_READY" | "DEPENDENT" | "QUERY_ATTACHMENT" | "JATS" | "NOTE";
+            filename?: string;
+            contentType?: string;
+            /** Format: int64 */
+            sizeBytes?: number;
+            downloadUrl?: string;
+            /** Format: date-time */
+            uploadedAt?: string;
+        };
+        ReviewerManuscriptResponse: {
+            /** Format: int64 */
+            submissionId?: number;
+            /** Format: int64 */
+            assignmentId?: number;
+            reviewMethod?: string;
+            locale?: string;
+            title?: {
+                [key: string]: string;
+            };
+            abstractText?: {
+                [key: string]: string;
+            };
+            keywords?: string[];
+            files?: components["schemas"]["File"][];
+        };
+        PublicationMetricsSummary: {
+            /** Format: int64 */
+            publicationId?: number;
+            /** Format: int64 */
+            viewCount?: number;
+            /** Format: int64 */
+            downloadCount?: number;
+            /** Format: date-time */
+            lastViewedAt?: string;
+            /** Format: date-time */
+            lastDownloadedAt?: string;
+        };
+        AuthorProfile: {
+            orcidUrl?: string;
+            givenName?: string;
+            familyName?: string;
+            affiliation?: string;
+            /** Format: int32 */
+            worksCount?: number;
+            works?: components["schemas"]["PublicationSummary"][];
+        };
         PublicArticleResponse: {
             /** Format: int64 */
             id?: number;
@@ -2232,6 +2497,29 @@ export interface components {
             affiliation?: string;
             corresponding?: boolean;
         };
+        GalleyLookup: Record<string, never>;
+        GalleySummary: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            publicationId?: number;
+            /** Format: int64 */
+            submissionFileId?: number;
+            remoteUrl?: string;
+            locale?: string;
+            label?: {
+                [key: string]: string;
+            };
+            /** Format: int32 */
+            seq?: number;
+            approved?: boolean;
+            urlPath?: string;
+            /** Format: int64 */
+            doiId?: number;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        FileStorageService: Record<string, never>;
     };
     responses: never;
     parameters: never;
@@ -2993,8 +3281,13 @@ export interface operations {
     queue: {
         parameters: {
             query: {
-                status?: "DRAFT" | "QUEUED" | "PUBLISHED" | "DECLINED" | "SCHEDULED";
+                status?: string;
                 stage?: "SUBMISSION" | "EXTERNAL_REVIEW" | "EDITING" | "PRODUCTION" | "PUBLISHED";
+                sectionId?: number;
+                submittedByUserId?: number;
+                submittedAfter?: string;
+                submittedBefore?: string;
+                q?: string;
                 pageable: components["schemas"]["Pageable"];
             };
             header?: never;
@@ -3498,6 +3791,30 @@ export interface operations {
     unpublish: {
         parameters: {
             query?: never;
+            header?: never;
+            path: {
+                publicationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PublicationResponse"];
+                };
+            };
+        };
+    };
+    schedule: {
+        parameters: {
+            query: {
+                when: string;
+            };
             header?: never;
             path: {
                 publicationId: number;
@@ -4062,6 +4379,77 @@ export interface operations {
             };
         };
     };
+    coverRedirect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    uploadCover: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IssueResponse"];
+                };
+            };
+        };
+    };
+    removeCover: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IssueResponse"];
+                };
+            };
+        };
+    };
     enqueue: {
         parameters: {
             query?: never;
@@ -4082,6 +4470,28 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["DepositSummary"];
                 };
+            };
+        };
+    };
+    register: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -4354,6 +4764,50 @@ export interface operations {
             };
         };
     };
+    manuscript: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewerManuscriptResponse"];
+                };
+            };
+        };
+    };
+    metricsForPublication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PublicationMetricsSummary"];
+                };
+            };
+        };
+    };
     recent: {
         parameters: {
             query?: {
@@ -4420,6 +4874,28 @@ export interface operations {
             };
         };
     };
+    topViewed: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PublicationMetricsSummary"][];
+                };
+            };
+        };
+    };
     getByCode: {
         parameters: {
             query?: never;
@@ -4460,6 +4936,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PublicationSummary"][];
+                };
+            };
+        };
+    };
+    issuePdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
                 };
             };
         };
@@ -4595,6 +5093,28 @@ export interface operations {
             };
         };
     };
+    profile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orcid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthorProfile"];
+                };
+            };
+        };
+    };
     articleBySlugOrId: {
         parameters: {
             query?: never;
@@ -4613,6 +5133,104 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PublicArticleResponse"];
+                };
+            };
+        };
+    };
+    articleVersions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slugOrId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PublicationSummary"][];
+                };
+            };
+        };
+    };
+    articleGalleys: {
+        parameters: {
+            query: {
+                galleyLookup: components["schemas"]["GalleyLookup"];
+            };
+            header?: never;
+            path: {
+                slugOrId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GalleySummary"][];
+                };
+            };
+        };
+    };
+    articleGalleyDownloadUrl: {
+        parameters: {
+            query: {
+                galleyLookup: components["schemas"]["GalleyLookup"];
+                fileStorage: components["schemas"]["FileStorageService"];
+            };
+            header?: never;
+            path: {
+                slugOrId: string;
+                galleyId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    citation: {
+        parameters: {
+            query?: {
+                format?: "BIBTEX" | "RIS" | "APA";
+            };
+            header?: never;
+            path: {
+                slugOrId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
                 };
             };
         };

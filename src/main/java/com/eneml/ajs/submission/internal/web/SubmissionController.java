@@ -4,6 +4,7 @@ import com.eneml.ajs.identity.api.UserDirectoryService;
 import com.eneml.ajs.submission.api.SubmissionStage;
 import com.eneml.ajs.submission.api.SubmissionStatus;
 import com.eneml.ajs.submission.internal.application.SubmissionService;
+import com.eneml.ajs.submission.internal.application.SubmissionService.SubmissionFilters;
 import com.eneml.ajs.submission.internal.domain.Submission;
 import com.eneml.ajs.submission.internal.web.dto.SubmissionDetailsRequest;
 import com.eneml.ajs.submission.internal.web.dto.SubmissionResponse;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.time.Instant;
 
 @RestController
 @RequestMapping("/api/v1/submissions")
@@ -61,16 +63,33 @@ class SubmissionController {
         return service.listMine(currentUserId(jwt), pageable).map(mapper::toResponse);
     }
 
+    /**
+     * Editorial inbox / faceted browser. All filters are optional; the
+     * default of {@code status=QUEUED} preserves the dashboard-counter
+     * behaviour callers depended on. Pass {@code status=ANY} to opt out
+     * of the status filter and search across all statuses.
+     */
     @GetMapping
     @PreAuthorize("hasAnyRole('EDITOR','ADMIN')")
-    @Operation(summary = "Editorial queue — list submissions by status / stage")
-    Page<SubmissionResponse> queue(@RequestParam(defaultValue = "QUEUED") SubmissionStatus status,
-                                   @RequestParam(required = false) SubmissionStage stage,
-                                   Pageable pageable) {
-        return (stage == null
-                ? service.listByStatus(status, pageable)
-                : service.listEditorialQueue(stage, pageable)
-        ).map(mapper::toResponse);
+    @Operation(summary = "Editorial queue / faceted browser — filter by status, stage, section, date, q")
+    Page<SubmissionResponse> queue(
+            @RequestParam(defaultValue = "QUEUED") String status,
+            @RequestParam(required = false) SubmissionStage stage,
+            @RequestParam(required = false) Long sectionId,
+            @RequestParam(required = false) Long submittedByUserId,
+            @RequestParam(required = false) Instant submittedAfter,
+            @RequestParam(required = false) Instant submittedBefore,
+            @RequestParam(required = false) String q,
+            Pageable pageable) {
+        // "ANY" is a sentinel meaning "don't filter on status"; anything else
+        // is parsed as a real SubmissionStatus enum.
+        SubmissionStatus statusFilter = "ANY".equalsIgnoreCase(status)
+                ? null
+                : SubmissionStatus.valueOf(status);
+        SubmissionFilters filters = new SubmissionFilters(
+                statusFilter, stage, sectionId, submittedByUserId,
+                submittedAfter, submittedBefore, q);
+        return service.search(filters, pageable).map(mapper::toResponse);
     }
 
     @GetMapping("/{id}")

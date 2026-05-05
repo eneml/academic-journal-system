@@ -1,6 +1,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { SiteChrome } from "@/components/SiteChrome";
+import { ArrowRight, Download, Rss } from "lucide-react";
+import { PublicHeader } from "@/components/PublicHeader";
+import { PublicFooter } from "@/components/PublicFooter";
+import { CoverArt } from "@/components/CoverArt";
+import { Avatar } from "@/components/Avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   fetchActiveSections,
   fetchAnnouncements,
@@ -9,801 +15,433 @@ import {
   fetchJournalConfig,
   fetchMasthead,
   pickLocale,
-  type IssueSummary,
   type PublicationSummary,
-  type SectionSummary,
 } from "@/lib/api";
+import { articlePath, coverLabel, issueLabel, issuePath } from "@/lib/format";
 
 export const revalidate = 60;
 
+const ISSN = process.env.NEXT_PUBLIC_JOURNAL_ISSN ?? "2069-3417";
+
 export default async function HomePage(): Promise<ReactNode> {
-  const [config, issues, sections, masthead, announcements] = await Promise.all([
-    fetchJournalConfig(),
-    fetchIssues(),
-    fetchActiveSections(),
-    fetchMasthead(),
-    fetchAnnouncements(5),
-  ]);
+  const [config, issues, sections, masthead, announcements] = await Promise.all(
+    [
+      fetchJournalConfig(),
+      fetchIssues(),
+      fetchActiveSections(),
+      fetchMasthead(),
+      fetchAnnouncements(1),
+    ],
+  );
 
   const locale = config?.defaultLocale ?? "en";
-  const journalName = pickLocale(config?.name, locale) || "The Academic Journal";
 
-  // Pick the most recent published issue.
-  const currentIssue = (issues ?? [])
+  const publishedIssues = (issues ?? [])
     .filter((i) => i.published)
     .sort((a, b) =>
       (b.datePublished ?? "").localeCompare(a.datePublished ?? ""),
-    )[0];
+    );
+  const issue = publishedIssues[0] ?? null;
 
-  // Articles in the current issue (TOC).
-  const toc = currentIssue?.id
-    ? ((await fetchIssueTableOfContents(currentIssue.id)) ?? [])
-    : [];
+  const toc = issue ? ((await fetchIssueTableOfContents(issue.id)) ?? []) : [];
+  const announcement = (announcements ?? []).find((a) => a.visible);
 
-  const sectionsById = new Map<number, SectionSummary>(
-    (sections ?? []).map((s) => [s.id, s]),
-  );
+  const countsBySection = new Map<number, number>();
+  toc.forEach((p) => {
+    if (p.sectionId !== null && p.sectionId !== undefined) {
+      countsBySection.set(
+        p.sectionId,
+        (countsBySection.get(p.sectionId) ?? 0) + 1,
+      );
+    }
+  });
 
-  // Group articles by section for the sidebar TOC counter.
-  const sectionCounts = new Map<string, number>();
-  for (const a of toc) {
-    const sectionTitle = a.sectionId
-      ? pickLocale(sectionsById.get(a.sectionId)?.title, locale) || "Articles"
-      : "Articles";
-    sectionCounts.set(sectionTitle, (sectionCounts.get(sectionTitle) ?? 0) + 1);
-  }
-
-  const callForPapers = (announcements ?? []).find(
-    (a) => a.type === "CALL_FOR_PAPERS" && a.visible,
-  );
+  const featured = pickFeatured(toc);
+  const sectionsList = sections ?? [];
+  const visibleMasthead = (masthead ?? []).filter((m) => m.visible);
+  const seniorEditors = visibleMasthead.filter((m) => {
+    const role = pickLocale(m.roleLabel, locale).toLowerCase();
+    return (
+      role.includes("editor-in-chief") ||
+      role.startsWith("senior") ||
+      role.includes("methods editor") ||
+      role.includes("statistics editor") ||
+      role.includes("managing editor")
+    );
+  });
+  const totalArticles = toc.length;
 
   return (
-    <SiteChrome journalName={journalName} active="current">
-      {/* Hero — current issue */}
-      <section
-        style={{
-          padding: "56px var(--page-gutter) 40px",
-          display: "grid",
-          gridTemplateColumns: "1fr 280px",
-          gap: 56,
-          alignItems: "start",
-        }}
-      >
-        <div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              marginBottom: 22,
-            }}
-          >
-            <span className="sc" style={{ color: "var(--amber-deep)" }}>
-              {currentIssue ? "Current Issue" : "No issues yet"}
-            </span>
-            <span
-              style={{ width: 32, height: 1, background: "var(--border-strong)" }}
-            />
-            <span className="marginalia-num" style={{ fontSize: 13 }}>
-              {currentIssue
-                ? formatIssueLine(currentIssue, locale)
-                : "Forthcoming"}
-            </span>
-          </div>
-          <h2
-            style={{
-              fontFamily: "var(--serif-display)",
-              fontSize: "clamp(36px, 5.5vw, 56px)",
-              lineHeight: 1.05,
-              fontWeight: 500,
-              margin: "0 0 18px",
-              letterSpacing: "-0.02em",
-              maxWidth: 720,
-              textWrap: "balance" as React.CSSProperties["textWrap"],
-            }}
-          >
-            {currentIssue
-              ? pickLocale(currentIssue.title, locale) ||
-                `${journalName}, ${formatIssueLine(currentIssue, locale)}`
-              : journalName}
-          </h2>
-          <p
-            style={{
-              fontFamily: "var(--serif-body)",
-              fontSize: 18,
-              lineHeight: 1.55,
-              color: "var(--fg-2)",
-              margin: "0 0 24px",
-              maxWidth: 620,
-              fontStyle: "italic",
-            }}
-          >
-            Peer-reviewed original research, methods, and theory. Open access
-            since the first issue, with no embargo and no article-processing
-            charge.
-          </p>
-          <div style={{ display: "flex", gap: 10, marginBottom: 36, flexWrap: "wrap" }}>
-            {currentIssue ? (
-              <Link
-                href={`/issues/${encodeURIComponent(currentIssue.urlPath ?? String(currentIssue.id))}`}
-                className="btn btn-primary"
-                style={{ textDecoration: "none" }}
-              >
-                Read this issue <ArrowRight />
-              </Link>
-            ) : (
-              <Link
-                href="/issues"
-                className="btn btn-primary"
-                style={{ textDecoration: "none" }}
-              >
-                Browse archives <ArrowRight />
-              </Link>
-            )}
-            <a href="/feed.xml" className="btn" style={{ textDecoration: "none" }}>
-              <RssIcon /> Subscribe
-            </a>
-            <Link href="/search" className="btn" style={{ textDecoration: "none" }}>
-              Search articles
-            </Link>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              gap: 28,
-              fontSize: 12,
-              color: "var(--muted)",
-              flexWrap: "wrap",
-            }}
-          >
-            <Stat n={toc.length} label="articles" />
-            <Stat n={(masthead ?? []).filter((m) => m.visible).length} label="editors" />
-            <Stat n={(issues ?? []).filter((i) => i.published).length} label="issues published" />
-          </div>
-        </div>
+    <div className="min-h-screen bg-bg">
+      <PublicHeader activePath="/" />
 
-        {/* Cover */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <CoverArt
-            label={currentIssue ? formatVolNo(currentIssue) : "Forthcoming"}
-            year={currentIssue?.year ?? null}
-          />
-        </div>
-      </section>
+      {issue ? (
+        <section className="px-6 pt-14 pb-10 lg:px-14">
+          <div className="grid items-start gap-14 lg:grid-cols-[1fr_280px]">
+            <div>
+              <div className="mb-5 flex items-center gap-3">
+                <span className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-amber-deep">
+                  Current Issue
+                </span>
+                <span className="h-px w-8 bg-border-strong" />
+                <span className="font-mono text-[13px] text-muted">
+                  {issueLabel({
+                    volume: issue.volume,
+                    number: issue.number,
+                    year: issue.year,
+                    datePublished: issue.datePublished,
+                  })}
+                </span>
+              </div>
+              <h2 className="m-0 max-w-[720px] text-balance font-serif-display text-[clamp(36px,5vw,56px)] font-medium leading-[1.05] tracking-[-0.02em] text-fg">
+                {pickLocale(issue.title, locale) || "Current issue"}
+              </h2>
+              <p className="mt-4 max-w-[620px] font-serif-body text-[18px] italic leading-[1.55] text-fg-2">
+                Peer-reviewed original research, methods, and theory. Open access
+                since 1998 — no embargo, no article-processing charge.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-2">
+                <Button asChild>
+                  <Link href={issuePath(issue)}>
+                    Read this issue <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button variant="secondary" asChild>
+                  <Link href={issuePath(issue)}>
+                    <Download className="h-4 w-4" /> Table of contents
+                  </Link>
+                </Button>
+                <Button variant="secondary" asChild>
+                  <a href="/feed.xml">
+                    <Rss className="h-4 w-4" /> Subscribe
+                  </a>
+                </Button>
+              </div>
+              <div className="mt-9 flex flex-wrap gap-7 text-[12px] text-muted">
+                <Stat
+                  value={String(totalArticles)}
+                  label={totalArticles === 1 ? "article" : "articles"}
+                />
+                <Stat
+                  value={String(publishedIssues.length)}
+                  label="issues published"
+                />
+                <Stat
+                  value={String(visibleMasthead.length)}
+                  label="editorial board"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col items-center">
+              <CoverArt
+                width={220}
+                height={308}
+                label={coverLabel(issue.volume, issue.number)}
+                year={issue.year ?? ""}
+                src={issue.coverImageUrl ?? null}
+              />
+              <div className="mt-3.5 font-mono text-[11px] text-muted">
+                ISSN {ISSN}
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section className="px-6 pt-14 pb-10 lg:px-14">
+          <div className="max-w-[720px]">
+            <div className="mb-3 font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-amber-deep">
+              Forthcoming
+            </div>
+            <h1 className="m-0 mb-4 font-serif-display text-[clamp(36px,5vw,56px)] font-medium leading-[1.05] tracking-[-0.02em]">
+              The Academic Journal
+            </h1>
+            <p className="m-0 mb-7 font-serif-body text-[18px] italic leading-[1.55] text-fg-2">
+              Peer-reviewed original research, methods, and theory. The first
+              issue is forthcoming.
+            </p>
+            <Button asChild>
+              <Link href="/archive">
+                Browse archive <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </section>
+      )}
 
-      <div style={{ padding: "0 var(--page-gutter)" }}>
-        <div className="double-rule" />
+      <div className="px-6 lg:px-14">
+        <div className="border-t-[3px] border-double border-border-strong" />
       </div>
 
-      {/* Table of contents */}
-      <section
-        style={{
-          padding: "32px var(--page-gutter) 0",
-          display: "grid",
-          gridTemplateColumns: "200px 1fr",
-          gap: 56,
-        }}
-      >
-        <aside style={{ position: "sticky", top: 32, alignSelf: "start" }}>
-          <div className="sc" style={{ color: "var(--muted)", marginBottom: 14 }}>
-            In this issue
-          </div>
-          {toc.length === 0 ? (
-            <p
-              style={{
-                fontSize: 12,
-                color: "var(--muted)",
-                lineHeight: 1.6,
-              }}
-            >
-              No articles in the current issue yet.
-            </p>
-          ) : (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 9,
-                fontSize: 13,
-                color: "var(--fg-2)",
-              }}
-            >
-              {[...sectionCounts.entries()].map(([title, count], i) => (
-                <span
-                  key={title}
-                  style={{
-                    color: i === 0 ? "var(--fg)" : "var(--fg-2)",
-                    fontWeight: i === 0 ? 600 : 400,
-                    borderLeft:
-                      i === 0
-                        ? "2px solid var(--amber)"
-                        : "2px solid transparent",
-                    paddingLeft: 10,
-                  }}
-                >
-                  {title} ({count})
-                </span>
-              ))}
+      {issue ? (
+        <section className="grid gap-14 px-6 pt-8 lg:grid-cols-[200px_1fr] lg:px-14">
+          <aside className="sticky top-8 self-start">
+            <div className="mb-3.5 font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted">
+              In this issue
             </div>
-          )}
-          <div className="rule" style={{ margin: "20px 0 16px" }} />
-          <Link
-            href="/search"
-            style={{
-              fontSize: 12,
-              color: "var(--cobalt)",
-              fontFamily: "var(--sans)",
-              textDecoration: "none",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
-            Browse all articles →
-          </Link>
-        </aside>
-
-        <div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "baseline",
-              marginBottom: 8,
-            }}
-          >
-            <h3
-              style={{
-                fontFamily: "var(--serif-display)",
-                fontSize: 26,
-                fontWeight: 500,
-                margin: 0,
-                letterSpacing: "-0.01em",
-              }}
-            >
-              Featured in this issue
-            </h3>
-            {currentIssue ? (
-              <Link
-                href={`/issues/${encodeURIComponent(currentIssue.urlPath ?? String(currentIssue.id))}`}
-                style={{
-                  fontSize: 12,
-                  color: "var(--cobalt)",
-                  textDecoration: "none",
-                  fontWeight: 500,
-                }}
-              >
-                View full table of contents <ArrowRight size={11} />
-              </Link>
-            ) : null}
-          </div>
-          {toc.length === 0 ? (
-            <p
-              style={{
-                fontFamily: "var(--serif-body)",
-                color: "var(--muted)",
-                marginTop: 24,
-              }}
-            >
-              The next issue is in production. Recently published articles will
-              appear here when the issue lands.
-            </p>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              {toc.slice(0, 5).map((article, i) => (
-                <ArticleRow
-                  key={article.id}
-                  article={article}
-                  index={i}
-                  sectionsById={sectionsById}
-                  locale={locale}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Three-up: Scope, Editorial, Indexing */}
-      <section
-        style={{
-          padding: "64px var(--page-gutter) 0",
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          gap: 1,
-          background: "var(--border)",
-        }}
-      >
-        <ThreeUpCard title="Scope">
-          <p
-            style={{
-              fontFamily: "var(--serif-body)",
-              fontSize: 14.5,
-              lineHeight: 1.6,
-              margin: 0,
-              color: "var(--fg-2)",
-            }}
-          >
-            We publish original research, systematic reviews, and
-            methodological contributions across the journal&rsquo;s active
-            sections. Articles are peer-reviewed under a double-anonymous
-            protocol and released open access.
-          </p>
-          <Link
-            href="/about"
-            style={{
-              fontSize: 12,
-              color: "var(--cobalt)",
-              textDecoration: "none",
-              marginTop: 8,
-              display: "inline-block",
-            }}
-          >
-            About the journal →
-          </Link>
-        </ThreeUpCard>
-
-        <ThreeUpCard title="Editorial board">
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-              fontSize: 13,
-            }}
-          >
-            {(masthead ?? [])
-              .filter((m) => m.visible)
-              .slice(0, 4)
-              .map((m) => {
-                const fullName =
-                  [m.givenName, m.familyName].filter(Boolean).join(" ") ||
-                  `Member #${m.userId}`;
-                const role = pickLocale(m.roleLabel, locale);
+            <ul className="flex flex-col gap-2 text-[13px] m-0 p-0 list-none">
+              {sectionsList.map((s) => {
+                const count = countsBySection.get(s.id) ?? 0;
+                if (count === 0) return null;
+                const title = pickLocale(s.title, locale) || s.code;
                 return (
-                  <div
-                    key={m.id}
-                    style={{ display: "flex", gap: 8, alignItems: "center" }}
-                  >
-                    <div
-                      className="avatar"
-                      style={{ width: 28, height: 28, fontSize: 10 }}
+                  <li key={s.id}>
+                    <Link
+                      href={`${issuePath(issue)}#section-${s.code}`}
+                      className="block border-l-2 border-border pl-2.5 text-fg-2 hover:border-amber hover:text-fg no-underline"
                     >
-                      {fullName
-                        .split(" ")
-                        .filter(Boolean)
-                        .map((s) => s[0])
-                        .slice(0, 2)
-                        .join("")}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>
-                        {fullName}
-                      </div>
-                      {role ? (
-                        <div style={{ fontSize: 11, color: "var(--muted)" }}>
-                          {role}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
+                      {title} ({count})
+                    </Link>
+                  </li>
                 );
               })}
-            {(masthead ?? []).length === 0 ? (
-              <p style={{ color: "var(--muted)", fontSize: 12, margin: 0 }}>
-                Editorial board listing coming soon.
-              </p>
-            ) : null}
-            <Link
-              href="/about/editorial-board"
-              style={{
-                fontSize: 12,
-                color: "var(--cobalt)",
-                textDecoration: "none",
-                marginTop: 4,
-              }}
-            >
-              See full board →
-            </Link>
-          </div>
-        </ThreeUpCard>
+            </ul>
+            <div className="my-5 border-t border-border" />
+            <div className="mb-2.5 font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted">
+              Filters
+            </div>
+            <p className="text-[12px] leading-[1.7] text-muted m-0">
+              Year · Section · Author
+              <br />
+              <span className="text-fg-2">Open access only ✓</span>
+            </p>
+          </aside>
 
-        <ThreeUpCard title="Indexing">
-          <p
-            style={{
-              fontFamily: "var(--serif-body)",
-              fontSize: 14.5,
-              lineHeight: 1.6,
-              margin: 0,
-              color: "var(--fg-2)",
-            }}
-          >
-            Articles are deposited with Crossref for DOI registration and
-            harvested via OAI-PMH so they appear in the abstracting and
-            indexing services your institution subscribes to.
+          <div>
+            <div className="mb-2 flex items-baseline justify-between">
+              <h3 className="m-0 font-serif-display text-[26px] font-medium tracking-[-0.01em]">
+                Featured in this issue
+              </h3>
+              <Link
+                href={issuePath(issue)}
+                className="text-[12px] font-medium text-cobalt hover:text-cobalt-deep no-underline"
+              >
+                View full table of contents{" "}
+                <ArrowRight className="-mb-px ml-0.5 inline h-3 w-3" />
+              </Link>
+            </div>
+            <ol className="flex flex-col m-0 p-0 list-none">
+              {featured.length === 0 ? (
+                <li className="border-t border-border py-5">
+                  <p className="m-0 font-serif-body italic text-muted">
+                    The next issue is in production. Featured articles will
+                    appear here when the issue lands.
+                  </p>
+                </li>
+              ) : (
+                featured.map((p, i) => {
+                  const sec = sectionsList.find((s) => s.id === p.sectionId);
+                  const sectionTitle =
+                    sec ? pickLocale(sec.title, locale) || sec.code : "Article";
+                  const abstract = pickLocale(p.abstractText, locale);
+                  return (
+                    <li
+                      key={p.id}
+                      className="grid grid-cols-[44px_1fr] gap-5 border-t border-border py-5"
+                    >
+                      <div className="pt-1 font-serif-display text-[12px] uppercase tracking-[0.04em] text-muted-2">
+                        {String(i + 1).padStart(2, "0")}
+                      </div>
+                      <div>
+                        <div className="mb-2 flex items-center gap-2.5">
+                          <span className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-cobalt">
+                            {sectionTitle}
+                          </span>
+                          {p.accessStatus === "OPEN" ? (
+                            <Badge variant="mono">OA</Badge>
+                          ) : null}
+                        </div>
+                        <h4 className="m-0 mb-1 font-serif-display text-[22px] font-medium leading-[1.25] tracking-[-0.005em]">
+                          <Link
+                            href={articlePath(p)}
+                            className="hover:text-cobalt-deep no-underline text-inherit"
+                          >
+                            {pickLocale(p.title, locale) ||
+                              `Article ${p.id}`}
+                          </Link>
+                        </h4>
+                        {abstract ? (
+                          <p className="m-0 max-w-[640px] font-serif-body text-[14.5px] leading-[1.55] text-fg-2">
+                            {truncate(abstract, 240)}
+                          </p>
+                        ) : null}
+                        <div className="mt-3 flex flex-wrap items-center gap-3.5 text-[11px]">
+                          {p.urlPath ? (
+                            <span className="font-mono text-[10.5px] text-muted">
+                              /{p.urlPath}
+                            </span>
+                          ) : null}
+                          <span className="text-border-strong">·</span>
+                          <Link
+                            href={articlePath(p)}
+                            className="text-cobalt hover:underline no-underline"
+                          >
+                            HTML
+                          </Link>
+                          <Link
+                            href={`${articlePath(p)}#download`}
+                            className="text-cobalt hover:underline no-underline"
+                          >
+                            PDF
+                          </Link>
+                          <Link
+                            href={`${articlePath(p)}#cite`}
+                            className="text-cobalt hover:underline no-underline"
+                          >
+                            Cite
+                          </Link>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })
+              )}
+            </ol>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="mt-16 grid gap-px bg-border lg:grid-cols-3">
+        <Panel title="Scope">
+          <p className="m-0 font-serif-body text-[14.5px] leading-[1.6] text-fg-2">
+            We publish original research, systematic reviews, and methodological
+            contributions across the journal&rsquo;s active sections. Articles
+            are peer-reviewed under a double-anonymous protocol and released
+            open access.
           </p>
+        </Panel>
+        <Panel title="Editorial board">
+          {seniorEditors.length === 0 ? (
+            <p className="m-0 font-serif-body text-[13px] italic text-muted">
+              Editorial board listing coming soon.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-2.5 text-[13px] m-0 p-0 list-none">
+              {seniorEditors.slice(0, 4).map((p) => {
+                const name = `${p.givenName ?? ""} ${p.familyName ?? ""}`.trim();
+                return (
+                  <li key={p.id} className="flex items-center gap-2.5">
+                    <Avatar name={name || "—"} size={28} />
+                    <div>
+                      <div className="text-[13px] font-semibold">{name || "—"}</div>
+                      <div className="text-[11px] text-muted">
+                        {pickLocale(p.roleLabel, locale)}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
           <Link
-            href="/policies"
-            style={{
-              fontSize: 12,
-              color: "var(--cobalt)",
-              textDecoration: "none",
-              marginTop: 8,
-              display: "inline-block",
-            }}
+            href="/editorial"
+            className="mt-4 inline-flex items-center gap-1 text-[12px] font-medium text-cobalt hover:text-cobalt-deep no-underline"
           >
-            See archiving policy →
+            View full editorial board <ArrowRight className="h-3 w-3" />
           </Link>
-        </ThreeUpCard>
+        </Panel>
+        <Panel title="Indexed in">
+          <div className="flex flex-wrap gap-2">
+            {[
+              "Scopus",
+              "Web of Science",
+              "Google Scholar",
+              "DOAJ",
+              "PubMed Central",
+              "EBSCO",
+              "Crossref",
+              "DBLP",
+            ].map((s) => (
+              <Badge key={s}>{s}</Badge>
+            ))}
+          </div>
+        </Panel>
       </section>
 
-      {/* Announcement strip */}
-      {callForPapers ? (
-        <section
-          style={{
-            padding: "56px var(--page-gutter) 0",
-          }}
-        >
+      {announcement ? (
+        <section className="px-6 pt-14 lg:px-14">
           <Link
-            href={`/announcements${callForPapers.urlPath ? `#${callForPapers.urlPath}` : ""}`}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              background: "var(--cobalt-deep)",
-              color: "white",
-              padding: "28px 32px",
-              borderRadius: 6,
-              textDecoration: "none",
-              gap: 16,
-            }}
+            href="/announcements"
+            className="flex flex-col items-start justify-between gap-5 rounded-md p-7 text-white no-underline sm:flex-row sm:items-center"
+            style={{ background: "var(--cobalt-deep)" }}
           >
             <div>
               <div
-                className="sc"
-                style={{
-                  color: "var(--amber)",
-                  marginBottom: 6,
-                  opacity: 0.9,
-                }}
+                className="mb-1.5 font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em]"
+                style={{ color: "var(--amber)", opacity: 0.9 }}
               >
-                Open Call
-                {callForPapers.dateExpires
-                  ? ` · Due ${new Date(callForPapers.dateExpires).toLocaleDateString(
-                      locale,
-                      { day: "numeric", month: "short", year: "numeric" },
-                    )}`
+                Open call
+                {announcement.dateExpires
+                  ? ` · Due ${new Date(
+                      announcement.dateExpires,
+                    ).toLocaleDateString(locale, {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}`
                   : ""}
               </div>
-              <div
-                style={{
-                  fontFamily: "var(--serif-display)",
-                  fontSize: 24,
-                  fontWeight: 500,
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                {pickLocale(callForPapers.title, locale) || "Special call for papers"}
+              <div className="font-serif-display text-[24px] font-medium tracking-[-0.01em]">
+                {pickLocale(announcement.title, locale) ||
+                  "Special call for papers"}
               </div>
             </div>
-            <span
-              className="btn"
-              style={{
-                background: "white",
-                color: "var(--cobalt-deep)",
-                borderColor: "white",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-              }}
-            >
-              Submit a manuscript <ArrowRight />
-            </span>
+            <Button asChild variant="invert" size="lg">
+              <span className="inline-flex items-center gap-2">
+                Submit a manuscript <ArrowRight className="h-4 w-4" />
+              </span>
+            </Button>
           </Link>
         </section>
       ) : null}
-    </SiteChrome>
-  );
-}
 
-function Stat({ n, label }: { n: number; label: string }): ReactNode {
-  return (
-    <div>
-      <span
-        className="tnum"
-        style={{
-          color: "var(--fg)",
-          fontWeight: 600,
-          fontSize: 18,
-          marginRight: 4,
-        }}
-      >
-        {n}
-      </span>
-      {label}
+      <PublicFooter />
     </div>
   );
 }
 
-function ThreeUpCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}): ReactNode {
-  return (
-    <div style={{ background: "var(--bg)", padding: "32px 28px" }}>
-      <div className="sc" style={{ color: "var(--cobalt)", marginBottom: 14 }}>
-        {title}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function ArticleRow({
-  article,
-  index,
-  sectionsById,
-  locale,
-}: {
-  article: PublicationSummary;
-  index: number;
-  sectionsById: Map<number, SectionSummary>;
-  locale: string;
-}): ReactNode {
-  const slug = article.urlPath ?? String(article.id);
-  const title = pickLocale(article.title, locale) || `Article ${article.id}`;
-  const abstract = pickLocale(article.abstractText, locale);
-  const sectionTitle = article.sectionId
-    ? pickLocale(sectionsById.get(article.sectionId)?.title, locale) ||
-      sectionsById.get(article.sectionId)?.code
-    : null;
-
-  return (
-    <article
-      style={{
-        padding: "22px 0",
-        borderTop: "1px solid var(--border)",
-        display: "grid",
-        gridTemplateColumns: "44px 1fr 110px",
-        gap: 20,
-      }}
-    >
-      <div className="marginalia-num" style={{ fontSize: 12, paddingTop: 4 }}>
-        {String(index + 1).padStart(2, "0")}
-      </div>
-      <div style={{ minWidth: 0 }}>
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            alignItems: "center",
-            marginBottom: 8,
-          }}
-        >
-          {sectionTitle ? (
-            <span className="sc" style={{ color: "var(--cobalt)" }}>
-              {sectionTitle}
-            </span>
-          ) : null}
-          {article.accessStatus === "OPEN" ? (
-            <span className="chip chip-mono">OA</span>
-          ) : null}
-        </div>
-        <h4
-          style={{
-            fontFamily: "var(--serif-display)",
-            fontSize: 22,
-            fontWeight: 500,
-            margin: "0 0 6px",
-            lineHeight: 1.25,
-            letterSpacing: "-0.005em",
-          }}
-        >
-          <Link
-            href={`/articles/${encodeURIComponent(slug)}`}
-            style={{ color: "var(--fg)", textDecoration: "none" }}
-          >
-            {title}
-          </Link>
-        </h4>
-        {abstract ? (
-          <p
-            style={{
-              fontFamily: "var(--serif-body)",
-              fontSize: 14.5,
-              lineHeight: 1.55,
-              color: "var(--fg-2)",
-              margin: 0,
-              maxWidth: 640,
-            }}
-          >
-            {truncate(abstract, 280)}
-          </p>
-        ) : null}
-        <div
-          style={{
-            marginTop: 12,
-            display: "flex",
-            gap: 14,
-            fontSize: 11,
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          {article.datePublished ? (
-            <span style={{ color: "var(--muted)", fontFamily: "var(--mono)" }}>
-              {new Date(article.datePublished).toLocaleDateString(locale, {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              })}
-            </span>
-          ) : null}
-          <Link
-            href={`/articles/${encodeURIComponent(slug)}`}
-            style={{ color: "var(--cobalt)", textDecoration: "none" }}
-          >
-            Read article →
-          </Link>
-        </div>
-      </div>
-      <div style={{ textAlign: "right", paddingTop: 4 }}>
-        <div
-          className="tnum"
-          style={{
-            fontSize: 24,
-            fontWeight: 500,
-            color: "var(--fg)",
-            fontFamily: "var(--serif-display)",
-          }}
-        >
-          v{article.version ?? 1}
-        </div>
-        <div
-          style={{
-            fontSize: 10.5,
-            color: "var(--muted)",
-            letterSpacing: "0.04em",
-            textTransform: "uppercase",
-          }}
-        >
-          version
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function CoverArt({
-  label,
-  year,
-}: {
-  label: string;
-  year: number | null;
-}): ReactNode {
-  return (
-    <div
-      style={{
-        width: 220,
-        height: 308,
-        background:
-          "linear-gradient(180deg, var(--cobalt-deep) 0%, var(--cobalt) 100%)",
-        position: "relative",
-        boxShadow:
-          "0 1px 0 0 oklch(85% 0.012 90 / 0.6), 0 8px 24px oklch(20% 0.02 270 / 0.12)",
-        color: "white",
-        padding: "24px 22px",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-      }}
-    >
-      <div
-        className="sc"
-        style={{
-          letterSpacing: "0.18em",
-          fontSize: 9,
-          color: "oklch(85% 0.04 80)",
-        }}
-      >
-        ACADEMIC JOURNAL
-      </div>
-      <div>
-        <div
-          style={{
-            fontFamily: "var(--serif-display)",
-            fontWeight: 500,
-            fontSize: 28,
-            lineHeight: 1.1,
-            letterSpacing: "-0.01em",
-          }}
-        >
-          {label}
-        </div>
-        {year ? (
-          <div
-            className="tnum"
-            style={{
-              fontFamily: "var(--mono)",
-              fontSize: 11,
-              opacity: 0.7,
-              marginTop: 6,
-              letterSpacing: "0.06em",
-            }}
-          >
-            {year}
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function ArrowRight({ size = 14 }: { size?: number }): ReactNode {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.6}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-      style={{ verticalAlign: -1 }}
-    >
-      <path d="M5 12h14M13 6l6 6-6 6" />
-    </svg>
-  );
-}
-
-function RssIcon(): ReactNode {
-  return (
-    <svg
-      width={13}
-      height={13}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.6}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M5 19a2 2 0 1 0 .001-3.999A2 2 0 0 0 5 19ZM4 12a8 8 0 0 1 8 8M4 5a15 15 0 0 1 15 15" />
-    </svg>
-  );
-}
-
-function formatIssueLine(issue: IssueSummary, locale: string): string {
-  const parts: string[] = [];
-  if (issue.volume) parts.push(`Vol. ${issue.volume}`);
-  if (issue.number) parts.push(`No. ${issue.number}`);
-  if (issue.datePublished) {
-    parts.push(
-      new Date(issue.datePublished).toLocaleDateString(locale, {
-        month: "long",
-        year: "numeric",
-      }),
-    );
-  } else if (issue.year) {
-    parts.push(String(issue.year));
+function pickFeatured(toc: PublicationSummary[]): PublicationSummary[] {
+  const seen = new Set<number>();
+  const out: PublicationSummary[] = [];
+  for (const p of toc) {
+    if (p.sectionId === null || p.sectionId === undefined) continue;
+    if (seen.has(p.sectionId)) continue;
+    seen.add(p.sectionId);
+    out.push(p);
+    if (out.length === 3) break;
   }
-  return parts.join(" · ") || `Issue ${issue.id}`;
-}
-
-function formatVolNo(issue: IssueSummary): string {
-  if (issue.volume && issue.number) return `Vol. ${issue.volume} № ${issue.number}`;
-  if (issue.volume) return `Vol. ${issue.volume}`;
-  if (issue.number) return `№ ${issue.number}`;
-  return `Issue ${issue.id}`;
+  return out.length ? out : toc.slice(0, 3);
 }
 
 function truncate(s: string, max: number): string {
   if (!s) return "";
   if (s.length <= max) return s;
   return s.slice(0, max).replace(/\s+\S*$/, "") + "…";
+}
+
+function Stat({ value, label }: { value: string; label: string }) {
+  return (
+    <div>
+      <span className="mr-1 font-serif-display text-[18px] font-semibold tabular-nums text-fg">
+        {value}
+      </span>{" "}
+      {label}
+    </div>
+  );
+}
+
+function Panel({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="bg-bg p-7 lg:p-8">
+      <div className="mb-3.5 font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-cobalt">
+        {title}
+      </div>
+      {children}
+    </div>
+  );
 }

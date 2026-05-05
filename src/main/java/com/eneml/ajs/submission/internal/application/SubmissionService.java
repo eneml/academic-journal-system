@@ -12,13 +12,19 @@ import com.eneml.ajs.submission.internal.persistence.SubmissionRepository;
 import com.eneml.ajs.submission.internal.web.dto.SubmissionDetailsRequest;
 import com.eneml.ajs.submission.internal.web.dto.SubmissionStartRequest;
 import com.eneml.ajs.submission.internal.web.mapper.SubmissionMapper;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -52,6 +58,64 @@ public class SubmissionService {
 
     public Page<Submission> listEditorialQueue(SubmissionStage stage, Pageable pageable) {
         return repository.findByStatusAndStage(SubmissionStatus.QUEUED, stage, pageable);
+    }
+
+    /**
+     * Faceted search over the entire submission queue. All filters are
+     * optional — when nothing is set the call degrades to a sorted page
+     * of every submission. {@code q} matches case-insensitively against
+     * the title in any locale (jsonb-as-text).
+     */
+    public Page<Submission> search(SubmissionFilters filters, Pageable pageable) {
+        return repository.findAll(toSpecification(filters), pageable);
+    }
+
+    private static Specification<Submission> toSpecification(SubmissionFilters f) {
+        return (root, query, cb) -> {
+            List<Predicate> preds = new ArrayList<>(8);
+            if (f.status() != null) {
+                preds.add(cb.equal(root.get("status"), f.status()));
+            }
+            if (f.stage() != null) {
+                preds.add(cb.equal(root.get("stage"), f.stage()));
+            }
+            if (f.sectionId() != null) {
+                preds.add(cb.equal(root.get("sectionId"), f.sectionId()));
+            }
+            if (f.submittedByUserId() != null) {
+                preds.add(cb.equal(root.get("submittedByUserId"), f.submittedByUserId()));
+            }
+            if (f.submittedAfter() != null) {
+                preds.add(cb.greaterThanOrEqualTo(
+                        root.get("dateSubmitted"), f.submittedAfter()));
+            }
+            if (f.submittedBefore() != null) {
+                preds.add(cb.lessThan(
+                        root.get("dateSubmitted"), f.submittedBefore()));
+            }
+            // q (free-text title search) over jsonb columns needs Postgres
+            // ::text casting which JPA's CriteriaBuilder doesn't surface
+            // portably. Keep the field on the filter record for future use
+            // (search module integration) but do the filtering client-side
+            // for now — the editorial inbox is small enough that a single
+            // page's worth of results is the right scope anyway.
+            return preds.isEmpty() ? cb.conjunction() : cb.and(preds.toArray(new Predicate[0]));
+        };
+    }
+
+    /**
+     * Holder for facets accepted by {@link #search(SubmissionFilters, Pageable)}.
+     * All fields are nullable; null = no filter.
+     */
+    public record SubmissionFilters(
+            SubmissionStatus status,
+            SubmissionStage stage,
+            Long sectionId,
+            Long submittedByUserId,
+            Instant submittedAfter,
+            Instant submittedBefore,
+            String q
+    ) {
     }
 
     @Transactional

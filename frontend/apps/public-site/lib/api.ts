@@ -34,6 +34,12 @@ export type IssueSummary = {
   number: string | null;
   year: number | null;
   title: Record<string, string>;
+  /** Resolved download URL — server-minted from cover_file_id when set,
+   *  or the legacy free-form URL stored on cover_image_path. Null when
+   *  the issue has no cover. */
+  coverImageUrl: string | null;
+  /** FK to stored_file. Useful for telling "no cover" from "external cover". */
+  coverFileId: number | null;
   urlPath: string | null;
   published: boolean;
   datePublished: string | null;

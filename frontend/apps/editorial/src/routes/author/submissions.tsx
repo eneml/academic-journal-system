@@ -5,14 +5,15 @@ import {
   useLocation,
 } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { Icon } from "@ajs/ui/primitives";
+import { ArrowUpRight, FileText, Plus } from "lucide-react";
 import { useAuth } from "../../auth/AuthContext";
 import { api, type Page } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
-import { Card } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
 import { StatusChip } from "../../components/StatusChip";
 import { SignInPrompt } from "../../components/SignInPrompt";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
 
 export const Route = createFileRoute("/author/submissions")({
   component: AuthorSubmissionsPage,
@@ -81,12 +82,14 @@ function AuthorSubmissionsPage(): ReactNode {
       <PageHeader
         eyebrow="Author"
         title="My submissions"
-        description="Drafts you&rsquo;re still working on, plus anything currently moving through the editorial workflow."
+        description="Drafts you’re still working on, plus anything currently moving through the editorial workflow."
         actions={
-          <a href="/author/submissions/new" className="btn btn-primary btn-sm">
-            <Icon name="plus" size={13} />
-            New submission
-          </a>
+          <Button asChild>
+            <Link to="/author/submissions/new">
+              <Plus />
+              New submission
+            </Link>
+          </Button>
         }
       />
 
@@ -103,31 +106,31 @@ function AuthorSubmissionsPage(): ReactNode {
       ) : null}
 
       {!fetching && !errored && submissions.length === 0 ? (
-        <EmptyState
-          icon="fileText"
-          title="No submissions yet"
-          description="When you start a new submission it will appear here so you can pick up where you left off."
-          action={
-            <a href="/author/submissions/new" className="btn btn-primary btn-sm">
-              <Icon name="plus" size={13} />
+        <div className="rounded-lg border border-dashed border-border bg-bg-tint/40 px-8 py-14 text-center">
+          <FileText className="size-8 text-cobalt mx-auto mb-3" />
+          <h3 className="font-serif-display text-[18px] font-semibold text-fg">
+            No submissions yet
+          </h3>
+          <p className="text-sm text-muted mt-1.5 max-w-md mx-auto">
+            When you start a new submission it will appear here so you can pick up where you left off.
+          </p>
+          <Button asChild className="mt-4">
+            <Link to="/author/submissions/new">
+              <Plus />
               Start a submission
-            </a>
-          }
-        />
+            </Link>
+          </Button>
+        </div>
       ) : null}
 
       {!fetching && submissions.length > 0 ? (
-        <Card padded={false}>
-          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-            {submissions.map((s, idx) => (
-              <SubmissionRow
-                key={s.id}
-                submission={s}
-                divider={idx < submissions.length - 1}
-              />
+        <div className="rounded-lg border border-border bg-white overflow-hidden">
+          <ul className="divide-y divide-border">
+            {submissions.map((s) => (
+              <SubmissionRow key={s.id} submission={s} />
             ))}
           </ul>
-        </Card>
+        </div>
       ) : null}
     </>
   );
@@ -135,91 +138,55 @@ function AuthorSubmissionsPage(): ReactNode {
 
 function SubmissionRow({
   submission,
-  divider,
 }: {
   submission: Submission;
-  divider: boolean;
 }): ReactNode {
   const title = pickLocalized(submission.title) ?? `Submission #${submission.id}`;
   const summary = truncate(pickLocalized(submission.abstractText) ?? "", 220);
   const date = submission.dateLastActivity ?? submission.dateSubmitted;
 
   return (
-    <li
-      style={{
-        borderBottom: divider ? "1px solid var(--border)" : "none",
-      }}
-    >
+    <li className="hover:bg-bg-tint/50 transition-colors">
       <Link
         to="/author/submissions/$id"
         params={{ id: String(submission.id) }}
-        style={{
-          padding: "16px 22px",
-          display: "flex",
-          gap: 16,
-          alignItems: "flex-start",
-          textDecoration: "none",
-          color: "inherit",
-        }}
+        className="grid grid-cols-[64px_1fr_auto] gap-4 items-start p-5 no-underline text-inherit group"
       >
-        <span
-          className="marginalia-num tnum"
-          style={{ width: 28, marginTop: 4, flex: "none" }}
-        >
-          {String(submission.id).padStart(3, "0")}
+        <span className="font-mono tnum tabular-nums text-[11px] text-cobalt font-semibold mt-1">
+          AJ-{String(submission.id).padStart(4, "0")}
         </span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              alignItems: "baseline",
-              justifyContent: "space-between",
-            }}
-          >
-            <p
-              style={{
-                fontFamily: "var(--serif-display)",
-                fontSize: 16,
-                fontWeight: 500,
-                margin: 0,
-                color: "var(--fg)",
-                letterSpacing: "-0.005em",
-              }}
-            >
+        <div className="min-w-0">
+          <div className="flex gap-3 items-baseline justify-between">
+            <p className="font-serif-display text-[16px] font-medium text-fg m-0 tracking-tight">
               {title}
             </p>
-            {date ? (
-              <span
-                className="tnum"
-                style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}
-              >
-                {new Date(date).toLocaleDateString()}
-              </span>
-            ) : null}
           </div>
           {summary ? (
-            <p
-              style={{
-                fontFamily: "var(--serif-body)",
-                fontSize: 13.5,
-                color: "var(--fg-2)",
-                margin: "5px 0 0",
-                lineHeight: 1.55,
-              }}
-            >
+            <p className="font-serif-body text-[13.5px] text-fg-2 mt-1 leading-relaxed">
               {summary}
             </p>
           ) : null}
-          <div style={{ display: "flex", gap: 6, marginTop: 9, flexWrap: "wrap" }}>
+          <div className="flex gap-1.5 mt-2.5 flex-wrap items-center">
             {submission.status ? <StatusChip status={submission.status} /> : null}
             {submission.stage ? (
-              <StatusChip status={submission.stage} label={submission.stage.replace(/_/g, " ").toLowerCase()} />
+              <Badge variant="outline">
+                {submission.stage.replace(/_/g, " ").toLowerCase()}
+              </Badge>
             ) : null}
             {submission.progress ? (
-              <span className="chip chip-mono">{submission.progress}</span>
+              <Badge variant="ghost" className="font-mono normal-case">
+                {submission.progress}
+              </Badge>
             ) : null}
           </div>
+        </div>
+        <div className="flex items-center gap-2 text-muted-2 group-hover:text-cobalt transition-colors mt-1">
+          {date ? (
+            <span className="text-[11px] font-mono">
+              {new Date(date).toLocaleDateString()}
+            </span>
+          ) : null}
+          <ArrowUpRight className="size-4" />
         </div>
       </Link>
     </li>

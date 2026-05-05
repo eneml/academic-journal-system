@@ -13,6 +13,13 @@ import java.util.List;
 @Mapper
 public interface IssueMapper {
 
+    /**
+     * {@code coverImageUrl} is intentionally ignored here — it isn't
+     * persisted, it's resolved at controller-level by minting a presigned
+     * URL from {@link Issue#getCoverFileId()}. {@code coverFileId}
+     * itself maps cleanly from the entity.
+     */
+    @Mapping(target = "coverImageUrl", ignore = true)
     IssueResponse toResponse(Issue entity);
 
     List<IssueResponse> toResponses(List<Issue> entities);
@@ -22,6 +29,7 @@ public interface IssueMapper {
     List<IssueSummary> toSummaries(List<Issue> entities);
 
     @Mapping(target = "id",              ignore = true)
+    @Mapping(target = "coverFileId",     ignore = true)
     @Mapping(target = "published",       ignore = true)
     @Mapping(target = "datePublished",   ignore = true)
     @Mapping(target = "openAccessDate",  ignore = true)
@@ -32,6 +40,7 @@ public interface IssueMapper {
     Issue toEntity(IssueUpsertRequest src);
 
     @Mapping(target = "id",              ignore = true)
+    @Mapping(target = "coverFileId",     ignore = true)
     @Mapping(target = "published",       ignore = true)
     @Mapping(target = "datePublished",   ignore = true)
     @Mapping(target = "openAccessDate",  ignore = true)

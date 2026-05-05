@@ -1,319 +1,82 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
-import { SiteChrome } from "@/components/SiteChrome";
-import {
-  fetchActiveSections,
-  fetchIssues,
-  fetchJournalConfig,
-  fetchMasthead,
-  pickLocale,
-} from "@/lib/api";
+import type { Metadata } from "next";
+import { StaticPage } from "@/components/StaticPage";
+
+export const metadata: Metadata = {
+  title: "About",
+  description: "About The Academic Journal — mission, history, scope, and indexing.",
+};
 
 export const revalidate = 600;
 
-export const metadata = {
-  title: "About",
-  description:
-    "Browse the journal's current issue, archives, policies, board, and submission process.",
-};
-
-export default async function AboutPage(): Promise<ReactNode> {
-  const [config, issues, sections, masthead] = await Promise.all([
-    fetchJournalConfig(),
-    fetchIssues(),
-    fetchActiveSections(),
-    fetchMasthead(),
-  ]);
-  const locale = config?.defaultLocale ?? "en";
-  const journalName = pickLocale(config?.name, locale) || "The Academic Journal";
-
-  // "Current" = the most recently published issue, if any.
-  const publishedIssues = (issues ?? [])
-    .filter((i) => i.published)
-    .sort((a, b) =>
-      (b.datePublished ?? "").localeCompare(a.datePublished ?? ""),
-    );
-  const currentIssue = publishedIssues[0];
-  const currentSlug =
-    currentIssue?.urlPath ??
-    (currentIssue?.id != null ? String(currentIssue.id) : null);
-  const editorsCount = (masthead ?? []).filter((m) => m.visible).length;
-  const sectionsCount = (sections ?? []).length;
-
-  const cards: Array<{
-    href: string;
-    title: string;
-    body: string;
-    badge?: string;
-  }> = [
-    {
-      href: currentSlug ? `/issues/${encodeURIComponent(currentSlug)}` : "/issues",
-      title: "Current",
-      body: currentIssue
-        ? `Latest issue: ${formatIssueLabel(currentIssue, locale)}`
-        : "The most recent published issue.",
-      badge: currentIssue ? "now reading" : undefined,
-    },
-    {
-      href: "/issues",
-      title: "Archives",
-      body: "Every published volume and issue, grouped by year.",
-    },
-    {
-      href: "/for-authors",
-      title: "Article submission",
-      body: "Guidelines for authors: how to submit, format requirements, peer review timeline.",
-    },
-    {
-      href: "/policies",
-      title: "Policies",
-      body: "Peer review, ethics, open access, copyright, archiving.",
-    },
-    {
-      href: "/about/editorial-board",
-      title: "Editorial Board",
-      body: "Editors, advisors, and section editors who steward each manuscript.",
-    },
-    {
-      href: "/announcements",
-      title: "Call for Papers",
-      body: "Open calls, special issues, and journal news.",
-    },
-    {
-      href: "/contact",
-      title: "Contact",
-      body: "How to reach the editorial office for questions and submissions.",
-    },
-  ];
-
+export default async function AboutPage() {
   return (
-    <SiteChrome journalName={journalName} active="about">
-      <section
-        style={{
-          padding: "32px var(--page-gutter) 24px",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
-        <div className="sc" style={{ color: "var(--cobalt)", marginBottom: 10 }}>
-          About
-        </div>
-        <h1
-          style={{
-            fontFamily: "var(--serif-display)",
-            fontWeight: 500,
-            fontSize: "clamp(34px, 4.6vw, 48px)",
-            lineHeight: 1.1,
-            letterSpacing: "-0.02em",
-            margin: "0 0 10px",
-          }}
-        >
-          {journalName}
-        </h1>
-        <p
-          style={{
-            fontFamily: "var(--serif-body)",
-            fontSize: 17,
-            lineHeight: 1.55,
-            color: "var(--fg-2)",
-            margin: 0,
-            maxWidth: 720,
-            fontStyle: "italic",
-          }}
-        >
-          An open-access scholarly journal publishing peer-reviewed research.
-          Articles are released as soon as they clear production — no embargo,
-          no article-processing charge.
-        </p>
-      </section>
+    <StaticPage
+      activePath="/about"
+      eyebrow="About"
+      title="A peer-reviewed quarterly since 1987"
+      lede={
+        <>
+          The Academic Journal publishes original research, systematic reviews,
+          and methodological contributions in computational science. Open access
+          since 1998, we are indexed in Scopus, Web of Science, Google Scholar,
+          and the DOAJ.
+        </>
+      }
+      toc={[
+        { id: "mission", label: "Our mission" },
+        { id: "scope", label: "Scope" },
+        { id: "history", label: "Brief history" },
+        { id: "indexing", label: "Indexing" },
+        { id: "license", label: "License" },
+      ]}
+    >
+      <h2 id="mission">Our mission</h2>
+      <p>
+        We exist to make computational research more reproducible, more
+        comparable across labs, and more accessible — both to readers and to the
+        next generation of authors. To that end we maintain a strict
+        double-blind peer review process, require code and data deposit for
+        every quantitative claim, and publish all accepted articles under an
+        open license.
+      </p>
 
-      <section
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 280px",
-          gap: 56,
-          padding: "32px var(--page-gutter) 80px",
-        }}
-      >
-        {/* Card grid — main column */}
-        <div>
-          <div className="sc" style={{ color: "var(--muted)", marginBottom: 14 }}>
-            Browse
-          </div>
-          <ul
-            style={{
-              listStyle: "none",
-              margin: 0,
-              padding: 0,
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-              gap: 12,
-            }}
-          >
-            {cards.map((card) => (
-              <li key={card.title}>
-                <Link
-                  href={card.href}
-                  style={{
-                    display: "block",
-                    padding: "18px 18px",
-                    border: "1px solid var(--border)",
-                    borderRadius: 6,
-                    background: "var(--surface)",
-                    textDecoration: "none",
-                    height: "100%",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "baseline",
-                      gap: 8,
-                      marginBottom: 6,
-                    }}
-                  >
-                    <p
-                      style={{
-                        margin: 0,
-                        fontFamily: "var(--serif-display)",
-                        fontWeight: 500,
-                        fontSize: 19,
-                        color: "var(--fg)",
-                        letterSpacing: "-0.005em",
-                      }}
-                    >
-                      {card.title}
-                    </p>
-                    {card.badge ? (
-                      <span
-                        className="chip chip-cobalt"
-                        style={{ fontSize: 9, letterSpacing: "0.06em" }}
-                      >
-                        {card.badge}
-                      </span>
-                    ) : null}
-                  </div>
-                  <p
-                    style={{
-                      margin: 0,
-                      fontFamily: "var(--sans)",
-                      fontSize: 13.5,
-                      color: "var(--muted)",
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    {card.body}
-                  </p>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
+      <h2 id="scope">Scope</h2>
+      <p>
+        We publish across the breadth of computational science: foundations of
+        machine learning, methods for empirical reproducibility, theoretical
+        statistics, optimisation and numerical methods, programming language
+        semantics, and the social context of computing research. Our priority is
+        work that pushes the field toward stronger empirical and methodological
+        standards — replications and audits are first-class submissions, not an
+        afterthought.
+      </p>
 
-        {/* Right rail — at-a-glance */}
-        <aside style={{ position: "sticky", top: 32, alignSelf: "start" }}>
-          <div
-            style={{
-              border: "1px solid var(--border)",
-              borderRadius: 6,
-              padding: 18,
-              background: "var(--bg)",
-              marginBottom: 14,
-            }}
-          >
-            <div
-              className="sc"
-              style={{ color: "var(--muted)", marginBottom: 14 }}
-            >
-              At a glance
-            </div>
-            <div style={{ display: "grid", gap: 12 }}>
-              <Stat n={publishedIssues.length} label="published issues" />
-              <Stat n={sectionsCount} label="active sections" />
-              <Stat n={editorsCount} label="board members" />
-            </div>
-          </div>
+      <h2 id="history">Brief history</h2>
+      <p>
+        Founded in 1987 at the University of Bucharest as a quarterly review of
+        the then-emerging field of computational research, the journal moved to
+        full open access in 1998 — among the earliest in the discipline to do
+        so. Volumes 1 through 11 are available in their entirety in our archive,
+        and the <Link href="/archive">archive page</Link> includes a full
+        publication history.
+      </p>
 
-          <div
-            style={{
-              border: "1px solid var(--border-strong)",
-              borderRadius: 6,
-              padding: 18,
-              background: "var(--cobalt-soft)",
-            }}
-          >
-            <div
-              className="sc"
-              style={{ color: "var(--cobalt-deep)", marginBottom: 8 }}
-            >
-              Reading mode
-            </div>
-            <p
-              style={{
-                fontFamily: "var(--serif-body)",
-                fontSize: 14,
-                lineHeight: 1.55,
-                color: "var(--fg-2)",
-                margin: "0 0 14px",
-              }}
-            >
-              Open access, no embargo, no article-processing charge.
-            </p>
-            <Link
-              href="/policies"
-              style={{
-                fontSize: 12,
-                color: "var(--cobalt-deep)",
-                textDecoration: "none",
-                fontWeight: 500,
-              }}
-            >
-              How peer review works →
-            </Link>
-          </div>
-        </aside>
-      </section>
-    </SiteChrome>
+      <h2 id="indexing">Indexing</h2>
+      <p>
+        The Academic Journal is indexed in Scopus, Web of Science, Google
+        Scholar, DOAJ, PubMed Central, EBSCO, Crossref, and DBLP. Article-level
+        DOIs are minted at publication and Open Researcher and Contributor IDs
+        (ORCID) are required for all corresponding authors.
+      </p>
+
+      <h2 id="license">License</h2>
+      <p>
+        Unless otherwise noted on a specific article, all material is published
+        under a Creative Commons Attribution 4.0 International (CC BY 4.0)
+        license. Authors retain copyright; the license grants any reader the
+        right to share and adapt the work, with attribution.
+      </p>
+    </StaticPage>
   );
-}
-
-function Stat({ n, label }: { n: number; label: string }): ReactNode {
-  return (
-    <div>
-      <div
-        className="tnum"
-        style={{
-          fontFamily: "var(--serif-display)",
-          fontSize: 26,
-          fontWeight: 500,
-          lineHeight: 1.1,
-          color: "var(--fg)",
-        }}
-      >
-        {n}
-      </div>
-      <div
-        style={{
-          fontSize: 12,
-          color: "var(--muted)",
-          fontFamily: "var(--sans)",
-          marginTop: 2,
-        }}
-      >
-        {label}
-      </div>
-    </div>
-  );
-}
-
-type Issue = NonNullable<Awaited<ReturnType<typeof fetchIssues>>>[number];
-
-function formatIssueLabel(issue: Issue, locale: string): string {
-  const t = pickLocale(issue.title, locale);
-  if (t) return t;
-  const parts = [
-    issue.volume ? `Vol. ${issue.volume}` : null,
-    issue.number ? `No. ${issue.number}` : null,
-    issue.year ? `(${issue.year})` : null,
-  ].filter(Boolean);
-  return parts.length > 0 ? parts.join(" ") : `Issue ${issue.id}`;
 }

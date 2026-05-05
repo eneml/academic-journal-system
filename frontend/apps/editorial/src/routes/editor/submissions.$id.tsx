@@ -6,6 +6,26 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  Calendar,
+  CheckCheck,
+  Download,
+  FileIcon,
+  FilePlus,
+  Gavel,
+  Globe,
+  History,
+  LibraryBig,
+  Mail,
+  Send,
+  Trash2,
+  Users,
+  UserPlus,
+  X,
+} from "lucide-react";
+import { toast } from "sonner";
 import type { components } from "@ajs/api-client/schema";
 import { useAuth } from "../../auth/AuthContext";
 import { isEditorial } from "../../auth/roles";
@@ -15,6 +35,8 @@ import { Card } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
 import { SignInPrompt } from "../../components/SignInPrompt";
 import { StatusChip } from "../../components/StatusChip";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
 
 export const Route = createFileRoute("/editor/submissions/$id")({
   component: EditorialSubmissionDetailPage,
@@ -134,55 +156,330 @@ function EditorialSubmissionDetailPage(): ReactNode {
 
   return (
     <>
-      <p style={{ margin: "0 0 6px", fontSize: 12 }}>
-        <Link to="/editor/queue" className="hover:text-cobalt">
-          ← Editorial / queue
+      {/* Sticky page header — breadcrumb back-link + title + status pills.
+          Contains the canonical "where am I" info that should never scroll
+          out of sight while the editor moves through the workflow column. */}
+      <div className="sticky top-14 z-30 -mx-6 px-6 -mt-6 pt-6 bg-bg-tint/95 backdrop-blur-sm border-b border-border pb-4 mb-6">
+        <Link
+          to="/editor/queue"
+          className="text-[12px] text-muted hover:text-cobalt inline-flex items-center gap-1.5 mb-2"
+        >
+          <ArrowLeft className="size-3" /> Editorial / queue
         </Link>
-      </p>
-      <PageHeader eyebrow="Editorial" title={headerTitle} />
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          alignItems: "baseline",
-          marginBottom: 22,
-          flexWrap: "wrap",
-        }}
-      >
-        <StatusChip status={submission.status} />
-        <StatusChip status={submission.stage} />
-        <span style={{ color: "var(--muted)", fontSize: 12, fontFamily: "var(--mono)" }}>
-          submitted{" "}
-          {submission.dateSubmitted
-            ? new Date(submission.dateSubmitted).toLocaleDateString()
-            : "—"}
-        </span>
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] uppercase tracking-[0.08em] font-semibold text-cobalt-deep mb-1.5 font-mono">
+              Submission · AJ-{String(submission.id ?? 0).padStart(4, "0")}
+            </p>
+            <h1 className="font-sans text-[22px] font-semibold tracking-[-0.015em] text-fg leading-tight m-0">
+              {headerTitle}
+            </h1>
+            <div className="flex gap-2 items-center mt-3 flex-wrap">
+              <StatusChip status={submission.status} />
+              <StatusChip status={submission.stage} />
+              <span className="text-[12px] text-muted font-mono inline-flex items-center gap-1">
+                <Calendar className="size-3" />
+                submitted{" "}
+                {submission.dateSubmitted
+                  ? new Date(submission.dateSubmitted).toLocaleDateString()
+                  : "—"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Stage progress strip — five-segment progression so the editor
+            sees workflow position at a glance without reading status text. */}
+        <StageProgressStrip stage={submission.stage} />
       </div>
 
-      <MetadataView submission={submission} />
-      <AuthorsView authors={authors} />
-      <FilesView submissionId={submissionId} files={files} />
-      <RoundsCard
-        submissionId={submissionId}
-        rounds={rounds}
-        onChanged={() => void reload()}
-      />
-      <DecisionCard
-        submissionId={submissionId}
-        latestRound={latestRound}
-        history={decisions}
-        onChanged={() => void reload()}
-      />
+      {/* Two-column layout: workflow lives in the main column, reference
+          metadata + files lives in the sticky right rail. The rail keeps
+          contributors + files reachable without scrolling no matter how
+          far down the editor is in the decision form / event log. */}
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
+        {/* MAIN — workflow */}
+        <div className="flex flex-col gap-4 min-w-0">
+          <MetadataView submission={submission} />
+          <RoundsCard
+            submissionId={submissionId}
+            rounds={rounds}
+            onChanged={() => void reload()}
+          />
+          <DecisionCard
+            submissionId={submissionId}
+            latestRound={latestRound}
+            history={decisions}
+            onChanged={() => void reload()}
+          />
+          <PublicationsCard
+            submissionId={submissionId}
+            publications={publications}
+            onChanged={() => void reload()}
+          />
+          <AuditLogCard entries={auditLog} />
+        </div>
 
-      <PublicationsCard
-        submissionId={submissionId}
-        publications={publications}
-        onChanged={() => void reload()}
-      />
-
-      <AuditLogCard entries={auditLog} />
+        {/* RAIL — submission metadata + contributors + files */}
+        <aside className="flex flex-col gap-3 xl:sticky xl:top-[14rem] xl:self-start xl:max-h-[calc(100vh-15rem)] xl:overflow-y-auto pr-1 -mr-1">
+          <SubmissionAboutRail submission={submission} />
+          <ContributorsRail authors={authors} />
+          <FilesRail submissionId={submissionId} files={files} />
+        </aside>
+      </div>
     </>
   );
+}
+
+/**
+ * Small five-segment stage indicator that lives under the page header.
+ * Mirrors StageStepper from @ajs/ui but inline so the editor page can
+ * show it without bringing along the legacy primitive.
+ */
+function StageProgressStrip({ stage }: { stage?: string }): ReactNode {
+  const stages: Array<{ key: string; label: string }> = [
+    { key: "SUBMISSION", label: "Submission" },
+    { key: "EXTERNAL_REVIEW", label: "Review" },
+    { key: "EDITING", label: "Editing" },
+    { key: "PRODUCTION", label: "Production" },
+    { key: "PUBLISHED", label: "Published" },
+  ];
+  const currentIndex = stages.findIndex((s) => s.key === stage);
+  return (
+    <div className="flex items-center gap-1.5 mt-4">
+      {stages.map((s, idx) => {
+        const isCurrent = idx === currentIndex;
+        const isDone = currentIndex > -1 && idx < currentIndex;
+        return (
+          <div
+            key={s.key}
+            className="flex-1 flex flex-col gap-1.5 min-w-0"
+            title={s.label}
+          >
+            <div
+              className={`h-[3px] rounded-full transition-colors ${
+                isCurrent
+                  ? "bg-amber"
+                  : isDone
+                    ? "bg-cobalt"
+                    : "bg-border-strong"
+              }`}
+            />
+            <span
+              className={`text-[10px] uppercase tracking-[0.06em] font-semibold truncate ${
+                isCurrent
+                  ? "text-amber-deep"
+                  : isDone
+                    ? "text-cobalt-deep"
+                    : "text-muted-2"
+              }`}
+            >
+              {s.label}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * "About this submission" rail card — section, locale, dates, who submitted.
+ * The fields here are the ones an editor reaches for when triaging without
+ * needing to scroll back to the top of the workflow column.
+ */
+function SubmissionAboutRail({
+  submission,
+}: {
+  submission: Submission;
+}): ReactNode {
+  const submitted = submission.dateSubmitted
+    ? new Date(submission.dateSubmitted).toLocaleDateString()
+    : "—";
+  const lastActivity = submission.dateLastActivity
+    ? new Date(submission.dateLastActivity).toLocaleString()
+    : "—";
+  return (
+    <Card padded={false}>
+      <div className="px-4 py-3 border-b border-border">
+        <p className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted">
+          About
+        </p>
+      </div>
+      <dl className="px-4 py-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-[12.5px]">
+        <DtIcon icon={LibraryBig}>Section</DtIcon>
+        <dd className="m-0 text-fg-2 font-medium truncate">
+          #{submission.sectionId ?? "—"}
+        </dd>
+
+        <DtIcon icon={Globe}>Locale</DtIcon>
+        <dd className="m-0 text-fg-2 font-mono">{submission.locale ?? "—"}</dd>
+
+        <DtIcon icon={Calendar}>Submitted</DtIcon>
+        <dd className="m-0 text-fg-2 font-mono">{submitted}</dd>
+
+        <DtIcon icon={History}>Last activity</DtIcon>
+        <dd className="m-0 text-fg-2 font-mono text-[11.5px]">{lastActivity}</dd>
+
+        <DtIcon icon={Users}>Submitter</DtIcon>
+        <dd className="m-0 text-fg-2 font-mono">
+          user #{submission.submittedByUserId ?? "—"}
+        </dd>
+
+        <DtIcon icon={FileIcon}>Version</DtIcon>
+        <dd className="m-0 text-fg-2 font-mono">
+          v{submission.version ?? 0}
+        </dd>
+      </dl>
+    </Card>
+  );
+}
+
+function DtIcon({
+  icon: Icon,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  children: ReactNode;
+}): ReactNode {
+  return (
+    <dt className="text-[10px] uppercase tracking-[0.06em] font-semibold text-muted inline-flex items-center gap-1.5 self-center">
+      <Icon className="size-3 text-muted-2" />
+      {children}
+    </dt>
+  );
+}
+
+/** Compact contributors list for the rail. */
+function ContributorsRail({ authors }: { authors: AuthorRow[] }): ReactNode {
+  if (authors.length === 0) {
+    return (
+      <Card padded={false}>
+        <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+          <p className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted">
+            Contributors
+          </p>
+        </div>
+        <p className="text-[12px] text-muted px-4 py-3 m-0">
+          No contributors recorded.
+        </p>
+      </Card>
+    );
+  }
+  const ordered = authors.slice().sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0));
+  return (
+    <Card padded={false}>
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+        <p className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted">
+          Contributors
+        </p>
+        <Badge variant="ghost" className="font-mono">
+          {authors.length}
+        </Badge>
+      </div>
+      <ul className="divide-y divide-border">
+        {ordered.map((a) => {
+          const name = [a.givenName, a.familyName].filter(Boolean).join(" ");
+          const initials = computeInitials(a.givenName ?? "", a.familyName ?? "");
+          return (
+            <li key={a.id} className="px-4 py-2.5 flex items-start gap-2.5">
+              <span className="size-7 rounded-full bg-cobalt-soft text-cobalt-deep grid place-items-center font-semibold text-[10.5px] flex-none">
+                {initials}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="font-serif-display text-[13px] font-medium text-fg m-0 truncate">
+                  {name || "Unnamed contributor"}
+                </p>
+                {a.email ? (
+                  <p className="text-[11px] text-muted font-mono truncate inline-flex items-center gap-1 m-0 mt-0.5">
+                    <Mail className="size-2.5" />
+                    {a.email}
+                  </p>
+                ) : null}
+                {a.affiliation ? (
+                  <p className="text-[11px] text-muted-2 truncate m-0 mt-0.5">
+                    {a.affiliation}
+                  </p>
+                ) : null}
+                {a.corresponding ? (
+                  <Badge variant="cobalt" className="mt-1.5">
+                    corresponding
+                  </Badge>
+                ) : null}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </Card>
+  );
+}
+
+/** Compact files list for the rail. */
+function FilesRail({
+  submissionId,
+  files,
+}: {
+  submissionId: number;
+  files: FileRow[];
+}): ReactNode {
+  return (
+    <Card padded={false}>
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+        <p className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted">
+          Files
+        </p>
+        <Badge variant="ghost" className="font-mono">
+          {files.length}
+        </Badge>
+      </div>
+      {files.length === 0 ? (
+        <p className="text-[12px] text-muted px-4 py-3 m-0">
+          No files attached.
+        </p>
+      ) : (
+        <ul className="divide-y divide-border">
+          {files.map((f) => (
+            <li
+              key={f.id}
+              className="px-4 py-2.5 flex items-center gap-2 group"
+            >
+              <FileIcon className="size-3.5 text-muted-2 flex-none" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-mono text-fg-2 truncate m-0">
+                  {f.originalFilename ?? `File #${f.id}`}
+                </p>
+                <p className="text-[10px] text-muted font-mono uppercase tracking-wider mt-0.5 m-0">
+                  {f.fileStage}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  const url = await api<{ url: string }>(
+                    `/api/v1/submissions/${submissionId}/files/${f.id}/download-url`,
+                  );
+                  if (url?.url) window.open(url.url, "_blank");
+                  else toast.error("Couldn't generate download URL.");
+                }}
+                aria-label={`Download ${f.originalFilename ?? f.id}`}
+                className="size-7 rounded-md grid place-items-center text-muted hover:text-cobalt hover:bg-bg-tint transition-colors flex-none"
+              >
+                <Download className="size-3.5" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+function computeInitials(given: string, family: string): string {
+  const g = given.trim();
+  const f = family.trim();
+  if (g || f) return (g.charAt(0) + f.charAt(0)).toUpperCase() || "?";
+  return "?";
 }
 
 function AuditLogCard({ entries }: { entries: AuditEntry[] }): ReactNode {
@@ -200,17 +497,19 @@ function AuditLogCard({ entries }: { entries: AuditEntry[] }): ReactNode {
           justifyContent: "space-between",
         }}
       >
-        <h2 style={{ ...h2Style, marginBottom: 0 }}>
+        <h2 style={{ ...h2Style, marginBottom: 0 }} className="flex items-center gap-2">
+          <History className="size-4 text-muted" />
           Event log ({entries.length})
         </h2>
         {entries.length > 8 ? (
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={() => setExpanded((v) => !v)}
-            style={btnSecondary}
           >
             {expanded ? "Show recent only" : "Show all"}
-          </button>
+          </Button>
         ) : null}
       </div>
       {entries.length === 0 ? (
@@ -329,8 +628,12 @@ function PublicationsCard({
     );
     setBusy(false);
     if (result?.id) {
+      toast.success("Publication drafted.", {
+        description: "Fill in metadata, attach galleys, then publish.",
+      });
       window.location.assign(`/editor/publications/${result.id}`);
     } else {
+      toast.error("Couldn't draft a publication.");
       onChanged();
     }
   };
@@ -351,9 +654,16 @@ function PublicationsCard({
           Publications ({publications.length})
         </h2>
         {publications.length === 0 ? (
-          <button type="button" onClick={draftFirst} disabled={busy} style={btnSecondary}>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={draftFirst}
+            disabled={busy}
+          >
+            <FilePlus />
             {busy ? "Drafting…" : "Draft first version"}
-          </button>
+          </Button>
         ) : null}
       </div>
       {publications.length === 0 ? (
@@ -473,9 +783,9 @@ function AuthorsView({ authors }: { authors: AuthorRow[] }): ReactNode {
                 >
                   {[author.givenName, author.familyName].filter(Boolean).join(" ")}{" "}
                   {author.corresponding ? (
-                    <span className="chip chip-cobalt" style={{ marginLeft: 6 }}>
+                    <Badge variant="cobalt" className="ml-2">
                       corresponding
-                    </span>
+                    </Badge>
                   ) : null}
                 </p>
                 <p
@@ -557,18 +867,21 @@ function FilesView({
                   {f.fileStage} · {f.contentType ?? "?"}
                 </p>
               </div>
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={async () => {
                   const url = await api<{ url: string }>(
                     `/api/v1/submissions/${submissionId}/files/${f.id}/download-url`,
                   );
                   if (url?.url) window.open(url.url, "_blank");
+                  else toast.error("Couldn't generate download URL.");
                 }}
-                style={btnSecondary}
               >
+                <Download />
                 Download
-              </button>
+              </Button>
             </li>
           ))}
         </ul>
@@ -592,11 +905,18 @@ function RoundsCard({
 
   const openRound = async (): Promise<void> => {
     setBusy(true);
-    await api<ReviewRound>(
+    const result = await api<ReviewRound>(
       `/api/v1/submissions/${submissionId}/review-rounds?stage=EXTERNAL_REVIEW`,
       { method: "POST" },
     );
     setBusy(false);
+    if (result == null) {
+      toast.error("Couldn't open a new review round.");
+    } else {
+      toast.success(`Round ${rounds.length + 1} opened.`, {
+        description: "Invite reviewers below.",
+      });
+    }
     onChanged();
   };
 
@@ -613,9 +933,16 @@ function RoundsCard({
         }}
       >
         <h2 style={{ ...h2Style, marginBottom: 0 }}>Peer review</h2>
-        <button type="button" onClick={openRound} disabled={busy} style={btnSecondary}>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={openRound}
+          disabled={busy}
+        >
+          <UserPlus />
           {busy ? "Opening…" : `Open round ${rounds.length + 1}`}
-        </button>
+        </Button>
       </div>
       {rounds.length === 0 ? (
         <p style={{ padding: "12px 22px 18px", color: "var(--muted)", fontSize: 13, margin: 0 }}>
@@ -660,75 +987,91 @@ function ReviewRoundView({
 
   return (
     <section style={{ padding: "14px 22px", borderBottom: "1px solid var(--border)" }}>
-      <div style={{ display: "flex", gap: 8, alignItems: "baseline", marginBottom: 8 }}>
-        <p style={{ margin: 0, fontFamily: "var(--serif-display)", fontWeight: 600, fontSize: 14 }}>
-          Round {round.roundNumber} · {round.stage}
+      <div className="flex gap-2 items-center mb-3 pb-2 border-b border-border">
+        <span className="size-6 rounded-md bg-cobalt-soft text-cobalt-deep grid place-items-center font-semibold text-[10.5px] tnum tabular-nums flex-none font-mono">
+          R{round.roundNumber}
+        </span>
+        <p className="m-0 font-serif-display font-semibold text-[14px] flex-1">
+          Round {round.roundNumber}
+          <span className="text-muted font-normal font-sans ml-1.5">
+            · {(round.stage ?? "").replace(/_/g, " ").toLowerCase()}
+          </span>
         </p>
         <StatusChip status={round.status} />
       </div>
       {assignments == null ? (
-        <p style={{ color: "var(--muted)", fontSize: 12 }}>Loading reviewers&hellip;</p>
+        <p className="text-muted text-[12px] m-0">Loading reviewers…</p>
       ) : assignments.length === 0 ? (
-        <p style={{ color: "var(--muted)", fontSize: 12, margin: "0 0 8px" }}>
+        <p className="text-muted text-[12px] m-0 mb-2">
           No reviewers invited yet.
         </p>
       ) : (
-        <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+        <ul className="m-0 p-0 list-none flex flex-col gap-1.5">
           {assignments.map((a) => (
             <li
               key={a.id}
-              style={{
-                padding: "8px 0",
-                borderBottom: "1px solid var(--border)",
-                display: "flex",
-                gap: 10,
-                alignItems: "center",
-              }}
+              className="rounded-md border border-border px-3 py-2.5 flex gap-2 items-center bg-bg-tint/30 hover:bg-bg-tint/60 transition-colors"
             >
-              <span style={{ flex: 1, fontSize: 13 }}>
-                Reviewer #{a.reviewerUserId} · {a.reviewMethod}
+              <span className="size-7 rounded-full bg-cobalt-soft text-cobalt-deep grid place-items-center font-semibold text-[10.5px] flex-none">
+                R#{a.reviewerUserId}
               </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-medium text-fg m-0 truncate">
+                  Reviewer #{a.reviewerUserId}
+                </p>
+                <p className="text-[10.5px] text-muted font-mono uppercase tracking-wider mt-0.5 m-0">
+                  {a.reviewMethod}
+                </p>
+              </div>
               <StatusChip status={a.status} />
               {a.recommendation ? (
-                <span className="chip chip-cobalt">
+                <Badge variant="cobalt">
                   {a.recommendation.replace(/_/g, " ").toLowerCase()}
-                </span>
+                </Badge>
               ) : null}
               {a.status === "COMPLETED" ? (
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={async () => {
-                    await api(
+                    const result = await api(
                       `/api/v1/submissions/${submissionId}/review-rounds/${round.id}/assignments/${a.id}/confirm`,
                       { method: "POST" },
                     );
+                    if (result == null) {
+                      toast.error("Couldn't confirm the review.");
+                    } else {
+                      toast.success(`Confirmed reviewer #${a.reviewerUserId}.`);
+                    }
                     void loadAssignments();
                     onChanged();
                   }}
-                  style={btnSecondary}
                 >
+                  <CheckCheck />
                   Confirm
-                </button>
+                </Button>
               ) : null}
               {a.status === "AWAITING_RESPONSE" || a.status === "ACCEPTED" ? (
-                <button
+                <Button
                   type="button"
+                  variant="destructive"
+                  size="sm"
                   onClick={async () => {
                     if (!confirm(`Cancel reviewer #${a.reviewerUserId}?`)) return;
-                    await api(
+                    const result = await api(
                       `/api/v1/submissions/${submissionId}/review-rounds/${round.id}/assignments/${a.id}`,
                       { method: "DELETE" },
                     );
+                    if (result == null) {
+                      toast.success(`Cancelled reviewer #${a.reviewerUserId}.`);
+                    }
                     void loadAssignments();
                   }}
-                  style={{
-                    ...btnSecondary,
-                    color: "#b91c1c",
-                    borderColor: "#fca5a5",
-                  }}
                 >
+                  <X />
                   Cancel
-                </button>
+                </Button>
               ) : null}
             </li>
           ))}
@@ -747,9 +1090,15 @@ function ReviewRoundView({
               onCancel={() => setAdding(false)}
             />
           ) : (
-            <button type="button" onClick={() => setAdding(true)} style={btnSecondary}>
-              + Invite reviewer
-            </button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setAdding(true)}
+            >
+              <UserPlus />
+              Invite reviewer
+            </Button>
           )}
         </div>
       ) : null}
@@ -819,7 +1168,11 @@ function InviteForm({
     setBusy(false);
     if (result === null) {
       setError("Invitation failed. The reviewer may already be on this round.");
+      toast.error("Invitation failed.");
     } else {
+      toast.success("Reviewer invited.", {
+        description: "They'll get an in-app notification + email.",
+      });
       onInvited();
     }
   };
@@ -908,13 +1261,14 @@ function InviteForm({
           {error}
         </p>
       ) : null}
-      <div style={{ display: "flex", gap: 6 }}>
-        <button type="submit" disabled={busy} style={btnPrimary}>
+      <div className="flex gap-1.5">
+        <Button type="submit" disabled={busy}>
+          <Send />
           {busy ? "Inviting…" : "Send invitation"}
-        </button>
-        <button type="button" onClick={onCancel} style={btnSecondary}>
+        </Button>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -956,7 +1310,9 @@ function DecisionCard({
     setBusy(false);
     if (result === null) {
       setError("Decision failed — it may not be valid for the current stage.");
+      toast.error("Decision failed.");
     } else {
+      toast.success(`Decision recorded: ${type.replace(/_/g, " ").toLowerCase()}.`);
       setSummary("");
       onChanged();
     }
@@ -1065,9 +1421,10 @@ function DecisionCard({
           </p>
         ) : null}
         <div>
-          <button type="submit" disabled={busy} style={btnPrimary}>
+          <Button type="submit" disabled={busy}>
+            <Gavel />
             {busy ? "Recording…" : "Record decision"}
-          </button>
+          </Button>
         </div>
       </form>
     </Card>

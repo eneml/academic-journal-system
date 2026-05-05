@@ -1,13 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
+import { ArrowUpRight, Clock, Inbox } from "lucide-react";
 import { useAuth } from "../../auth/AuthContext";
 import { api, type Page } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
-import { Card } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
 import { StatusChip } from "../../components/StatusChip";
 import { SignInPrompt } from "../../components/SignInPrompt";
 import { isEditorial } from "../../auth/roles";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
 
 export const Route = createFileRoute("/editor/queue")({
   component: EditorQueuePage,
@@ -53,7 +55,7 @@ function EditorQueuePage(): ReactNode {
   }, [user, allowed]);
 
   if (authLoading) {
-    return <p style={{ color: "var(--muted)" }}>Loading session&hellip;</p>;
+    return <p className="text-muted text-sm">Loading session…</p>;
   }
   if (!user) {
     return <SignInPrompt />;
@@ -72,6 +74,7 @@ function EditorQueuePage(): ReactNode {
   }
 
   const submissions = page?.content ?? [];
+  const total = page?.totalElements ?? submissions.length;
 
   return (
     <>
@@ -79,137 +82,103 @@ function EditorQueuePage(): ReactNode {
         eyebrow="Editorial"
         title="Editorial queue"
         description="Submissions awaiting editor action — triage, assign, or move on to peer review."
+        actions={
+          total > 0 ? (
+            <Button asChild variant="secondary" size="sm">
+              <Link to="/editor/submissions">
+                Open all
+                <ArrowUpRight />
+              </Link>
+            </Button>
+          ) : undefined
+        }
       />
 
       {fetching ? (
-        <p style={{ color: "var(--muted)", fontSize: 13 }}>Loading queue&hellip;</p>
+        <div className="flex items-center gap-2 text-muted text-sm py-6">
+          <Clock className="size-4 animate-pulse" /> Loading queue…
+        </div>
       ) : null}
 
       {!fetching && errored ? (
         <EmptyState
           icon="alert"
-          title="Couldn&rsquo;t load the queue"
-          description="The /api/v1/submissions endpoint didn&rsquo;t respond. Confirm the backend is up and you&rsquo;re signed in with editor privileges."
+          title="Couldn’t load the queue"
+          description="The /api/v1/submissions endpoint didn’t respond. Confirm the backend is up and you’re signed in with editor privileges."
         />
       ) : null}
 
       {!fetching && !errored && submissions.length === 0 ? (
-        <EmptyState
-          icon="inbox"
-          title="Queue is clear"
-          description="No submissions are currently in QUEUED status. Newly submitted manuscripts will appear here."
-        />
+        <div className="rounded-lg border border-dashed border-border bg-bg-tint/50 px-8 py-12 text-center">
+          <Inbox className="size-8 text-cobalt mx-auto mb-3" />
+          <h3 className="font-serif-display text-[18px] font-semibold text-fg">
+            Queue is clear
+          </h3>
+          <p className="text-sm text-muted mt-1.5 max-w-md mx-auto">
+            No submissions are currently in QUEUED status. Newly submitted manuscripts will appear here.
+          </p>
+        </div>
       ) : null}
 
       {!fetching && submissions.length > 0 ? (
-        <Card padded={false}>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontSize: 13,
-            }}
-          >
-            <thead>
-              <tr style={{ textAlign: "left" }}>
-                <Th width={50}>#</Th>
-                <Th>Title</Th>
-                <Th width={120}>Stage</Th>
-                <Th width={120}>Status</Th>
-                <Th width={130}>Last activity</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {submissions.map((s, idx) => (
-                <QueueRow
-                  key={s.id}
-                  submission={s}
-                  divider={idx < submissions.length - 1}
-                />
-              ))}
-            </tbody>
-          </table>
-        </Card>
+        <div className="rounded-lg border border-border bg-white overflow-hidden">
+          <div className="grid grid-cols-[64px_1fr_140px_120px_140px_60px] gap-3 px-4 py-3 border-b border-border bg-bg-tint text-[10px] uppercase tracking-[0.07em] text-muted font-semibold">
+            <span>ID</span>
+            <span>Title</span>
+            <span>Stage</span>
+            <span>Status</span>
+            <span>Last activity</span>
+            <span></span>
+          </div>
+          <ul className="divide-y divide-border">
+            {submissions.map((s) => (
+              <QueueRow key={s.id} submission={s} />
+            ))}
+          </ul>
+        </div>
       ) : null}
     </>
   );
 }
 
-function Th({ children, width }: { children: ReactNode; width?: number }): ReactNode {
-  return (
-    <th
-      className="sc"
-      style={{
-        textAlign: "left",
-        padding: "12px 18px",
-        color: "var(--muted)",
-        borderBottom: "1px solid var(--border)",
-        background: "var(--surface)",
-        fontWeight: 600,
-        width,
-      }}
-    >
-      {children}
-    </th>
-  );
-}
-
 function QueueRow({
   submission,
-  divider,
 }: {
   submission: QueueSubmission;
-  divider: boolean;
 }): ReactNode {
   const title = pickLocalized(submission.title) ?? `Submission #${submission.id}`;
   const date = submission.dateLastActivity ?? submission.dateSubmitted;
   return (
-    <tr style={{ borderBottom: divider ? "1px solid var(--border)" : "none" }}>
-      <Td>
-        <span className="marginalia-num tnum">
-          {String(submission.id).padStart(3, "0")}
+    <li>
+      <Link
+        to="/editor/submissions/$id"
+        params={{ id: String(submission.id) }}
+        className="grid grid-cols-[64px_1fr_140px_120px_140px_60px] gap-3 items-center px-4 py-3 hover:bg-bg-tint/50 transition-colors no-underline text-inherit group"
+      >
+        <span className="font-mono tnum tabular-nums text-[11px] text-cobalt font-semibold">
+          AJ-{String(submission.id).padStart(4, "0")}
         </span>
-      </Td>
-      <Td>
-        <Link
-          to="/editor/submissions/$id"
-          params={{ id: String(submission.id) }}
-          style={{
-            fontFamily: "var(--serif-display)",
-            fontSize: 14,
-            fontWeight: 500,
-            color: "var(--cobalt)",
-            textDecoration: "none",
-          }}
-        >
+        <span className="font-serif-display text-[14px] font-medium text-fg truncate">
           {title}
-        </Link>
-      </Td>
-      <Td>
-        {submission.stage ? (
-          <StatusChip status={submission.stage} label={submission.stage.replace(/_/g, " ").toLowerCase()} />
-        ) : (
-          <span style={{ color: "var(--muted)" }}>—</span>
-        )}
-      </Td>
-      <Td>
-        {submission.status ? <StatusChip status={submission.status} /> : null}
-      </Td>
-      <Td>
-        <span
-          className="tnum"
-          style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--fg-2)" }}
-        >
+        </span>
+        <span className="justify-self-start">
+          {submission.stage ? (
+            <Badge variant="outline">
+              {submission.stage.replace(/_/g, " ").toLowerCase()}
+            </Badge>
+          ) : (
+            <span className="text-muted">—</span>
+          )}
+        </span>
+        <span className="justify-self-start">
+          {submission.status ? <StatusChip status={submission.status} /> : null}
+        </span>
+        <span className="text-[12px] font-mono text-muted">
           {date ? new Date(date).toLocaleDateString() : "—"}
         </span>
-      </Td>
-    </tr>
-  );
-}
-
-function Td({ children }: { children: ReactNode }): ReactNode {
-  return (
-    <td style={{ padding: "12px 18px", verticalAlign: "middle" }}>{children}</td>
+        <ArrowUpRight className="size-4 text-muted-2 group-hover:text-cobalt justify-self-end transition-colors" />
+      </Link>
+    </li>
   );
 }
 

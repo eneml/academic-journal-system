@@ -89,6 +89,14 @@ public class ReviewerInboxService {
     }
 
     private Long submissionIdOf(ReviewAssignment a) {
+        return submissionIdFor(a);
+    }
+
+    /**
+     * Public version exposed to controllers that need to fetch the
+     * manuscript belonging to a reviewer's assignment.
+     */
+    public Long submissionIdFor(ReviewAssignment a) {
         ReviewRound round = roundRepository.findById(a.getReviewRoundId()).orElseThrow(() ->
                 NotFoundException.of("ReviewRound", a.getReviewRoundId()));
         return round.getSubmissionId();
