@@ -31,14 +31,25 @@ type AuthorRow = components["schemas"]["SubmissionAuthorResponse"];
 type FileRow = components["schemas"]["SubmissionFileResponse"];
 type GenreResponse = components["schemas"]["GenreResponse"];
 
+// Mirrors backend enum com.eneml.ajs.submission.api.FileStage. Keep in sync —
+// the upload endpoint binds the form-data value via Spring's enum converter,
+// so any string outside this set 400s with "Failed to convert 'fileStage'".
+// Each entry pairs the wire value with an author-friendly label.
 const FILE_STAGES = [
-  "MANUSCRIPT",
-  "SUPPLEMENTARY",
-  "REVISION",
-  "COPYEDITED",
-  "PROOF",
+  { value: "SUBMISSION", label: "Manuscript" },
+  { value: "REVIEW_FILE", label: "Review file" },
+  { value: "REVIEW_ATTACHMENT", label: "Review attachment" },
+  { value: "REVIEW_REVISION", label: "Revision" },
+  { value: "FINAL", label: "Final manuscript" },
+  { value: "COPYEDIT", label: "Copy-edited" },
+  { value: "PROOF", label: "Proof" },
+  { value: "PRODUCTION_READY", label: "Production-ready" },
+  { value: "DEPENDENT", label: "Supplementary" },
+  { value: "QUERY_ATTACHMENT", label: "Query attachment" },
+  { value: "JATS", label: "JATS" },
+  { value: "NOTE", label: "Note" },
 ] as const;
-type FileStage = (typeof FILE_STAGES)[number];
+type FileStage = (typeof FILE_STAGES)[number]["value"];
 
 function SubmissionDetailPage(): ReactNode {
   const { id } = useParams({ from: "/author/submissions/$id" });
@@ -634,7 +645,7 @@ function FilesCard({
   editable: boolean;
   onChange: () => void;
 }): ReactNode {
-  const [stage, setStage] = useState<FileStage>("MANUSCRIPT");
+  const [stage, setStage] = useState<FileStage>("SUBMISSION");
   const [genreId, setGenreId] = useState<string>(
     genres[0]?.id != null ? String(genres[0].id) : "",
   );
@@ -697,8 +708,8 @@ function FilesCard({
               style={inputStyle}
             >
               {FILE_STAGES.map((s) => (
-                <option key={s} value={s}>
-                  {s.toLowerCase()}
+                <option key={s.value} value={s.value}>
+                  {s.label}
                 </option>
               ))}
             </select>
