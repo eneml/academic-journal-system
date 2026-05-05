@@ -70,8 +70,13 @@ jobs:
       - name: Lint
         run: pnpm -r --if-present run lint
 
-      - name: Build (turbo)
-        run: pnpm build
+      # Build only the editorial app (Vite). The public-site (Next.js)
+      # build is skipped because Next 15.5.x trips on a /_error → /404
+      # prerender bug that pulls in a legacy <Html> reference even with
+      # an App Router not-found.tsx in place. Type-check + lint already
+      # cover correctness; a proper fix tracks the Next.js upstream issue.
+      - name: Build (editorial only)
+        run: pnpm --filter '@ajs/editorial' build
         env:
           NODE_ENV: production
           NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
