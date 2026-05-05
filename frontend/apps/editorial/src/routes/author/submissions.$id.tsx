@@ -18,8 +18,6 @@ import {
   Save,
   Send,
   Trash2,
-  Upload,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { components } from "@ajs/api-client/schema";
@@ -1061,25 +1059,3 @@ const inputStyle = {
   fontWeight: 400,
 };
 
-const btnPrimary = {
-  padding: "10px 18px",
-  background: "var(--cobalt)",
-  color: "white",
-  border: "none",
-  borderRadius: "var(--r-2)",
-  fontFamily: "var(--sans)",
-  fontSize: 13,
-  fontWeight: 500,
-  cursor: "pointer",
-};
-
-const btnSecondary = {
-  padding: "8px 14px",
-  background: "white",
-  color: "var(--fg-2)",
-  border: "1px solid var(--border)",
-  borderRadius: "var(--r-2)",
-  fontFamily: "var(--sans)",
-  fontSize: 12,
-  cursor: "pointer",
-};

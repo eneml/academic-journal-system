@@ -38,7 +38,7 @@ export function SignInPrompt(): ReactNode {
       </p>
       <Link
         to="/login"
-        search={dest === "/" ? undefined : ({ redirect: dest } as never)}
+        search={{ redirect: dest === "/" ? undefined : dest }}
         className="btn btn-primary"
         style={{ textDecoration: "none" }}
       >

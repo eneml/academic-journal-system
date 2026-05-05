@@ -205,7 +205,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
         location.pathname === "/" ? "/" : `${location.pathname}${location.search ? "" : ""}`;
       void navigate({
         to: "/login",
-        search: dest === "/" ? undefined : ({ redirect: dest } as never),
+        search: { redirect: dest === "/" ? undefined : dest },
         replace: true,
       });
     }
@@ -365,7 +365,7 @@ function UserBadge(): ReactNode {
     return (
       <div className="p-3 border-t border-border">
         <Button asChild className="w-full">
-          <Link to="/login">Sign in</Link>
+          <Link to="/login" search={{ redirect: undefined }}>Sign in</Link>
         </Button>
       </div>
     );
@@ -472,7 +472,7 @@ function Topbar(): ReactNode {
         </div>
       ) : (
         <Button asChild size="sm">
-          <Link to="/login">Sign in</Link>
+          <Link to="/login" search={{ redirect: undefined }}>Sign in</Link>
         </Button>
       )}
       <span className="hidden" aria-hidden>

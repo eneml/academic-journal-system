@@ -8,7 +8,6 @@ import {
 } from "react";
 import {
   ArrowLeft,
-  ArrowUpRight,
   Calendar,
   CheckCheck,
   Download,
@@ -20,7 +19,6 @@ import {
   LibraryBig,
   Mail,
   Send,
-  Trash2,
   Users,
   UserPlus,
   X,
@@ -748,147 +746,6 @@ function MetadataView({ submission }: { submission: Submission }): ReactNode {
   );
 }
 
-function AuthorsView({ authors }: { authors: AuthorRow[] }): ReactNode {
-  return (
-    <Card padded={false}>
-      <div style={{ padding: "16px 22px 0" }}>
-        <h2 style={h2Style}>Contributors ({authors.length})</h2>
-      </div>
-      <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-        {authors.length === 0 ? (
-          <li style={{ padding: "12px 22px 18px", color: "var(--muted)", fontSize: 13 }}>
-            No contributors recorded.
-          </li>
-        ) : (
-          authors
-            .slice()
-            .sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0))
-            .map((author, idx) => (
-              <li
-                key={author.id}
-                style={{
-                  padding: "10px 22px",
-                  borderTop: idx === 0 ? "1px solid var(--border)" : "none",
-                  borderBottom:
-                    idx < authors.length - 1 ? "1px solid var(--border)" : "none",
-                }}
-              >
-                <p
-                  style={{
-                    fontFamily: "var(--serif-display)",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    margin: 0,
-                  }}
-                >
-                  {[author.givenName, author.familyName].filter(Boolean).join(" ")}{" "}
-                  {author.corresponding ? (
-                    <Badge variant="cobalt" className="ml-2">
-                      corresponding
-                    </Badge>
-                  ) : null}
-                </p>
-                <p
-                  style={{
-                    fontFamily: "var(--mono)",
-                    fontSize: 11,
-                    color: "var(--muted)",
-                    margin: "3px 0 0",
-                  }}
-                >
-                  {author.email}
-                  {author.affiliation ? ` · ${author.affiliation}` : ""}
-                  {author.orcidId ? ` · ${author.orcidId}` : ""}
-                </p>
-              </li>
-            ))
-        )}
-      </ul>
-    </Card>
-  );
-}
-
-function FilesView({
-  submissionId,
-  files,
-}: {
-  submissionId: number;
-  files: FileRow[];
-}): ReactNode {
-  return (
-    <Card padded={false}>
-      <div style={{ padding: "16px 22px 0" }}>
-        <h2 style={h2Style}>Files ({files.length})</h2>
-      </div>
-      {files.length === 0 ? (
-        <p
-          style={{
-            padding: "12px 22px 18px",
-            color: "var(--muted)",
-            fontSize: 13,
-            margin: 0,
-          }}
-        >
-          No files attached.
-        </p>
-      ) : (
-        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-          {files.map((f, idx) => (
-            <li
-              key={f.id}
-              style={{
-                padding: "10px 22px",
-                borderTop: idx === 0 ? "1px solid var(--border)" : "none",
-                borderBottom: idx < files.length - 1 ? "1px solid var(--border)" : "none",
-                display: "flex",
-                gap: 10,
-                alignItems: "center",
-              }}
-            >
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p
-                  style={{
-                    fontFamily: "var(--serif-display)",
-                    fontSize: 13.5,
-                    fontWeight: 500,
-                    margin: 0,
-                  }}
-                >
-                  {f.originalFilename ?? `File #${f.id}`}
-                </p>
-                <p
-                  style={{
-                    fontFamily: "var(--mono)",
-                    fontSize: 10.5,
-                    color: "var(--muted)",
-                    margin: "2px 0 0",
-                  }}
-                >
-                  {f.fileStage} · {f.contentType ?? "?"}
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={async () => {
-                  const url = await api<{ url: string }>(
-                    `/api/v1/submissions/${submissionId}/files/${f.id}/download-url`,
-                  );
-                  if (url?.url) window.open(url.url, "_blank");
-                  else toast.error("Couldn't generate download URL.");
-                }}
-              >
-                <Download />
-                Download
-              </Button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Card>
-  );
-}
 
 // ---------- Review rounds + invitations + reviews ----------
 
@@ -1492,18 +1349,6 @@ const inputStyle = {
   textTransform: "none" as const,
   letterSpacing: 0,
   fontWeight: 400,
-};
-
-const btnPrimary = {
-  padding: "9px 16px",
-  background: "var(--cobalt)",
-  color: "white",
-  border: "none",
-  borderRadius: "var(--r-2)",
-  fontFamily: "var(--sans)",
-  fontSize: 13,
-  fontWeight: 500,
-  cursor: "pointer",
 };
 
 const btnSecondary = {

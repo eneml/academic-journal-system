@@ -616,7 +616,7 @@ function pickLocalized(map: Record<string, string> | undefined): string | undefi
 /** Pull yyyy-mm-dd out of an ISO string for a `<input type="date">`. */
 function dateInputValue(iso: string): string {
   const m = iso.match(/^(\d{4}-\d{2}-\d{2})/);
-  return m ? m[1] : "";
+  return m?.[1] ?? "";
 }
 
 /** Widen yyyy-mm-dd to a UTC instant at start- or end-of-day. */
@@ -651,13 +651,3 @@ const inputStyle = {
   fontWeight: 400,
 };
 
-const pillStyle = {
-  padding: "6px 12px",
-  border: "1px solid var(--border)",
-  borderRadius: 999,
-  fontFamily: "var(--sans)",
-  fontSize: 12,
-  cursor: "pointer",
-  background: "white",
-  color: "var(--fg-2)",
-};

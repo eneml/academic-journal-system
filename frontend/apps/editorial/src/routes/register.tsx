@@ -118,9 +118,7 @@ function RegisterPage(): ReactNode {
           Already have an account?{" "}
           <Link
             to="/login"
-            search={
-              redirectTo === "/" ? undefined : ({ redirect: redirectTo } as never)
-            }
+            search={{ redirect: redirectTo === "/" ? undefined : redirectTo }}
             style={{ color: "var(--cobalt)", textDecoration: "none", fontWeight: 500 }}
           >
             Sign in →

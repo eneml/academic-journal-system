@@ -71,9 +71,7 @@ function LoginPage(): ReactNode {
           New here?{" "}
           <Link
             to="/register"
-            search={
-              redirectTo === "/" ? undefined : ({ redirect: redirectTo } as never)
-            }
+            search={{ redirect: redirectTo === "/" ? undefined : redirectTo }}
             style={{ color: "var(--cobalt)", textDecoration: "none", fontWeight: 500 }}
           >
             Create an account →
