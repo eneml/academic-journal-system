@@ -69,6 +69,15 @@ class SecurityConfig {
                                 "/api/v1/metrics/**",
                                 "/api/v1/articles/**",
                                 "/api/v1/search",
+                                // Public-site reads — used by homepage announcement strip,
+                                // /announcements page, /sections/[code], /authors/[orcid].
+                                // Mutating endpoints (/announcements POST/PUT/DELETE,
+                                // /users) stay protected via the controller-level
+                                // @PreAuthorize since only the GET method is permitted here.
+                                "/api/v1/announcements",
+                                "/api/v1/announcements/*",
+                                "/api/v1/sections/*/publications",
+                                "/api/v1/authors/*",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
