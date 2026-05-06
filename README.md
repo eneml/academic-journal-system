@@ -1,3 +1,5 @@
+<img width="1600" height="900" alt="screenshots" src="https://github.com/user-attachments/assets/06493302-d76c-4ffd-9d58-d94a9706d5ab" />
+
 # Academic Journal System
 Open-source platform for running peer-reviewed journals end-to-end: submission, review, editorial decisions, production, and publication.
 
