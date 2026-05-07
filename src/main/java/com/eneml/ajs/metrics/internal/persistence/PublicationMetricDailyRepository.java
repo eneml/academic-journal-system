@@ -97,4 +97,24 @@ public interface PublicationMetricDailyRepository
     List<Object[]> articleTotalsForRange(
             @Param("from") LocalDate from,
             @Param("to") LocalDate to);
+
+    /**
+     * Per-publication daily series for one article. Powers the homepage
+     * sparkline + the per-article stats chart. Returns rows shaped
+     * (day, abstracts, files), one per day in [from..to] that has data.
+     */
+    @Query(value = """
+            SELECT day::text AS d,
+                   abstract_views                                 AS abstracts,
+                   pdf_views + html_views + other_views          AS files
+            FROM publication_metric_daily
+            WHERE publication_id = :publicationId
+              AND day BETWEEN :from AND :to
+            ORDER BY day
+            """,
+            nativeQuery = true)
+    List<Object[]> publicationDaily(
+            @Param("publicationId") long publicationId,
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 }

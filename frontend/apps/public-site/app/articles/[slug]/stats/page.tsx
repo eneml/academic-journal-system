@@ -5,10 +5,11 @@ import type { ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
-import { DoiChip } from "@ajs/ui";
+import { DoiChip, Sparkline } from "@ajs/ui";
 import {
   fetchArticle,
   fetchPublicationMetrics,
+  fetchPublicationTimeseries,
   pickLocale,
 } from "@/lib/api";
 import { articlePath, formatDate } from "@/lib/format";
@@ -37,9 +38,14 @@ export default async function ArticleStatsPage({
   const article = await fetchArticle(slug);
   if (!article) notFound();
 
-  const metrics = await fetchPublicationMetrics(article.id);
+  const [metrics, series] = await Promise.all([
+    fetchPublicationMetrics(article.id),
+    fetchPublicationTimeseries(article.id, 90),
+  ]);
   const locale = article.locale ?? "en";
   const title = pickLocale(article.title, locale) || "Untitled";
+  const abstractsSpark = (series ?? []).map((b) => Number(b.abstracts));
+  const filesSpark = (series ?? []).map((b) => Number(b.files));
 
   const daysOnline = article.datePublished
     ? Math.max(0, Math.round((Date.now() - Date.parse(article.datePublished)) / 86_400_000))
@@ -102,16 +108,51 @@ export default async function ArticleStatsPage({
         <div className="rounded-md border border-border bg-bg p-6">
           <div className="mb-3 flex items-baseline justify-between">
             <div>
-              <div className="sc text-muted">Activity over time</div>
+              <div className="sc text-muted">Activity over time · last 90 days</div>
               <h3 className="m-0 mt-0.5 font-serif-display text-[22px] font-medium tracking-[-0.01em] text-ink">
                 Views &amp; downloads
               </h3>
             </div>
+            <div className="flex flex-wrap gap-3 text-[11.5px] text-muted">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-0.5 w-2.5 rounded-sm bg-cobalt" /> Abstract views
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-0.5 w-2.5 rounded-sm bg-amber-deep" /> File downloads
+              </span>
+            </div>
           </div>
-          <Empty
-            heading="Detailed timeseries not yet available"
-            body="The per-article 12-month chart wires up after the publication metrics timeseries endpoint lands. The cumulative totals above always reflect live data."
-          />
+          {abstractsSpark.length > 1 || filesSpark.length > 1 ? (
+            <div className="flex flex-col gap-3.5">
+              <div>
+                <div className="mb-1 font-mono text-[10.5px] text-muted">Abstract views</div>
+                <Sparkline
+                  data={abstractsSpark}
+                  width={1200}
+                  height={120}
+                  color="var(--cobalt)"
+                  ariaLabel="Abstract views over the last 90 days"
+                  className="w-full max-w-full"
+                />
+              </div>
+              <div>
+                <div className="mb-1 font-mono text-[10.5px] text-muted">File downloads</div>
+                <Sparkline
+                  data={filesSpark}
+                  width={1200}
+                  height={120}
+                  color="var(--amber-deep)"
+                  ariaLabel="File downloads over the last 90 days"
+                  className="w-full max-w-full"
+                />
+              </div>
+            </div>
+          ) : (
+            <Empty
+              heading="No activity yet"
+              body="When readers start visiting this article, daily views + downloads will plot here. Cumulative totals above already reflect any traffic."
+            />
+          )}
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-2">

@@ -253,6 +253,34 @@ export const fetchPublicationMetricsBatch = async (
   return out;
 };
 
+export type DailyMetricsBucket = {
+  key: string;
+  abstracts: number;
+  files: number;
+};
+
+export const fetchPublicationTimeseries = (
+  publicationId: number,
+  days = 30,
+) =>
+  getJson<DailyMetricsBucket[]>(
+    `/api/v1/publications/${publicationId}/metrics/timeseries?days=${days}`,
+  );
+
+export const fetchPublicationTimeseriesBatch = async (
+  ids: readonly number[],
+  days = 30,
+): Promise<Map<number, DailyMetricsBucket[]>> => {
+  const results = await Promise.all(
+    ids.map((id) => fetchPublicationTimeseries(id, days)),
+  );
+  const out = new Map<number, DailyMetricsBucket[]>();
+  results.forEach((series, i) => {
+    if (series) out.set(ids[i]!, series);
+  });
+  return out;
+};
+
 export type AuthorProfile = {
   orcidUrl: string;
   givenName: string | null;

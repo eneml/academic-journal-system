@@ -4,7 +4,7 @@ import { ArrowRight, BookOpen, Download, Quote, Rss } from "lucide-react";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
 import { Avatar } from "@/components/Avatar";
-import { Button, CoverArt, Fleuron } from "@ajs/ui";
+import { Button, CoverArt, Fleuron, Sparkline } from "@ajs/ui";
 import {
   fetchActiveSections,
   fetchAnnouncements,
@@ -14,7 +14,9 @@ import {
   fetchJournalConfig,
   fetchMasthead,
   fetchPublicationMetricsBatch,
+  fetchPublicationTimeseriesBatch,
   pickLocale,
+  type DailyMetricsBucket,
   type IndexingMembership,
   type PublicationMetrics,
   type PublicationSummary,
@@ -59,7 +61,10 @@ export default async function HomePage(): Promise<ReactNode> {
 
   const featured = pickFeatured(toc);
   const sectionsList = sections ?? [];
-  const featuredMetrics = await fetchPublicationMetricsBatch(featured.map((p) => p.id));
+  const [featuredMetrics, featuredTimeseries] = await Promise.all([
+    fetchPublicationMetricsBatch(featured.map((p) => p.id)),
+    fetchPublicationTimeseriesBatch(featured.map((p) => p.id), 30),
+  ]);
   const visibleMasthead = (masthead ?? []).filter((m) => m.visible);
   const seniorEditors = visibleMasthead.filter((m) => {
     const role = pickLocale(m.roleLabel, locale).toLowerCase();
@@ -103,6 +108,7 @@ export default async function HomePage(): Promise<ReactNode> {
           sectionsList={sectionsList}
           countsBySection={countsBySection}
           featuredMetrics={featuredMetrics}
+          featuredTimeseries={featuredTimeseries}
           locale={locale}
         />
       ) : null}
@@ -359,6 +365,7 @@ function FeaturedSection({
   sectionsList,
   countsBySection,
   featuredMetrics,
+  featuredTimeseries,
   locale,
 }: {
   issue: NonNullable<Awaited<ReturnType<typeof fetchIssues>>>[number];
@@ -366,6 +373,7 @@ function FeaturedSection({
   sectionsList: NonNullable<Awaited<ReturnType<typeof fetchActiveSections>>>;
   countsBySection: Map<number, number>;
   featuredMetrics: Map<number, PublicationMetrics>;
+  featuredTimeseries: Map<number, DailyMetricsBucket[]>;
   locale: string;
 }) {
   return (
@@ -428,6 +436,7 @@ function FeaturedSection({
                 first={i === 0}
                 section={sectionsList.find((s) => s.id === p.sectionId)}
                 metrics={featuredMetrics.get(p.id)}
+                series={featuredTimeseries.get(p.id) ?? []}
                 locale={locale}
               />
             ))
@@ -444,6 +453,7 @@ function FeaturedRow({
   first,
   section,
   metrics,
+  series,
   locale,
 }: {
   article: PublicationSummary;
@@ -451,6 +461,7 @@ function FeaturedRow({
   first: boolean;
   section: NonNullable<Awaited<ReturnType<typeof fetchActiveSections>>>[number] | undefined;
   metrics: PublicationMetrics | undefined;
+  series: DailyMetricsBucket[];
   locale: string;
 }) {
   const sectionTitle = section ? pickLocale(section.title, locale) || section.code : "Article";
@@ -521,15 +532,24 @@ function FeaturedRow({
           </Link>
         </div>
       </div>
-      <FeaturedRailMetrics metrics={metrics} />
+      <FeaturedRailMetrics metrics={metrics} series={series} />
     </li>
   );
 }
 
-function FeaturedRailMetrics({ metrics }: { metrics: PublicationMetrics | undefined }) {
+function FeaturedRailMetrics({
+  metrics,
+  series,
+}: {
+  metrics: PublicationMetrics | undefined;
+  series: DailyMetricsBucket[];
+}) {
   if (!metrics) {
     return <div className="hidden lg:block" aria-hidden />;
   }
+  // Convert daily buckets to a 30-point sparkline (sum of abstracts + files
+  // per day). Days with no rows fall through as zeros via the chart.
+  const sparkData = series.map((b) => Number(b.abstracts) + Number(b.files));
   return (
     <div className="hidden flex-col gap-3 border-l border-border pl-4 pt-1.5 lg:flex">
       <div>
@@ -537,6 +557,17 @@ function FeaturedRailMetrics({ metrics }: { metrics: PublicationMetrics | undefi
           {NUMBER.format(metrics.viewCount)}
         </div>
         <div className="sc mt-1 text-muted text-[9.5px]">views · cumulative</div>
+        {sparkData.length > 1 ? (
+          <div className="mt-2">
+            <Sparkline
+              data={sparkData}
+              width={120}
+              height={22}
+              color="var(--cobalt)"
+              ariaLabel="30-day view trend"
+            />
+          </div>
+        ) : null}
       </div>
       {metrics.downloadCount > 0 ? (
         <div className="grid grid-cols-1 gap-1.5 border-t border-border pt-2.5">
