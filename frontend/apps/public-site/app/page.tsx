@@ -365,10 +365,7 @@ export default async function HomePage(): Promise<ReactNode> {
             style={{ background: "var(--cobalt-deep)" }}
           >
             <div>
-              <div
-                className="mb-1.5 font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em]"
-                style={{ color: "var(--amber)", opacity: 0.9 }}
-              >
+              <div className="mb-1.5 font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-amber-soft">
                 Open call
                 {announcement.dateExpires
                   ? ` · Due ${new Date(

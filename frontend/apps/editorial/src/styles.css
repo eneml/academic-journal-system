@@ -4,6 +4,10 @@
 /* Tailwind v4 — CSS-first config via @import + @theme. */
 @import "tailwindcss";
 
+/* Scan shared UI primitives so utility classes referenced only inside
+   @ajs/ui are emitted in the app bundle. */
+@source "../../../../packages/ui/src/**/*.{ts,tsx}";
+
 @theme {
   --color-bg: var(--bg);
   --color-bg-tint: var(--bg-tint);

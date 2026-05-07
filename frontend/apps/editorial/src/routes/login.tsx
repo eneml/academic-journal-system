@@ -112,7 +112,7 @@ function LoginPage(): ReactNode {
           Forgot your password?{" "}
           <a
             href={`${KEYCLOAK_ISSUER}/login-actions/reset-credentials?client_id=${KEYCLOAK_CLIENT_ID}`}
-            className="text-cobalt no-underline hover:underline"
+            className="font-medium text-cobalt underline underline-offset-2"
           >
             Reset it →
           </a>
