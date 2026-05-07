@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Bar,
   BarChart,
@@ -15,8 +15,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Download, Share2 } from "lucide-react";
-import { Button } from "@ajs/ui";
+import { ArrowDown, ArrowUp, Download, Search, Share2 } from "lucide-react";
+import { Button, Input } from "@ajs/ui";
 import { useAuth } from "../../auth/AuthContext";
 import { isEditorial } from "../../auth/roles";
 import { api } from "../../lib/api";
@@ -79,6 +79,68 @@ interface IssueRow {
   fileViews: number;
   totalViews: number;
 }
+interface Bucket {
+  key: string;
+  abstracts: number;
+  files: number;
+}
+interface ArticleRow {
+  publicationId: number;
+  title: string;
+  authorByline: string | null;
+  abstractViews: number;
+  fileViews: number;
+  pdfViews: number;
+  htmlViews: number;
+  otherViews: number;
+  total: number;
+}
+interface ArticlePage {
+  rows: ArticleRow[];
+  totalRows: number;
+  page: number;
+  size: number;
+}
+
+type RangePreset = "3m" | "6m" | "12m" | "ytd" | "all";
+type EngagementMode = "articles" | "issues";
+type EngagementSeries = "abstracts" | "files";
+type SortKey =
+  | "title"
+  | "abstract"
+  | "file"
+  | "pdf"
+  | "html"
+  | "other"
+  | "total";
+type SortDir = "asc" | "desc";
+
+const PAGE_SIZE = 20;
+const RANGE_LABELS: Record<RangePreset, string> = {
+  "3m": "Last 3 months",
+  "6m": "Last 6 months",
+  "12m": "Last 12 months",
+  ytd: "YTD",
+  all: "All time",
+};
+
+function rangeFor(preset: RangePreset): { from: string; to: string } {
+  const today = new Date();
+  const to = isoDate(today);
+  if (preset === "all") return { from: "2000-01-01", to };
+  if (preset === "ytd") return { from: `${today.getFullYear()}-01-01`, to };
+  const months = preset === "3m" ? 3 : preset === "6m" ? 6 : 12;
+  const d = new Date(today);
+  d.setMonth(d.getMonth() - months);
+  return { from: isoDate(d), to };
+}
+
+function isoDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 function StatsPage(): ReactNode {
   const { user, roles, loading } = useAuth();
@@ -110,6 +172,36 @@ function StatsAdmin(): ReactNode {
   const [issues, setIssues] = useState<IssueRow[]>([]);
   const [loadingAll, setLoadingAll] = useState(true);
 
+  // Reader engagement card state
+  const [engagementMode, setEngagementMode] = useState<EngagementMode>("articles");
+  const [engagementSeries, setEngagementSeries] =
+    useState<EngagementSeries>("abstracts");
+  const [rangePreset, setRangePreset] = useState<RangePreset>("12m");
+  const [buckets, setBuckets] = useState<Bucket[]>([]);
+  const [loadingBuckets, setLoadingBuckets] = useState(false);
+
+  // Article details table state
+  const [articles, setArticles] = useState<ArticlePage | null>(null);
+  const [loadingArticles, setLoadingArticles] = useState(false);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const [sortKey, setSortKey] = useState<SortKey>("total");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  const range = useMemo(() => rangeFor(rangePreset), [rangePreset]);
+
+  function toggleSort(key: SortKey): void {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+    setPage(0);
+  }
+
+  // Dashboard core: KPIs, flow, decisions, sections, performance,
+  // reading-impact, issues — fetched once on mount.
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -136,6 +228,59 @@ function StatsAdmin(): ReactNode {
       cancelled = true;
     };
   }, []);
+
+  // Engagement chart buckets — re-fires on range change. Issues mode
+  // reuses the issues array we already have and doesn't need a server
+  // round-trip.
+  useEffect(() => {
+    if (engagementMode === "issues") return;
+    let cancelled = false;
+    setLoadingBuckets(true);
+    const qs = new URLSearchParams({
+      from: range.from,
+      to: range.to,
+      granularity: "monthly",
+    });
+    void (async () => {
+      const data = await api<Bucket[]>(
+        `/api/v1/admin/stats/articles/timeseries?${qs.toString()}`,
+      );
+      if (!cancelled) {
+        setBuckets(data ?? []);
+        setLoadingBuckets(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [engagementMode, range.from, range.to]);
+
+  // Article details table — re-fires on range / search / page / sort.
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingArticles(true);
+    const qs = new URLSearchParams({
+      from: range.from,
+      to: range.to,
+      page: String(page),
+      size: String(PAGE_SIZE),
+      sort: sortKey,
+      dir: sortDir,
+    });
+    if (search.trim()) qs.set("q", search.trim());
+    void (async () => {
+      const data = await api<ArticlePage>(
+        `/api/v1/admin/stats/articles/details?${qs.toString()}`,
+      );
+      if (!cancelled) {
+        setArticles(data);
+        setLoadingArticles(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [range.from, range.to, search, page, sortKey, sortDir]);
 
   // Sparkline data per KPI: take the monthly flow series.
   const submissionsSpark = flow.map((p) => p.submissions);
@@ -240,6 +385,73 @@ function StatsAdmin(): ReactNode {
         </Card>
       </div>
 
+      {/* Reader engagement — interchangeable Articles vs Issues + monthly range */}
+      <div className="mt-4">
+        <Card>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <Eyebrow text="Reader engagement" />
+              <Title
+                text={
+                  engagementMode === "articles"
+                    ? "Article views, monthly"
+                    : "Engagement by issue"
+                }
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Toggle
+                options={[
+                  { value: "articles", label: "Articles" },
+                  { value: "issues", label: "Issues" },
+                ]}
+                value={engagementMode}
+                onChange={setEngagementMode}
+              />
+              <Toggle
+                options={[
+                  { value: "abstracts", label: "Abstracts" },
+                  { value: "files", label: "Files" },
+                ]}
+                value={engagementSeries}
+                onChange={setEngagementSeries}
+              />
+              {engagementMode === "articles" ? (
+                <RangePresetPicker value={rangePreset} onChange={setRangePreset} />
+              ) : null}
+            </div>
+          </div>
+
+          <div className="mt-4 h-[260px]">
+            {engagementMode === "articles" ? (
+              loadingBuckets ? (
+                <div className="grid h-full place-items-center text-[12.5px] text-muted">
+                  Loading…
+                </div>
+              ) : buckets.length === 0 ? (
+                <div className="grid h-full place-items-center text-[12.5px] text-muted">
+                  No events recorded in this range.
+                </div>
+              ) : (
+                <ArticleEngagementChart
+                  buckets={buckets}
+                  series={engagementSeries}
+                />
+              )
+            ) : issues.length === 0 ? (
+              <div className="grid h-full place-items-center text-[12.5px] text-muted">
+                No published issues yet.
+              </div>
+            ) : (
+              <IssueEngagementChart
+                rows={issues}
+                series={engagementSeries}
+              />
+            )}
+          </div>
+        </Card>
+      </div>
+
       {/* Issues + Reading & Impact + Indexing Health */}
       <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr]">
         <Card>
@@ -258,6 +470,58 @@ function StatsAdmin(): ReactNode {
             <IndexingHealthStub />
           </Card>
         </div>
+      </div>
+
+      {/* Article details — paginated, searchable, sortable */}
+      <div className="mt-4">
+        <Card padded={false}>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3">
+            <div>
+              <Eyebrow text="Articles" />
+              <Title text="Article details" />
+            </div>
+            <span className="text-[12px] text-muted">
+              {Math.min(PAGE_SIZE, articles?.rows.length ?? 0)} of{" "}
+              {(articles?.totalRows ?? 0).toLocaleString()} articles ·{" "}
+              {RANGE_LABELS[rangePreset]}
+            </span>
+          </div>
+
+          {loadingArticles && !articles ? (
+            <div className="grid h-[180px] place-items-center text-[13px] text-muted">
+              Loading…
+            </div>
+          ) : (
+            <>
+              <ArticleDetailsTable
+                rows={articles?.rows ?? []}
+                search={search}
+                onSearch={(s) => {
+                  setPage(0);
+                  setSearch(s);
+                }}
+                sortKey={sortKey}
+                sortDir={sortDir}
+                onSort={toggleSort}
+              />
+              {!articles || articles.rows.length === 0 ? (
+                <div className="border-t border-border px-5 py-10">
+                  <EmptyState
+                    icon="inbox"
+                    title="No articles match"
+                    description="Try widening the range or clearing the search."
+                  />
+                </div>
+              ) : null}
+              <ArticlePagination
+                page={page}
+                total={articles?.totalRows ?? 0}
+                pageSize={PAGE_SIZE}
+                onPage={setPage}
+              />
+            </>
+          )}
+        </Card>
       </div>
     </>
   );
@@ -814,5 +1078,341 @@ function IndexingHealthStub(): ReactNode {
         </li>
       ))}
     </ul>
+  );
+}
+
+// ----------------------------------------------------------------------
+// Reader engagement: chart variants, range picker, generic toggle
+// ----------------------------------------------------------------------
+
+function Toggle<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: Array<{ value: T; label: string }>;
+  value: T;
+  onChange: (v: T) => void;
+}): ReactNode {
+  return (
+    <div
+      role="tablist"
+      className="inline-flex rounded-md border border-border bg-bg-tint p-0.5"
+    >
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          role="tab"
+          aria-selected={value === o.value}
+          onClick={() => onChange(o.value)}
+          className={cn(
+            "rounded-[4px] px-3 py-1 text-[12px] font-medium transition-colors",
+            value === o.value ? "bg-cobalt text-white" : "text-fg-2 hover:text-fg",
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function RangePresetPicker({
+  value,
+  onChange,
+}: {
+  value: RangePreset;
+  onChange: (v: RangePreset) => void;
+}): ReactNode {
+  const presets: RangePreset[] = ["3m", "6m", "12m", "ytd", "all"];
+  return (
+    <div className="inline-flex rounded-md border border-border bg-bg-tint p-0.5">
+      {presets.map((p) => (
+        <button
+          key={p}
+          type="button"
+          aria-pressed={value === p}
+          onClick={() => onChange(p)}
+          className={cn(
+            "rounded-[4px] px-2.5 py-1 text-[11.5px] font-medium uppercase tracking-wider transition-colors",
+            value === p
+              ? "bg-cobalt text-white"
+              : "text-fg-2 hover:text-fg",
+          )}
+        >
+          {p === "ytd" ? "YTD" : p === "all" ? "All" : p.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function prettyMonth(k: string): string {
+  const m = /^(\d{4})-(\d{2})/.exec(k);
+  if (!m) return k;
+  const d = new Date(`${m[1]}-${m[2]}-01T00:00:00`);
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    year: "2-digit",
+  });
+}
+
+function ArticleEngagementChart({
+  buckets,
+  series,
+}: {
+  buckets: Bucket[];
+  series: EngagementSeries;
+}): ReactNode {
+  const data = buckets.map((b) => ({
+    label: prettyMonth(b.key),
+    value: series === "abstracts" ? b.abstracts : b.files,
+  }));
+  const stroke = series === "abstracts" ? "var(--cobalt)" : "var(--amber-deep)";
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: -16 }}>
+        <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
+        <XAxis
+          dataKey="label"
+          tick={{ fontSize: 11, fill: "var(--muted)" }}
+          stroke="var(--border-strong)"
+        />
+        <YAxis
+          tick={{ fontSize: 11, fill: "var(--muted)" }}
+          stroke="var(--border-strong)"
+          allowDecimals={false}
+        />
+        <Tooltip
+          contentStyle={{
+            background: "var(--bg)",
+            border: "1px solid var(--border)",
+            borderRadius: 6,
+            fontSize: 12,
+          }}
+        />
+        <Line
+          type="monotone"
+          dataKey="value"
+          stroke={stroke}
+          strokeWidth={2}
+          dot={{ r: 2.5, strokeWidth: 0, fill: stroke }}
+          activeDot={{ r: 4 }}
+          name={series === "abstracts" ? "Abstract views" : "File views"}
+          isAnimationActive={false}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+function IssueEngagementChart({
+  rows,
+  series,
+}: {
+  rows: IssueRow[];
+  series: EngagementSeries;
+}): ReactNode {
+  const data = rows
+    .map((r) => ({
+      label: r.identification.replace(/\(\d{4}\)$/, "").trim(),
+      value: series === "abstracts" ? r.abstractViews : r.fileViews,
+    }))
+    .reverse();
+  const fill = series === "abstracts" ? "var(--cobalt)" : "var(--amber-deep)";
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: -16 }}>
+        <CartesianGrid stroke="var(--border)" vertical={false} strokeDasharray="3 3" />
+        <XAxis
+          dataKey="label"
+          tick={{ fontSize: 11, fill: "var(--muted)" }}
+          stroke="var(--border-strong)"
+        />
+        <YAxis
+          tick={{ fontSize: 11, fill: "var(--muted)" }}
+          stroke="var(--border-strong)"
+          allowDecimals={false}
+        />
+        <Tooltip
+          contentStyle={{
+            background: "var(--bg)",
+            border: "1px solid var(--border)",
+            borderRadius: 6,
+            fontSize: 12,
+          }}
+        />
+        <Bar
+          dataKey="value"
+          fill={fill}
+          radius={[3, 3, 0, 0]}
+          name={series === "abstracts" ? "Abstract views" : "File views"}
+          isAnimationActive={false}
+        />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+// ----------------------------------------------------------------------
+// Article details: search + sortable header + paginated table
+// ----------------------------------------------------------------------
+
+function ArticleDetailsTable({
+  rows,
+  search,
+  onSearch,
+  sortKey,
+  sortDir,
+  onSort,
+}: {
+  rows: ArticleRow[];
+  search: string;
+  onSearch: (s: string) => void;
+  sortKey: SortKey;
+  sortDir: SortDir;
+  onSort: (k: SortKey) => void;
+}): ReactNode {
+  return (
+    <div className="grid grid-cols-[1fr_120px_120px_70px_70px_70px_80px] gap-3 px-5">
+      <div className="border-b border-border py-2.5">
+        <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+          Title
+        </div>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted" />
+          <Input
+            value={search}
+            onChange={(e) => onSearch(e.target.value)}
+            placeholder="Search by title, author and ID"
+            className="h-8 pl-8 text-[12px]"
+          />
+        </div>
+      </div>
+      <SortHeader k="abstract" label="Abstract Views" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+      <SortHeader k="file" label="File Views" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+      <SortHeader k="pdf" label="PDF" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+      <SortHeader k="html" label="HTML" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+      <SortHeader k="other" label="Other" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+      <SortHeader k="total" label="Total" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+
+      {rows.map((r) => (
+        <ArticleRowCells key={r.publicationId} row={r} />
+      ))}
+    </div>
+  );
+}
+
+function SortHeader({
+  k,
+  label,
+  sortKey,
+  sortDir,
+  onSort,
+}: {
+  k: SortKey;
+  label: string;
+  sortKey: SortKey;
+  sortDir: SortDir;
+  onSort: (k: SortKey) => void;
+}): ReactNode {
+  const active = sortKey === k;
+  const Icon = active && sortDir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(k)}
+      aria-sort={
+        active ? (sortDir === "asc" ? "ascending" : "descending") : "none"
+      }
+      className={cn(
+        "flex h-full items-end justify-end gap-1 self-stretch border-b border-border py-2.5 text-right text-[10.5px] font-semibold uppercase tracking-[0.08em] transition-colors",
+        active ? "text-fg" : "text-muted hover:text-fg-2",
+      )}
+    >
+      <span>{label}</span>
+      <Icon
+        className={cn(
+          "size-3 shrink-0 transition-opacity",
+          active ? "opacity-100" : "opacity-30",
+        )}
+      />
+    </button>
+  );
+}
+
+function ArticleRowCells({ row }: { row: ArticleRow }): ReactNode {
+  return (
+    <>
+      <div className="border-b border-border py-3">
+        {row.authorByline ? (
+          <span className="font-medium">{row.authorByline}. </span>
+        ) : null}
+        <span className="text-fg-2">{row.title}</span>
+      </div>
+      <div className="tnum border-b border-border py-3 text-right text-[13px]">
+        {row.abstractViews.toLocaleString()}
+      </div>
+      <div className="tnum border-b border-border py-3 text-right text-[13px]">
+        {row.fileViews.toLocaleString()}
+      </div>
+      <div className="tnum border-b border-border py-3 text-right text-[12.5px] text-muted">
+        {row.pdfViews.toLocaleString()}
+      </div>
+      <div className="tnum border-b border-border py-3 text-right text-[12.5px] text-muted">
+        {row.htmlViews.toLocaleString()}
+      </div>
+      <div className="tnum border-b border-border py-3 text-right text-[12.5px] text-muted">
+        {row.otherViews.toLocaleString()}
+      </div>
+      <div className="tnum border-b border-border py-3 text-right text-[13px] font-semibold">
+        {row.total.toLocaleString()}
+      </div>
+    </>
+  );
+}
+
+function ArticlePagination({
+  page,
+  total,
+  pageSize,
+  onPage,
+}: {
+  page: number;
+  total: number;
+  pageSize: number;
+  onPage: (p: number) => void;
+}): ReactNode {
+  if (total <= pageSize) return null;
+  const lastPage = Math.max(0, Math.ceil(total / pageSize) - 1);
+  const fromIdx = page * pageSize + 1;
+  const toIdx = Math.min((page + 1) * pageSize, total);
+  return (
+    <div className="flex items-center justify-between border-t border-border px-5 py-3 text-[12px] text-muted">
+      <span>
+        Showing {fromIdx}–{toIdx} of {total.toLocaleString()}
+      </span>
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={page === 0}
+          onClick={() => onPage(Math.max(0, page - 1))}
+        >
+          Previous
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={page >= lastPage}
+          onClick={() => onPage(Math.min(lastPage, page + 1))}
+        >
+          Next
+        </Button>
+      </div>
+    </div>
   );
 }
