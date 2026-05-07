@@ -42,6 +42,13 @@ export interface LanguageSwitcherProps {
    * picking one of these is a no-op until translations exist.
    */
   decorativeLocales?: string[];
+  /**
+   * Optional hook invoked after the cookie is set and before the page reloads.
+   * Apps with an authenticated session use this to persist the choice on the
+   * user record (e.g. `PATCH /api/v1/users/me/preferences`). Errors here do
+   * not block the cookie write — the UI flips locale either way.
+   */
+  onPick?: (next: Locale) => void | Promise<void>;
 }
 
 const DECORATIVE_DEFAULT = ["DE", "FR"];
@@ -50,6 +57,7 @@ export function LanguageSwitcher({
   current: initial,
   variant = "compact",
   decorativeLocales = DECORATIVE_DEFAULT,
+  onPick,
 }: LanguageSwitcherProps = {}) {
   const [current, setCurrent] = useState<Locale>(initial ?? defaultLocale);
 
@@ -59,9 +67,14 @@ export function LanguageSwitcher({
     if (fromCookie && fromCookie !== current) setCurrent(fromCookie);
   }, [initial, current]);
 
-  function pick(next: Locale): void {
+  async function pick(next: Locale): Promise<void> {
     if (next === current) return;
     setLocaleCookie(next);
+    try {
+      await onPick?.(next);
+    } catch {
+      // Persistence failure is non-fatal — cookie + reload still apply locally.
+    }
     if (typeof window !== "undefined") window.location.reload();
   }
 
@@ -98,7 +111,7 @@ export function LanguageSwitcher({
       <DropdownMenuContent align="end" className="min-w-[160px]">
         <DropdownMenuLabel>Language</DropdownMenuLabel>
         {locales.map((loc) => (
-          <DropdownMenuItem key={loc} onClick={() => pick(loc)}>
+          <DropdownMenuItem key={loc} onClick={() => void pick(loc)}>
             <span aria-hidden className="mr-1 text-[14px] leading-none">
               {LANG_FLAG[loc]}
             </span>
