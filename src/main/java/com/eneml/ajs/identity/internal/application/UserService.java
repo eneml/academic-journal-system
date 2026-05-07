@@ -64,6 +64,18 @@ public class UserService {
     }
 
     @Transactional
+    public User patchPreferences(
+            Long userId,
+            com.eneml.ajs.identity.internal.web.dto.UserPreferencesPatch patch
+    ) {
+        User user = get(userId);
+        if (patch.locale() != null && !patch.locale().isBlank()) {
+            user.setLocale(patch.locale());
+        }
+        return user;
+    }
+
+    @Transactional
     public User updateAsAdmin(Long userId, UserAdminUpdateRequest request) {
         User user = get(userId);
         if (!user.getEmail().equalsIgnoreCase(request.email())

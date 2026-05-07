@@ -54,6 +54,16 @@ class UserController {
         return mapper.toResponse(service.updateSelf(me.getId(), request));
     }
 
+    @org.springframework.web.bind.annotation.PatchMapping("/me/preferences")
+    @Operation(summary = "Patch user preferences (locale, …) without resending the whole profile")
+    UserResponse updatePreferences(
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody com.eneml.ajs.identity.internal.web.dto.UserPreferencesPatch patch
+    ) {
+        User me = service.getByKeycloakSub(jwt.getSubject());
+        return mapper.toResponse(service.patchPreferences(me.getId(), patch));
+    }
+
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "List users (admin)")
