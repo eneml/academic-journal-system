@@ -49,6 +49,8 @@ export { CoverArt } from "./CoverArt";
 export type { CoverArtProps } from "./CoverArt";
 export { Sparkline } from "./Sparkline";
 export type { SparklineProps } from "./Sparkline";
+export { UtilityBar } from "./UtilityBar";
+export type { UtilityBarProps } from "./UtilityBar";
 export { OrcidBadge } from "./OrcidBadge";
 export type { OrcidBadgeProps } from "./OrcidBadge";
 export { DoiChip } from "./DoiChip";
