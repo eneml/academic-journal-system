@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowUpRight, UserCog } from "lucide-react";
 import type { User } from "oidc-client-ts";
-import { UserMenu as SharedUserMenu, type UserMenuItem } from "@ajs/ui";
+import { UserMenu as SharedUserMenu } from "@ajs/ui";
 import { getUserManager } from "@/lib/oidc";
 
 const EDITORIAL_APP_URL =
@@ -12,7 +11,10 @@ const EDITORIAL_APP_URL =
 /**
  * OIDC integration shim around the shared {@link SharedUserMenu}. Runs a
  * silent SSO probe on mount so a Keycloak session established by the
- * editorial app surfaces here without an interactive login.
+ * editorial app surfaces here. When signed in, the chip becomes a
+ * "Dashboard →" link to the editorial workbench; when signed out it stays
+ * a "Sign in" link. Sign-out and profile management live in the editorial
+ * app to keep the public site free of session UI.
  */
 export function UserMenu() {
   const [user, setUser] = useState<User | null>(null);
@@ -59,18 +61,6 @@ export function UserMenu() {
     };
   }, []);
 
-  async function handleSignOut(): Promise<void> {
-    try {
-      await getUserManager().signoutRedirect({
-        post_logout_redirect_uri: window.location.href,
-      });
-    } catch (err) {
-      console.warn("Sign-out failed, clearing local session:", err);
-      await getUserManager().removeUser();
-      setUser(null);
-    }
-  }
-
   const profile = (user?.profile ?? {}) as Record<string, unknown>;
   const given = (profile.given_name as string | undefined) ?? "";
   const family = (profile.family_name as string | undefined) ?? "";
@@ -79,34 +69,12 @@ export function UserMenu() {
   const displayName = `${given} ${family}`.trim() || username;
   const initials = computeInitials(given, family, username);
 
-  const items: UserMenuItem[] = [
-    {
-      type: "link",
-      label: "Open editorial workbench",
-      href: EDITORIAL_APP_URL,
-      icon: ArrowUpRight,
-      external: true,
-    },
-    {
-      type: "link",
-      label: "Profile settings",
-      href: `${EDITORIAL_APP_URL}/profile`,
-      icon: UserCog,
-      external: true,
-    },
-  ];
-
   return (
     <SharedUserMenu
       variant="chip"
-      user={
-        user
-          ? { displayName, email, initials }
-          : null
-      }
-      items={items}
-      onSignOut={() => void handleSignOut()}
+      user={user ? { displayName, email, initials } : null}
       signInHref={EDITORIAL_APP_URL}
+      dashboardHref={EDITORIAL_APP_URL}
     />
   );
 }
