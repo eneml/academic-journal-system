@@ -1,49 +1,33 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { Button } from "@ajs/ui";
 
 /**
  * Fallback prompt for routes that render before AppShell's redirect-to-login
- * fires (or when the gate is bypassed). Now an inline link to /login rather
- * than a button kicking the OIDC redirect, since we own the login UI.
+ * fires (or when the gate is bypassed). Inline link to /login since we own
+ * the login UI.
  */
 export function SignInPrompt(): ReactNode {
   const location = useLocation();
   const dest = `${location.pathname}${location.search ?? ""}`;
   return (
-    <div style={{ maxWidth: 540 }}>
-      <p className="sc" style={{ color: "var(--muted)", marginBottom: 6 }}>
-        Sign in required
-      </p>
-      <h1
-        style={{
-          fontFamily: "var(--serif-display)",
-          fontWeight: 500,
-          fontSize: 30,
-          letterSpacing: "-0.01em",
-          margin: "0 0 10px",
-        }}
-      >
+    <div className="max-w-[540px]">
+      <p className="sc text-muted mb-1.5">Sign in required</p>
+      <h1 className="m-0 mb-2.5 font-serif-display text-[30px] font-medium tracking-[-0.01em]">
         Authenticate to continue
       </h1>
-      <p
-        style={{
-          fontFamily: "var(--serif-body)",
-          fontSize: 16,
-          lineHeight: 1.6,
-          color: "var(--fg-2)",
-          marginBottom: 20,
-        }}
-      >
-        This area of the workbench is gated by the journal&rsquo;s identity provider.
+      <p className="mb-5 font-serif-body text-[16px] leading-[1.6] text-fg-2">
+        This area of the workbench is gated by the journal&rsquo;s identity
+        provider.
       </p>
-      <Link
-        to="/login"
-        search={{ redirect: dest === "/" ? undefined : dest }}
-        className="btn btn-primary"
-        style={{ textDecoration: "none" }}
-      >
-        Sign in
-      </Link>
+      <Button asChild>
+        <Link
+          to="/login"
+          search={{ redirect: dest === "/" ? undefined : dest }}
+        >
+          Sign in
+        </Link>
+      </Button>
     </div>
   );
 }

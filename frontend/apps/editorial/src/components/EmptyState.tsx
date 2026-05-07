@@ -15,52 +15,19 @@ export function EmptyState({
   action,
 }: EmptyStateProps): ReactNode {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        textAlign: "center",
-        padding: "44px 24px",
-        border: "1px dashed var(--border-strong)",
-        borderRadius: "var(--r-2)",
-        background: "var(--surface)",
-        color: "var(--fg-2)",
-      }}
-    >
-      <div
-        style={{
-          width: 36,
-          height: 36,
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "var(--bg)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--r-2)",
-          color: "var(--muted)",
-          marginBottom: 12,
-        }}
-      >
+    <div className="flex flex-col items-center text-center px-6 py-11 rounded-md border border-dashed border-border-strong bg-surface text-fg-2">
+      <div className="inline-flex size-9 items-center justify-center rounded-md border border-border bg-bg text-muted mb-3">
         <Icon name={icon} size={18} />
       </div>
-      <p
-        style={{
-          fontFamily: "var(--serif-display)",
-          fontSize: 17,
-          fontWeight: 500,
-          color: "var(--fg)",
-          margin: 0,
-        }}
-      >
+      <p className="m-0 font-serif-display text-[17px] font-medium text-fg">
         {title}
       </p>
       {description ? (
-        <p style={{ fontSize: 13, marginTop: 6, maxWidth: 380, lineHeight: 1.55 }}>
+        <p className="mt-1.5 max-w-[380px] text-[13px] leading-[1.55]">
           {description}
         </p>
       ) : null}
-      {action ? <div style={{ marginTop: 14 }}>{action}</div> : null}
+      {action ? <div className="mt-3.5">{action}</div> : null}
     </div>
   );
 }

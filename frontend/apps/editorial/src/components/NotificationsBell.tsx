@@ -281,7 +281,7 @@ function toneForLevel(level: string): string {
   switch (level) {
     case "ERROR":
     case "URGENT":
-      return "bg-[#fff5f5] text-[#b91c1c]";
+      return "bg-danger-soft text-danger-deep";
     case "WARN":
     case "WARNING":
       return "bg-amber-soft text-amber-deep";
