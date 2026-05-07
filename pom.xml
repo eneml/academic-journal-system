@@ -145,6 +145,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.samskivert</groupId>
+            <artifactId>jmustache</artifactId>
+            <version>1.16</version>
+        </dependency>
 
         <!-- ============================================================
              Rate limiting: bucket4j + Caffeine (in-memory token buckets)
