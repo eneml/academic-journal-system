@@ -4,6 +4,8 @@ import com.eneml.ajs.editorial.api.DecisionMade;
 import com.eneml.ajs.editorial.api.DecisionType;
 import com.eneml.ajs.identity.api.UserDirectoryService;
 import com.eneml.ajs.identity.api.UserSummary;
+import com.eneml.ajs.journal.api.JournalConfigSummary;
+import com.eneml.ajs.journal.api.JournalLookup;
 import com.eneml.ajs.messaging.api.NotificationLevel;
 import com.eneml.ajs.messaging.api.NotificationType;
 import com.eneml.ajs.messaging.internal.application.NotificationDraft;
@@ -27,6 +29,8 @@ class EditorialEventsListener {
     private final SubmissionLookup submissionLookup;
     private final UserDirectoryService userDirectory;
     private final EmailTemplateService emailTemplates;
+    private final JournalLookup journalLookup;
+    private final MailLinks mailLinks;
 
     @ApplicationModuleListener
     void on(DecisionMade event) {
@@ -35,11 +39,16 @@ class EditorialEventsListener {
             return;
         }
         UserSummary author = userDirectory.findById(submission.submittedByUserId()).orElse(null);
+        UserSummary sender = event.decidedByUserId() == null
+                ? null
+                : userDirectory.findById(event.decidedByUserId()).orElse(null);
+        JournalConfigSummary journal = journalLookup.getConfig();
+
         Category category = categoryOf(event.type());
         Optional<RenderedEmail> rendered = emailTemplates.render(
                 category.templateKey().key(),
                 author == null ? null : author.locale(),
-                NotificationVars.forDecisionEvent(submission, event.type(), author));
+                NotificationVars.decisionToAuthor(submission, event.type(), author, sender, journal, mailLinks));
         String title = rendered.map(RenderedEmail::subject).orElse(category.fallbackTitle());
         String body = rendered.map(RenderedEmail::body).orElse(category.fallbackBody(event.type()));
 

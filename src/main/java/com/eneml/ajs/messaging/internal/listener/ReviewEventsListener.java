@@ -2,6 +2,8 @@ package com.eneml.ajs.messaging.internal.listener;
 
 import com.eneml.ajs.identity.api.UserDirectoryService;
 import com.eneml.ajs.identity.api.UserSummary;
+import com.eneml.ajs.journal.api.JournalConfigSummary;
+import com.eneml.ajs.journal.api.JournalLookup;
 import com.eneml.ajs.messaging.api.NotificationLevel;
 import com.eneml.ajs.messaging.api.NotificationType;
 import com.eneml.ajs.messaging.internal.application.NotificationDraft;
@@ -26,14 +28,17 @@ class ReviewEventsListener {
     private final NotificationService notifications;
     private final UserDirectoryService userDirectory;
     private final EmailTemplateService emailTemplates;
+    private final JournalLookup journalLookup;
+    private final MailLinks mailLinks;
 
     @ApplicationModuleListener
     void on(ReviewerInvited event) {
         UserSummary reviewer = userDirectory.findById(event.reviewerUserId()).orElse(null);
+        JournalConfigSummary journal = journalLookup.getConfig();
         Optional<RenderedEmail> rendered = emailTemplates.render(
                 CanonicalEmailTemplateKey.REVIEW_REQUEST.key(),
                 reviewer == null ? null : reviewer.locale(),
-                NotificationVars.forReviewerInvitation(reviewer, event.assignmentId()));
+                NotificationVars.reviewerInvitation(reviewer, event.assignmentId(), journal, mailLinks));
         String title = rendered.map(RenderedEmail::subject).orElse(FALLBACK_TITLE);
         String body = rendered.map(RenderedEmail::body).orElse(FALLBACK_BODY);
         notifications.create(new NotificationDraft(
