@@ -47,6 +47,8 @@ export { UserMenu } from "./UserMenu";
 export type { UserMenuProps, UserMenuItem, UserMenuUser } from "./UserMenu";
 export { CoverArt } from "./CoverArt";
 export type { CoverArtProps } from "./CoverArt";
+export { Sparkline } from "./Sparkline";
+export type { SparklineProps } from "./Sparkline";
 export { OrcidBadge } from "./OrcidBadge";
 export type { OrcidBadgeProps } from "./OrcidBadge";
 export { DoiChip } from "./DoiChip";
