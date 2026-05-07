@@ -128,6 +128,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/notification-preferences/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setMine"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/journal/sections/{id}": {
         parameters: {
             query?: never;
@@ -166,6 +182,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/journal/indexing/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_6"];
+        post?: never;
+        delete: operations["delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/journal/genres/{id}": {
         parameters: {
             query?: never;
@@ -176,7 +208,7 @@ export interface paths {
         /** Get genre by id (public) */
         get: operations["get_4"];
         /** Update a genre (code is immutable; use enable/disable for state) */
-        put: operations["update_6"];
+        put: operations["update_7"];
         post?: never;
         delete?: never;
         options?: never;
@@ -194,7 +226,7 @@ export interface paths {
         /** Get journal configuration (public) */
         get: operations["get_5"];
         /** Update journal configuration */
-        put: operations["update_7"];
+        put: operations["update_8"];
         post?: never;
         delete?: never;
         options?: never;
@@ -212,10 +244,26 @@ export interface paths {
         /** Get an issue by id */
         get: operations["get_6"];
         /** Update an issue */
-        put: operations["update_8"];
+        put: operations["update_9"];
         post?: never;
         /** Delete an unpublished issue */
-        delete: operations["delete"];
+        delete: operations["delete_1"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/email-templates/{key}/locales/{locale}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["upsertLocale"];
+        post?: never;
+        delete: operations["deleteLocale"];
         options?: never;
         head?: never;
         patch?: never;
@@ -231,10 +279,10 @@ export interface paths {
         /** Get a single announcement by id (public) */
         get: operations["get_7"];
         /** Update an announcement */
-        put: operations["update_9"];
+        put: operations["update_10"];
         post?: never;
         /** Permanently delete an announcement */
-        delete: operations["delete_1"];
+        delete: operations["delete_2"];
         options?: never;
         head?: never;
         patch?: never;
@@ -382,6 +430,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/submissions/{submissionId}/participants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_2"];
+        put?: never;
+        post: operations["assign_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/submissions/{submissionId}/files": {
         parameters: {
             query?: never;
@@ -390,7 +454,7 @@ export interface paths {
             cookie?: never;
         };
         /** List files on a submission */
-        get: operations["list_2"];
+        get: operations["list_3"];
         put?: never;
         /** Upload a file (multipart) and attach to the submission */
         post: operations["upload"];
@@ -410,8 +474,25 @@ export interface paths {
         /** List the decision history for a submission */
         get: operations["history"];
         put?: never;
-        /** Take a decision (workflow transition) */
+        /** Take a decision; optional emailOverrides bypass the auto-render path */
         post: operations["take"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/submissions/{submissionId}/decisions/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview a decision without committing — returns the predicted outcome and email steps */
+        post: operations["preview"];
         delete?: never;
         options?: never;
         head?: never;
@@ -426,7 +507,7 @@ export interface paths {
             cookie?: never;
         };
         /** List authors on a submission */
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
         /** Add an author to the submission */
         post: operations["add"];
@@ -580,7 +661,7 @@ export interface paths {
             cookie?: never;
         };
         /** List galleys for a publication */
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
         /** Add a galley (PDF/HTML/JATS) to the publication */
         post: operations["add_1"];
@@ -675,6 +756,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/library": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_6"];
+        put?: never;
+        post: operations["save"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/journal/sections": {
         parameters: {
             query?: never;
@@ -683,7 +780,7 @@ export interface paths {
             cookie?: never;
         };
         /** List sections (public) */
-        get: operations["list_5"];
+        get: operations["list_7"];
         put?: never;
         /** Create a section */
         post: operations["create_1"];
@@ -735,7 +832,7 @@ export interface paths {
             cookie?: never;
         };
         /** List masthead entries (public, enriched with author info) */
-        get: operations["list_6"];
+        get: operations["list_8"];
         put?: never;
         /** Add an entry to the masthead */
         post: operations["add_2"];
@@ -762,6 +859,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/journal/indexing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_9"];
+        put?: never;
+        post: operations["create_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/journal/genres": {
         parameters: {
             query?: never;
@@ -770,10 +883,10 @@ export interface paths {
             cookie?: never;
         };
         /** List genres (public) */
-        get: operations["list_7"];
+        get: operations["list_10"];
         put?: never;
         /** Create a genre */
-        post: operations["create_2"];
+        post: operations["create_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -839,10 +952,10 @@ export interface paths {
             cookie?: never;
         };
         /** List all issues */
-        get: operations["list_8"];
+        get: operations["list_11"];
         put?: never;
         /** Create an issue */
-        post: operations["create_3"];
+        post: operations["create_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -902,6 +1015,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/issues/{id}/articles/{publicationId}/section": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move an article between sections within the same issue */
+        post: operations["moveArticleToSection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/integration/publications/{publicationId}/deposits/{target}": {
         parameters: {
             query?: never;
@@ -913,6 +1043,22 @@ export interface paths {
         put?: never;
         /** Manually enqueue a deposit attempt to CrossRef or ORCID */
         post: operations["enqueue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/email-templates/{key}/render": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["render"];
         delete?: never;
         options?: never;
         head?: never;
@@ -944,10 +1090,10 @@ export interface paths {
             cookie?: never;
         };
         /** List currently visible announcements (public) */
-        get: operations["list_9"];
+        get: operations["list_12"];
         put?: never;
         /** Post an announcement */
-        post: operations["create_4"];
+        post: operations["create_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -969,6 +1115,56 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch user preferences (locale, …) without resending the whole profile */
+        patch: operations["updatePreferences"];
+        trace?: never;
+    };
+    "/api/v1/submissions/{submissionId}/participants/{assignmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["unassign"];
+        options?: never;
+        head?: never;
+        patch: operations["update_11"];
+        trace?: never;
+    };
+    "/api/v1/issues/{id}/articles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Reorder articles in an issue (drag-drop curation) */
+        patch: operations["reorderArticles"];
         trace?: never;
     };
     "/api/v1/submissions/{submissionId}/files/{fileId}/download-url": {
@@ -1142,6 +1338,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/publications/{publicationId}/metrics/timeseries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daily view+download series for one article (last N days) */
+        get: operations["publicationTimeseries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/publications/recent": {
         parameters: {
             query?: never;
@@ -1202,6 +1415,22 @@ export interface paths {
         };
         /** Top publications by cumulative view count */
         get: operations["topViewed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notification-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listMine"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1362,6 +1591,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/email-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_13"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/email-templates/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["one"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/authors/{orcid}": {
         parameters: {
             query?: never;
@@ -1481,6 +1742,176 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/stats/sections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Per-section submission counts + acceptance rate (current YTD) */
+        get: operations["sections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/stats/reading-impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cumulative abstract + file views and (placeholder) citations */
+        get: operations["readingImpact"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/stats/performance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Time-to-decision percentiles + histogram (current YTD) */
+        get: operations["performance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/stats/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** YTD submissions, articles, acceptance rate, active reviewers */
+        get: operations["overview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/stats/monthly-flow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Submissions and decisions, month by month, for a given year */
+        get: operations["monthlyFlow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/stats/issues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Per-issue article + view + download totals, newest first */
+        get: operations["issues"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/stats/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cumulative decision-type breakdown for the donut chart */
+        get: operations["decisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/stats/articles/timeseries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daily or monthly time-series of abstract + file views over a range */
+        get: operations["timeseries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/stats/articles/details": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Paged per-article totals for the inspected range */
+        get: operations["details"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/audit-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Most recent journal-wide events, newest first */
+        get: operations["recent_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/{userId}/roles/{role}": {
         parameters: {
             query?: never;
@@ -1510,6 +1941,22 @@ export interface paths {
         post?: never;
         /** Detach a file from the submission */
         delete: operations["remove_3"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/library/{publicationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["remove_4"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1763,6 +2210,14 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        NotificationPreferenceUpdateRequest: {
+            blocked?: boolean;
+        };
+        NotificationPreferenceEntry: {
+            key?: string;
+            description?: string;
+            blocked?: boolean;
+        };
         SectionUpdateRequest: {
             /** Format: int32 */
             seq?: number;
@@ -1858,6 +2313,17 @@ export interface components {
             familyName?: string;
             orcidId?: string;
         };
+        IndexingMembershipDto: {
+            /** Format: int64 */
+            id?: number;
+            code: string;
+            label: string;
+            url?: string;
+            quartile?: string;
+            /** Format: int32 */
+            sortOrder?: number;
+            active?: boolean;
+        };
         GenreUpdateRequest: {
             /** Format: int32 */
             seq?: number;
@@ -1910,6 +2376,17 @@ export interface components {
                 [key: string]: string;
             };
             submissionsOpen?: boolean;
+            acronym?: string;
+            subtitle: {
+                [key: string]: string;
+            };
+            /** Format: int32 */
+            foundingYear?: number;
+            frequency?: string;
+            publisher?: string;
+            countryOfPublication?: string;
+            tagline?: string;
+            taglineOrnament?: string;
         };
         JournalConfigResponse: {
             name?: {
@@ -1931,6 +2408,17 @@ export interface components {
                 [key: string]: string;
             };
             submissionsOpen?: boolean;
+            acronym?: string;
+            subtitle?: {
+                [key: string]: string;
+            };
+            /** Format: int32 */
+            foundingYear?: number;
+            frequency?: string;
+            publisher?: string;
+            countryOfPublication?: string;
+            tagline?: string;
+            taglineOrnament?: string;
             /** Format: int64 */
             version?: number;
             /** Format: date-time */
@@ -1992,6 +2480,22 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        EmailTemplateLocaleUpsertRequest: {
+            subject: string;
+            body: string;
+        };
+        EmailTemplateLocaleResponse: {
+            locale?: string;
+            subject?: string;
+            body?: string;
+        };
+        EmailTemplateResponse: {
+            key?: string;
+            description?: string;
+            enabled?: boolean;
+            custom?: boolean;
+            locales?: components["schemas"]["EmailTemplateLocaleResponse"][];
+        };
         AnnouncementUpsertRequest: {
             /** @enum {string} */
             type?: "GENERAL" | "CALL_FOR_PAPERS" | "SPECIAL_ISSUE" | "POLICY";
@@ -2006,6 +2510,9 @@ export interface components {
             dateExpires?: string;
             pinned?: boolean;
             visible?: boolean;
+            ctaLabel?: string;
+            ctaUrl?: string;
+            guestEditors?: string;
         };
         AnnouncementResponse: {
             /** Format: int64 */
@@ -2025,6 +2532,9 @@ export interface components {
             dateExpires?: string;
             pinned?: boolean;
             visible?: boolean;
+            ctaLabel?: string;
+            ctaUrl?: string;
+            guestEditors?: string;
             /** Format: date-time */
             updatedAt?: string;
         };
@@ -2130,6 +2640,34 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        AssignParticipantRequest: {
+            /** @enum {string} */
+            stage: "SUBMISSION" | "EXTERNAL_REVIEW" | "EDITING" | "PRODUCTION" | "PUBLISHED";
+            /** Format: int64 */
+            userId: number;
+            /** @enum {string} */
+            role: "EDITOR" | "SECTION_EDITOR" | "AUTHOR" | "PRODUCTION_STAFF";
+            canChangeMetadata?: boolean;
+            recommendOnly?: boolean;
+        };
+        StageParticipantSummary: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            submissionId?: number;
+            /** @enum {string} */
+            stage?: "SUBMISSION" | "EXTERNAL_REVIEW" | "EDITING" | "PRODUCTION" | "PUBLISHED";
+            /** Format: int64 */
+            userId?: number;
+            /** @enum {string} */
+            role?: "EDITOR" | "SECTION_EDITOR" | "AUTHOR" | "PRODUCTION_STAFF";
+            canChangeMetadata?: boolean;
+            recommendOnly?: boolean;
+            /** Format: date-time */
+            dateAssigned?: string;
+            /** Format: int64 */
+            assignedByUserId?: number;
+        };
         SubmissionFileResponse: {
             /** Format: int64 */
             id?: number;
@@ -2162,12 +2700,21 @@ export interface components {
             sizeBytes?: number;
             originalFilename?: string;
         };
+        DecisionEmailOverride: {
+            stepId: string;
+            templateKey: string;
+            skipped?: boolean;
+            subject?: string;
+            body?: string;
+            recipientUserIds?: number[];
+        };
         TakeDecisionRequest: {
             /** @enum {string} */
             type: "EXTERNAL_REVIEW" | "SKIP_REVIEW" | "INITIAL_DECLINE" | "ACCEPT" | "DECLINE" | "REQUEST_REVISIONS" | "RESUBMIT_FOR_REVIEW" | "NEW_REVIEW_ROUND" | "CANCEL_REVIEW_ROUND" | "SEND_TO_PRODUCTION" | "BACK_FROM_PRODUCTION" | "BACK_FROM_COPYEDITING";
             /** Format: int64 */
             reviewRoundId?: number;
             summary?: string;
+            emailOverrides?: components["schemas"]["DecisionEmailOverride"][];
         };
         EditorialDecisionResponse: {
             /** Format: int64 */
@@ -2193,6 +2740,42 @@ export interface components {
             version?: number;
             /** Format: date-time */
             updatedAt?: string;
+        };
+        DecisionPreviewRequest: {
+            /** @enum {string} */
+            type: "EXTERNAL_REVIEW" | "SKIP_REVIEW" | "INITIAL_DECLINE" | "ACCEPT" | "DECLINE" | "REQUEST_REVISIONS" | "RESUBMIT_FOR_REVIEW" | "NEW_REVIEW_ROUND" | "CANCEL_REVIEW_ROUND" | "SEND_TO_PRODUCTION" | "BACK_FROM_PRODUCTION" | "BACK_FROM_COPYEDITING";
+            /** Format: int64 */
+            reviewRoundId?: number;
+        };
+        DecisionEmailPreview: {
+            stepId?: string;
+            label?: string;
+            templateKey?: string;
+            locale?: string;
+            templateConfigured?: boolean;
+            canSkip?: boolean;
+            recipients?: components["schemas"]["DecisionEmailRecipient"][];
+            subject?: string;
+            body?: string;
+        };
+        DecisionEmailRecipient: {
+            /** Format: int64 */
+            userId?: number;
+            email?: string;
+            fullName?: string;
+            locale?: string;
+            role?: string;
+        };
+        DecisionPreviewResponse: {
+            /** @enum {string} */
+            type?: "EXTERNAL_REVIEW" | "SKIP_REVIEW" | "INITIAL_DECLINE" | "ACCEPT" | "DECLINE" | "REQUEST_REVISIONS" | "RESUBMIT_FOR_REVIEW" | "NEW_REVIEW_ROUND" | "CANCEL_REVIEW_ROUND" | "SEND_TO_PRODUCTION" | "BACK_FROM_PRODUCTION" | "BACK_FROM_COPYEDITING";
+            /** @enum {string} */
+            previousStage?: "SUBMISSION" | "EXTERNAL_REVIEW" | "EDITING" | "PRODUCTION" | "PUBLISHED";
+            /** @enum {string} */
+            newStage?: "SUBMISSION" | "EXTERNAL_REVIEW" | "EDITING" | "PRODUCTION" | "PUBLISHED";
+            /** @enum {string} */
+            newStatus?: "DRAFT" | "QUEUED" | "PUBLISHED" | "DECLINED" | "SCHEDULED";
+            emailSteps?: components["schemas"]["DecisionEmailPreview"][];
         };
         ReorderRequest: {
             orderedIds: number[];
@@ -2227,6 +2810,20 @@ export interface components {
             readAt?: string;
             /** Format: date-time */
             createdAt?: string;
+        };
+        LibraryItemRequest: {
+            /** Format: int64 */
+            publicationId: number;
+            note?: string;
+        };
+        LibraryItemResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            publicationId?: number;
+            /** Format: date-time */
+            savedAt?: string;
+            note?: string;
         };
         SectionCreateRequest: {
             code: string;
@@ -2268,6 +2865,10 @@ export interface components {
                 [key: string]: string;
             };
         };
+        IssueArticleSectionRequest: {
+            /** Format: int64 */
+            sectionId: number;
+        };
         DepositSummary: {
             /** Format: int64 */
             id?: number;
@@ -2288,11 +2889,34 @@ export interface components {
             completedAt?: string;
             errorMessage?: string;
         };
+        EmailTemplateRenderRequest: {
+            locale: string;
+            vars?: {
+                [key: string]: Record<string, never>;
+            };
+        };
+        EmailTemplateRenderResponse: {
+            key?: string;
+            locale?: string;
+            configured?: boolean;
+            subject?: string;
+            body?: string;
+        };
         RegisterRequest: {
             email: string;
             password: string;
             givenName: string;
             familyName: string;
+        };
+        UserPreferencesPatch: {
+            locale?: string;
+        };
+        UpdateParticipantRequest: {
+            canChangeMetadata?: boolean;
+            recommendOnly?: boolean;
+        };
+        IssueArticleOrderRequest: {
+            order: number[];
         };
         Pageable: {
             /** Format: int32 */
@@ -2302,16 +2926,16 @@ export interface components {
             sort?: string[];
         };
         PageUserResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             sort?: components["schemas"]["SortObject"];
             pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["UserResponse"][];
@@ -2331,21 +2955,21 @@ export interface components {
             offset?: number;
         };
         SortObject: {
-            sorted?: boolean;
             unsorted?: boolean;
+            sorted?: boolean;
             empty?: boolean;
         };
         PageSubmissionResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             sort?: components["schemas"]["SortObject"];
             pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["SubmissionResponse"][];
@@ -2398,6 +3022,8 @@ export interface components {
             datePublished?: string;
             /** Format: int64 */
             doiId?: number;
+            /** Format: int32 */
+            displayOrder?: number;
         };
         SearchHit: {
             publication?: components["schemas"]["PublicationSummary"];
@@ -2445,6 +3071,21 @@ export interface components {
             lastViewedAt?: string;
             /** Format: date-time */
             lastDownloadedAt?: string;
+        };
+        DailyMetricsBucket: {
+            key?: string;
+            /** Format: int64 */
+            abstracts?: number;
+            /** Format: int64 */
+            files?: number;
+        };
+        NotificationPreferencesResponse: {
+            entries?: components["schemas"]["NotificationPreferenceEntry"][];
+        };
+        LibraryListResponse: {
+            items?: components["schemas"]["LibraryItemResponse"][];
+            /** Format: int64 */
+            total?: number;
         };
         AuthorProfile: {
             orcidUrl?: string;
@@ -2520,6 +3161,112 @@ export interface components {
             updatedAt?: string;
         };
         FileStorageService: Record<string, never>;
+        SectionStatsRow: {
+            /** Format: int64 */
+            sectionId?: number;
+            code?: string;
+            title?: string;
+            /** Format: int64 */
+            submissions?: number;
+            /** Format: int64 */
+            accepted?: number;
+            /** Format: int64 */
+            declined?: number;
+            /** Format: int32 */
+            acceptanceRatePct?: number;
+        };
+        ReadingImpactSummary: {
+            /** Format: int64 */
+            totalAbstractViews?: number;
+            /** Format: int64 */
+            totalFileViews?: number;
+            /** Format: int64 */
+            totalCitations?: number;
+            /** Format: double */
+            twoYearImpactFactor?: number;
+        };
+        PerformanceStats: {
+            /** Format: int64 */
+            sampleSize?: number;
+            /** Format: int32 */
+            p50Days?: number;
+            /** Format: int32 */
+            p90Days?: number;
+            /** Format: int32 */
+            meanDays?: number;
+            /** Format: int32 */
+            slaTargetDays?: number;
+            /** Format: int32 */
+            slaOnTimePct?: number;
+            histogram?: number[];
+        };
+        StatsOverview: {
+            /** Format: int64 */
+            submissionsYtd?: number;
+            /** Format: int64 */
+            articlesPublishedYtd?: number;
+            /** Format: int32 */
+            acceptanceRatePct?: number;
+            /** Format: int64 */
+            activeReviewers?: number;
+            /** Format: int64 */
+            totalDecisions?: number;
+        };
+        MonthlyFlowPoint: {
+            /** Format: int32 */
+            month?: number;
+            /** Format: int64 */
+            submissions?: number;
+            /** Format: int64 */
+            decisions?: number;
+        };
+        IssueStatsRow: {
+            /** Format: int64 */
+            issueId?: number;
+            identification?: string;
+            datePublished?: string;
+            /** Format: int64 */
+            articles?: number;
+            /** Format: int64 */
+            abstractViews?: number;
+            /** Format: int64 */
+            fileViews?: number;
+            /** Format: int64 */
+            totalViews?: number;
+        };
+        DecisionBreakdown: {
+            /** @enum {string} */
+            type?: "EXTERNAL_REVIEW" | "SKIP_REVIEW" | "INITIAL_DECLINE" | "ACCEPT" | "DECLINE" | "REQUEST_REVISIONS" | "RESUBMIT_FOR_REVIEW" | "NEW_REVIEW_ROUND" | "CANCEL_REVIEW_ROUND" | "SEND_TO_PRODUCTION" | "BACK_FROM_PRODUCTION" | "BACK_FROM_COPYEDITING";
+            /** Format: int64 */
+            count?: number;
+        };
+        ArticleStatsPage: {
+            rows?: components["schemas"]["ArticleStatsRow"][];
+            /** Format: int64 */
+            totalRows?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+        };
+        ArticleStatsRow: {
+            /** Format: int64 */
+            publicationId?: number;
+            title?: string;
+            authorByline?: string;
+            /** Format: int64 */
+            abstractViews?: number;
+            /** Format: int64 */
+            fileViews?: number;
+            /** Format: int64 */
+            pdfViews?: number;
+            /** Format: int64 */
+            htmlViews?: number;
+            /** Format: int64 */
+            otherViews?: number;
+            /** Format: int64 */
+            total?: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -2817,6 +3564,32 @@ export interface operations {
             };
         };
     };
+    setMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationPreferenceUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NotificationPreferenceEntry"];
+                };
+            };
+        };
+    };
     get_2: {
         parameters: {
             query?: never;
@@ -2955,6 +3728,52 @@ export interface operations {
             };
         };
     };
+    update_6: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IndexingMembershipDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IndexingMembershipDto"];
+                };
+            };
+        };
+    };
+    delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     get_4: {
         parameters: {
             query?: never;
@@ -2977,7 +3796,7 @@ export interface operations {
             };
         };
     };
-    update_6: {
+    update_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -3023,7 +3842,7 @@ export interface operations {
             };
         };
     };
-    update_7: {
+    update_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -3069,7 +3888,7 @@ export interface operations {
             };
         };
     };
-    update_8: {
+    update_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -3095,12 +3914,60 @@ export interface operations {
             };
         };
     };
-    delete: {
+    delete_1: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    upsertLocale: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+                locale: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailTemplateLocaleUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EmailTemplateResponse"];
+                };
+            };
+        };
+    };
+    deleteLocale: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+                locale: string;
             };
             cookie?: never;
         };
@@ -3137,7 +4004,7 @@ export interface operations {
             };
         };
     };
-    update_9: {
+    update_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -3163,7 +4030,7 @@ export interface operations {
             };
         };
     };
-    delete_1: {
+    delete_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -3519,6 +4386,56 @@ export interface operations {
     };
     list_2: {
         parameters: {
+            query?: {
+                stage?: "SUBMISSION" | "EXTERNAL_REVIEW" | "EDITING" | "PRODUCTION" | "PUBLISHED";
+            };
+            header?: never;
+            path: {
+                submissionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StageParticipantSummary"][];
+                };
+            };
+        };
+    };
+    assign_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submissionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignParticipantRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StageParticipantSummary"];
+                };
+            };
+        };
+    };
+    list_3: {
+        parameters: {
             query?: never;
             header?: never;
             path: {
@@ -3620,7 +4537,33 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submissionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DecisionPreviewResponse"];
+                };
+            };
+        };
+    };
+    list_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -3856,7 +4799,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -4021,7 +4964,54 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LibraryListResponse"];
+                };
+            };
+        };
+    };
+    save: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LibraryItemRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LibraryItemResponse"];
+                };
+            };
+        };
+    };
+    list_7: {
         parameters: {
             query?: {
                 includeInactive?: boolean;
@@ -4111,7 +5101,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_8: {
         parameters: {
             query?: {
                 visibleOnly?: boolean;
@@ -4179,7 +5169,53 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_9: {
+        parameters: {
+            query?: {
+                includeInactive?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IndexingMembershipDto"][];
+                };
+            };
+        };
+    };
+    create_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IndexingMembershipDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IndexingMembershipDto"];
+                };
+            };
+        };
+    };
+    list_10: {
         parameters: {
             query?: {
                 enabledOnly?: boolean;
@@ -4201,7 +5237,7 @@ export interface operations {
             };
         };
     };
-    create_2: {
+    create_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -4291,7 +5327,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -4311,7 +5347,7 @@ export interface operations {
             };
         };
     };
-    create_3: {
+    create_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -4450,6 +5486,31 @@ export interface operations {
             };
         };
     };
+    moveArticleToSection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                publicationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IssueArticleSectionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     enqueue: {
         parameters: {
             query?: never;
@@ -4469,6 +5530,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["DepositSummary"];
+                };
+            };
+        };
+    };
+    render: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailTemplateRenderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EmailTemplateRenderResponse"];
                 };
             };
         };
@@ -4495,7 +5582,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_12: {
         parameters: {
             query?: {
                 limit?: number;
@@ -4517,7 +5604,7 @@ export interface operations {
             };
         };
     };
-    create_4: {
+    create_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -4560,6 +5647,102 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["AnnouncementResponse"];
                 };
+            };
+        };
+    };
+    updatePreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserPreferencesPatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UserResponse"];
+                };
+            };
+        };
+    };
+    unassign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submissionId: number;
+                assignmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_11: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submissionId: number;
+                assignmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateParticipantRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StageParticipantSummary"];
+                };
+            };
+        };
+    };
+    reorderArticles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IssueArticleOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -4702,6 +5885,8 @@ export interface operations {
                 q: string;
                 section?: number;
                 year?: number;
+                type?: string[];
+                oa?: boolean;
                 page?: number;
                 size?: number;
             };
@@ -4808,6 +5993,30 @@ export interface operations {
             };
         };
     };
+    publicationTimeseries: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path: {
+                publicationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DailyMetricsBucket"][];
+                };
+            };
+        };
+    };
     recent: {
         parameters: {
             query?: {
@@ -4892,6 +6101,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PublicationMetricsSummary"][];
+                };
+            };
+        };
+    };
+    listMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NotificationPreferencesResponse"];
                 };
             };
         };
@@ -5093,6 +6322,48 @@ export interface operations {
             };
         };
     };
+    list_13: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EmailTemplateResponse"][];
+                };
+            };
+        };
+    };
+    one: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EmailTemplateResponse"];
+                };
+            };
+        };
+    };
     profile: {
         parameters: {
             query?: never;
@@ -5214,7 +6485,7 @@ export interface operations {
     citation: {
         parameters: {
             query?: {
-                format?: "BIBTEX" | "RIS" | "APA";
+                format?: "BIBTEX" | "RIS" | "ENDNOTE" | "APA" | "MLA" | "CHICAGO" | "VANCOUVER";
             };
             header?: never;
             path: {
@@ -5255,6 +6526,227 @@ export interface operations {
             };
         };
     };
+    sections: {
+        parameters: {
+            query?: {
+                locale?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SectionStatsRow"][];
+                };
+            };
+        };
+    };
+    readingImpact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReadingImpactSummary"];
+                };
+            };
+        };
+    };
+    performance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PerformanceStats"];
+                };
+            };
+        };
+    };
+    overview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StatsOverview"];
+                };
+            };
+        };
+    };
+    monthlyFlow: {
+        parameters: {
+            query?: {
+                year?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MonthlyFlowPoint"][];
+                };
+            };
+        };
+    };
+    issues: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IssueStatsRow"][];
+                };
+            };
+        };
+    };
+    decisions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DecisionBreakdown"][];
+                };
+            };
+        };
+    };
+    timeseries: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                granularity?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DailyMetricsBucket"][];
+                };
+            };
+        };
+    };
+    details: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                q?: string;
+                locale?: string;
+                page?: number;
+                size?: number;
+                sort?: string;
+                dir?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ArticleStatsPage"];
+                };
+            };
+        };
+    };
+    recent_1: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EventLogEntrySummary"][];
+                };
+            };
+        };
+    };
     revoke: {
         parameters: {
             query?: {
@@ -5285,6 +6777,26 @@ export interface operations {
             path: {
                 submissionId: number;
                 fileId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    remove_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicationId: number;
             };
             cookie?: never;
         };

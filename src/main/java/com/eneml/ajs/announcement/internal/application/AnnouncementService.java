@@ -86,6 +86,13 @@ public class AnnouncementService {
         a.setDateExpires(request.dateExpires());
         if (request.pinned() != null) a.setPinned(request.pinned());
         if (request.visible() != null) a.setVisible(request.visible());
+        a.setCtaLabel(blankToNull(request.ctaLabel()));
+        a.setCtaUrl(blankToNull(request.ctaUrl()));
+        a.setGuestEditors(blankToNull(request.guestEditors()));
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s;
     }
 
     private void ensureUniqueUrlPath(String urlPath, Long excludingId) {

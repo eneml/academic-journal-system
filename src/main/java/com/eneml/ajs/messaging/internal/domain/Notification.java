@@ -53,6 +53,14 @@ public class Notification extends AuditableEntity {
     @Column(name = "read_at")
     private Instant readAt;
 
+    /**
+     * Canonical email-template key the dispatcher uses to look up the user's
+     * per-category opt-out state. Nullable for ad-hoc notifications not tied
+     * to a templated event.
+     */
+    @Column(name = "template_key", length = 64)
+    private String templateKey;
+
     public boolean isUnread() { return readAt == null; }
 
     public void markRead() {

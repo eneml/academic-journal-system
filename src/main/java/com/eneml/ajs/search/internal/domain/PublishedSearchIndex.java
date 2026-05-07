@@ -53,4 +53,10 @@ public class PublishedSearchIndex {
 
     @Column(name = "indexed_at", nullable = false)
     private Instant indexedAt = Instant.now();
+
+    @Column(name = "article_type", nullable = false, length = 32)
+    private String articleType = "ARTICLE";
+
+    @Column(name = "open_access", nullable = false)
+    private boolean openAccess = true;
 }

@@ -11,7 +11,8 @@ public record UserSummary(
         String givenName,
         String familyName,
         String orcidId,
-        UserStatus status
+        UserStatus status,
+        String locale
 ) {
 
     public String fullName() {

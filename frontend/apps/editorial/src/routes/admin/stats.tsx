@@ -532,16 +532,12 @@ function StatsAdmin(): ReactNode {
 // ----------------------------------------------------------------------
 
 function Eyebrow({ text }: { text: string }): ReactNode {
-  return (
-    <div className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">
-      {text}
-    </div>
-  );
+  return <div className="sc text-muted">{text}</div>;
 }
 
 function Title({ text }: { text: string }): ReactNode {
   return (
-    <div className="mt-1 font-serif-display text-[20px] font-medium tracking-[-0.01em]">
+    <div className="mt-1 font-serif-display text-[20px] font-medium tracking-[-0.01em] text-ink">
       {text}
     </div>
   );

@@ -71,6 +71,17 @@ class MetricsLookupAdapter implements MetricsLookup {
                 .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<DailyMetricsBucket> publicationDaily(long publicationId, LocalDate from, LocalDate to) {
+        return dailyRepository.publicationDaily(publicationId, from, to).stream()
+                .map(row -> new DailyMetricsBucket(
+                        (String) row[0],
+                        ((Number) row[1]).longValue(),
+                        ((Number) row[2]).longValue()))
+                .toList();
+    }
+
     private static PublicationMetricsSummary toSummary(PublicationMetrics m) {
         return new PublicationMetricsSummary(
                 m.getPublicationId(),

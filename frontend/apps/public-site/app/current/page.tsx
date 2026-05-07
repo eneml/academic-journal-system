@@ -5,8 +5,7 @@ import type { ReactNode } from "react";
 import { ChevronRight, Download, Rss } from "lucide-react";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
-import { CoverArt } from "@/components/CoverArt";
-import { Button } from "@ajs/ui";
+import { Button, CoverArt } from "@ajs/ui";
 import {
   fetchActiveSections,
   fetchIssueTableOfContents,
@@ -62,13 +61,15 @@ export default async function CurrentIssuePage(): Promise<ReactNode> {
 
       <section className="grid items-start gap-14 px-6 pt-8 pb-10 lg:grid-cols-[260px_1fr] lg:px-14">
         <div className="flex flex-col items-center">
-          <CoverArt
-            width={260}
-            height={364}
-            label={coverLabel(issue.volume, issue.number)}
-            year={issue.year ?? ""}
-            src={issue.coverImageUrl ?? null}
-          />
+          <div className="shadow-cover">
+            <CoverArt
+              width={260}
+              height={364}
+              label={coverLabel(issue.volume, issue.number)}
+              year={issue.year ?? ""}
+              src={issue.coverImageUrl ?? null}
+            />
+          </div>
           <div className="mt-3.5 flex w-full flex-col gap-2">
             <Button asChild className="w-full justify-center">
               <a href="#table-of-contents">
@@ -84,13 +85,13 @@ export default async function CurrentIssuePage(): Promise<ReactNode> {
         </div>
 
         <div>
-          <div className="mb-3 font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-amber-deep">
+          <div className="sc mb-3 text-amber-deep">
             Current Issue
             {issue.datePublished
               ? ` · ${new Date(issue.datePublished).toLocaleDateString("en-US", { month: "long", year: "numeric" })}`
               : ""}
           </div>
-          <h1 className="m-0 mb-3.5 font-serif-display text-[clamp(32px,4vw,48px)] font-medium leading-[1.05] tracking-[-0.02em]">
+          <h1 className="m-0 mb-3.5 font-serif-display text-[clamp(32px,4vw,48px)] font-medium leading-[1.05] tracking-[-0.02em] text-ink">
             {pickLocale(issue.title, locale) ||
               `Volume ${issue.volume ?? "—"}${issue.number ? `, Number ${issue.number}` : ""}`}
           </h1>
@@ -121,7 +122,7 @@ export default async function CurrentIssuePage(): Promise<ReactNode> {
       </section>
 
       <div className="px-6 lg:px-14">
-        <div className="border-t-[3px] border-double border-border-strong" />
+        <div className="double-rule" />
       </div>
 
       <section
@@ -129,9 +130,7 @@ export default async function CurrentIssuePage(): Promise<ReactNode> {
         className="grid gap-14 px-6 pt-9 pb-10 lg:grid-cols-[200px_1fr] lg:px-14"
       >
         <aside className="sticky top-8 self-start">
-          <div className="mb-3.5 font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted">
-            Sections
-          </div>
+          <div className="sc mb-3.5 text-muted">Sections</div>
           <SectionScrollSpy
             items={grouped.map((g) => ({
               id: `section-${g.section.code}`,
@@ -167,13 +166,13 @@ export default async function CurrentIssuePage(): Promise<ReactNode> {
                 {g.items.map((p, i) => (
                   <li
                     key={p.id}
-                    className="grid grid-cols-[44px_1fr_110px] items-start gap-4 border-t border-border py-4"
+                    className="toc-row grid grid-cols-[44px_1fr_110px] items-start gap-4 border-t border-border py-4 pl-2"
                   >
-                    <div className="pt-1 font-serif-display text-[12px] uppercase tracking-[0.04em] text-muted-2">
+                    <div className="marginalia-num pt-1">
                       {String(i + 1).padStart(2, "0")}
                     </div>
                     <div>
-                      <h4 className="m-0 mb-1 font-serif-display text-[17px] font-medium leading-[1.3]">
+                      <h4 className="m-0 mb-1 font-serif-display text-[17px] font-medium leading-[1.3] text-ink">
                         <Link
                           href={articlePath(p)}
                           className="hover:text-cobalt-deep no-underline text-inherit"

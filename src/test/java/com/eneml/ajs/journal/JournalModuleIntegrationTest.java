@@ -250,7 +250,9 @@ class JournalModuleIntegrationTest {
                 2014,
                 "Quarterly",
                 "University of Bucharest Press",
-                "RO"));
+                "RO",
+                null,
+                null));
 
         var refreshed = journalLookup.getConfig();
         assertThat(refreshed.name()).containsEntry("en", "AJS Quarterly");

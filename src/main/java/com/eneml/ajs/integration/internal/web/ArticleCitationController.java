@@ -56,9 +56,10 @@ class ArticleCitationController {
 
     private static String extensionFor(CitationFormatter.Format f) {
         return switch (f) {
-            case BIBTEX -> "bib";
-            case RIS    -> "ris";
-            case APA    -> "txt";
+            case BIBTEX    -> "bib";
+            case RIS       -> "ris";
+            case ENDNOTE   -> "enw";
+            case APA, MLA, CHICAGO, VANCOUVER -> "txt";
         };
     }
 

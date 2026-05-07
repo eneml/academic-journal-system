@@ -22,6 +22,9 @@ public final class AnnouncementMapper {
                 entity.getDateExpires(),
                 entity.isPinned(),
                 entity.isVisible(),
+                entity.getCtaLabel(),
+                entity.getCtaUrl(),
+                entity.getGuestEditors(),
                 entity.getUpdatedAt());
     }
 
@@ -39,7 +42,10 @@ public final class AnnouncementMapper {
                 entity.getDatePosted(),
                 entity.getDateExpires(),
                 entity.isPinned(),
-                entity.isVisible());
+                entity.isVisible(),
+                entity.getCtaLabel(),
+                entity.getCtaUrl(),
+                entity.getGuestEditors());
     }
 
     public static List<AnnouncementSummary> toSummaries(List<Announcement> entities) {

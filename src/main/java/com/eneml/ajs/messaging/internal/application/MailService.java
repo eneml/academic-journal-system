@@ -5,6 +5,7 @@ import com.eneml.ajs.identity.api.UserSummary;
 import com.eneml.ajs.journal.api.JournalConfigSummary;
 import com.eneml.ajs.journal.api.JournalLookup;
 import com.eneml.ajs.messaging.api.NotificationLevel;
+import com.eneml.ajs.messaging.internal.application.template.NotificationSubscriptionService;
 import com.eneml.ajs.messaging.internal.domain.Notification;
 import com.eneml.ajs.messaging.internal.persistence.NotificationRepository;
 import jakarta.mail.MessagingException;
@@ -41,6 +42,7 @@ public class MailService {
     private final UserDirectoryService userDirectory;
     private final JournalLookup journalLookup;
     private final NotificationRepository notificationRepository;
+    private final NotificationSubscriptionService subscriptions;
 
     @Value("${app.email.from}")
     private String fromAddress;
@@ -60,6 +62,15 @@ public class MailService {
         // Only TASK-level notifications produce emails — TRIVIAL/NORMAL stay in-app
         // so we don't drown people with mail every time anything happens.
         if (n.getLevel() == NotificationLevel.TRIVIAL) {
+            return;
+        }
+        // Per-user opt-out: if the user has muted this template key, the in-app
+        // banner still shows but mail is suppressed. Notifications without a
+        // template key (ad-hoc system messages) always send.
+        if (n.getTemplateKey() != null
+                && subscriptions.isBlocked(n.getUserId(), n.getTemplateKey())) {
+            log.debug("notification {} skipped: user {} muted '{}'",
+                    notificationId, n.getUserId(), n.getTemplateKey());
             return;
         }
         UserSummary recipient = userDirectory.findById(n.getUserId()).orElse(null);

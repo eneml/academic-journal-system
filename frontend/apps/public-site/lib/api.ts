@@ -13,11 +13,34 @@ const REVALIDATE_SECONDS = 60;
 
 export type JournalConfig = {
   name: Record<string, string>;
+  issnPrint: string | null;
+  issnOnline: string | null;
   defaultLocale: string;
   supportedLocales: string[];
   contactEmail: string | null;
   submissionsOpen: boolean;
+  acronym: string | null;
+  subtitle: Record<string, string>;
+  foundingYear: number | null;
+  frequency: string | null;
+  publisher: string | null;
+  countryOfPublication: string | null;
+  tagline: string | null;
+  taglineOrnament: string | null;
 };
+
+export type IndexingMembership = {
+  id: number;
+  code: string;
+  label: string;
+  url: string | null;
+  quartile: string | null;
+  sortOrder: number;
+  active: boolean;
+};
+
+export const fetchIndexingMemberships = () =>
+  getJson<IndexingMembership[]>(`/api/v1/journal/indexing`);
 
 export type SectionSummary = {
   id: number;
@@ -152,6 +175,9 @@ export type Announcement = {
   dateExpires: string | null;
   pinned: boolean;
   visible: boolean;
+  ctaLabel: string | null;
+  ctaUrl: string | null;
+  guestEditors: string | null;
 };
 
 export const fetchAnnouncements = (limit = 20) =>
@@ -227,6 +253,34 @@ export const fetchPublicationMetricsBatch = async (
   return out;
 };
 
+export type DailyMetricsBucket = {
+  key: string;
+  abstracts: number;
+  files: number;
+};
+
+export const fetchPublicationTimeseries = (
+  publicationId: number,
+  days = 30,
+) =>
+  getJson<DailyMetricsBucket[]>(
+    `/api/v1/publications/${publicationId}/metrics/timeseries?days=${days}`,
+  );
+
+export const fetchPublicationTimeseriesBatch = async (
+  ids: readonly number[],
+  days = 30,
+): Promise<Map<number, DailyMetricsBucket[]>> => {
+  const results = await Promise.all(
+    ids.map((id) => fetchPublicationTimeseries(id, days)),
+  );
+  const out = new Map<number, DailyMetricsBucket[]>();
+  results.forEach((series, i) => {
+    if (series) out.set(ids[i]!, series);
+  });
+  return out;
+};
+
 export type AuthorProfile = {
   orcidUrl: string;
   givenName: string | null;
@@ -248,12 +302,18 @@ export type SearchHit = {
 export const search = (q: string, opts?: {
   section?: number;
   year?: number;
+  /** Article type filter — values must match the search index `article_type` column. */
+  types?: string[];
+  /** Open Access only when true; restricted-only when false; both when undefined. */
+  openAccess?: boolean;
   page?: number;
   size?: number;
 }) => {
   const params = new URLSearchParams({ q });
   if (opts?.section != null) params.set("section", String(opts.section));
   if (opts?.year != null) params.set("year", String(opts.year));
+  (opts?.types ?? []).forEach((t) => params.append("type", t));
+  if (opts?.openAccess != null) params.set("oa", String(opts.openAccess));
   if (opts?.page != null) params.set("page", String(opts.page));
   if (opts?.size != null) params.set("size", String(opts.size));
   return getJson<SearchHit[]>(`/api/v1/search?${params.toString()}`);

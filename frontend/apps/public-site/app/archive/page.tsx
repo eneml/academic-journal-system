@@ -4,8 +4,7 @@ import type { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
-import { CoverArt } from "@/components/CoverArt";
-import { Badge } from "@ajs/ui";
+import { Badge, CoverArt } from "@ajs/ui";
 import {
   fetchIssues,
   fetchJournalConfig,

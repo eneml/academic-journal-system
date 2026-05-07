@@ -5,9 +5,7 @@ import type { ReactNode } from "react";
 import { ChevronRight, History } from "lucide-react";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
-import { Badge } from "@ajs/ui";
-import { DoiChip } from "@/components/DoiChip";
-import { OrcidBadge } from "@/components/OrcidBadge";
+import { Badge, DoiChip, OrcidBadge } from "@ajs/ui";
 import { ArticleToolbar } from "@/components/ArticleToolbar";
 import { ArticleToc, type TocItem } from "@/components/ArticleToc";
 import { ReadingProgress } from "@/components/ReadingProgress";
@@ -195,11 +193,13 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
 
         <div>
           <header className="mb-8">
-            <div className="mb-3 font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-cobalt">
-              {sectionLabel}{" "}
-              {article.accessStatus === "OPEN" ? "· Open Access" : ""}
+            <div className="mb-3.5 flex items-center gap-2.5">
+              <span className="sc text-cobalt">{sectionLabel}</span>
+              {article.accessStatus === "OPEN" ? (
+                <span className="oa-badge">Open Access</span>
+              ) : null}
             </div>
-            <h1 className="m-0 mb-3.5 text-balance font-serif-display text-[clamp(28px,4vw,40px)] font-medium leading-[1.12] tracking-[-0.02em]">
+            <h1 className="m-0 mb-3.5 text-balance font-serif-display text-[clamp(28px,4vw,40px)] font-medium leading-[1.12] tracking-[-0.02em] text-ink">
               {title}
             </h1>
 
@@ -239,10 +239,7 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
             <div className="flex flex-wrap items-center gap-2 border-y border-border py-3">
               {article.doi ? <DoiChip doi={article.doi} /> : null}
               {article.accessStatus === "OPEN" ? (
-                <Badge variant="amber" className="gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-deep" />
-                  Open Access
-                </Badge>
+                <span className="oa-badge">Open Access</span>
               ) : null}
               <Badge>CC BY 4.0</Badge>
               <Badge variant="mono">v{article.version} · current</Badge>
@@ -291,7 +288,7 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
             ) : null}
           </section>
 
-          <div className="prose-reading dropcap" id="article-body">
+          <div className="reading dropcap" id="article-body">
             <h2 id="intro">1. Introduction</h2>
             <p>{abstract}</p>
             <p>
@@ -326,6 +323,41 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
         </div>
 
         <aside className="sticky top-8 hidden self-start lg:block">
+          {galleysSorted.length > 0 ? (
+            <>
+              <div className="sc mb-2.5 text-muted">Galleys</div>
+              <ul className="m-0 mb-5 flex flex-col gap-1.5 p-0 text-[12px] list-none">
+                {galleysSorted.map((g) => {
+                  const label = pickLocale(g.label, locale) || `Galley ${g.seq}`;
+                  const href = `${API_BASE_URL}/api/v1/articles/${encodeURIComponent(slug)}/galleys/${g.id}/download-url`;
+                  const kind = label.toLowerCase().includes("pdf")
+                    ? "PDF"
+                    : label.toLowerCase().includes("html")
+                      ? "HTML"
+                      : label.toLowerCase().includes("xml") ||
+                          label.toLowerCase().includes("jats")
+                        ? "JATS"
+                        : label.toUpperCase().slice(0, 5);
+                  return (
+                    <li key={g.id}>
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between gap-2 rounded border border-border bg-bg px-2 py-1.5 no-underline transition-colors hover:border-cobalt"
+                      >
+                        <span className="chip chip-cobalt">{kind}</span>
+                        <span className="flex-1 truncate font-mono text-[10.5px] text-fg-2">
+                          {label}
+                        </span>
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          ) : null}
+
           {versionsSorted.length > 1 ? (
             <>
               <div className="mb-2.5 font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted">

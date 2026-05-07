@@ -49,6 +49,12 @@ type Decision = components["schemas"]["EditorialDecisionResponse"];
 type UserSummary = components["schemas"]["UserResponse"];
 type Publication = components["schemas"]["PublicationResponse"];
 type AuditEntry = components["schemas"]["EventLogEntrySummary"];
+type Participant = components["schemas"]["StageParticipantSummary"];
+type StageRole = NonNullable<Participant["role"]>;
+type Stage = NonNullable<Participant["stage"]>;
+
+const STAGE_ROLES: StageRole[] = ["EDITOR", "SECTION_EDITOR", "AUTHOR", "PRODUCTION_STAFF"];
+const STAGE_ORDER: Stage[] = ["SUBMISSION", "EXTERNAL_REVIEW", "EDITING", "PRODUCTION", "PUBLISHED"];
 
 const DECISION_TYPES = [
   "EXTERNAL_REVIEW",
@@ -81,10 +87,11 @@ function EditorialSubmissionDetailPage(): ReactNode {
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [publications, setPublications] = useState<Publication[]>([]);
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [errored, setErrored] = useState(false);
 
   const reload = useCallback(async (): Promise<void> => {
-    const [s, a, f, r, d, p, log] = await Promise.all([
+    const [s, a, f, r, d, p, log, parts] = await Promise.all([
       api<Submission>(`/api/v1/submissions/${submissionId}`),
       api<AuthorRow[]>(`/api/v1/submissions/${submissionId}/authors`),
       api<FileRow[]>(`/api/v1/submissions/${submissionId}/files`),
@@ -92,6 +99,7 @@ function EditorialSubmissionDetailPage(): ReactNode {
       api<Decision[]>(`/api/v1/submissions/${submissionId}/decisions`),
       api<Publication[]>(`/api/v1/submissions/${submissionId}/publications`),
       api<AuditEntry[]>(`/api/v1/submissions/${submissionId}/event-log`),
+      api<Participant[]>(`/api/v1/submissions/${submissionId}/participants`),
     ]);
     if (!s) {
       setErrored(true);
@@ -105,6 +113,7 @@ function EditorialSubmissionDetailPage(): ReactNode {
     setDecisions(d ?? []);
     setPublications(p ?? []);
     setAuditLog(log ?? []);
+    setParticipants(parts ?? []);
   }, [submissionId]);
 
   useEffect(() => {
@@ -189,6 +198,8 @@ function EditorialSubmissionDetailPage(): ReactNode {
         {/* Stage progress strip — five-segment progression so the editor
             sees workflow position at a glance without reading status text. */}
         <StageProgressStrip stage={submission.stage} />
+
+        <WorkflowTabStrip />
       </div>
 
       {/* Two-column layout: workflow lives in the main column, reference
@@ -198,24 +209,42 @@ function EditorialSubmissionDetailPage(): ReactNode {
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
         {/* MAIN — workflow */}
         <div className="flex flex-col gap-4 min-w-0">
-          <MetadataView submission={submission} />
-          <RoundsCard
-            submissionId={submissionId}
-            rounds={rounds}
-            onChanged={() => void reload()}
-          />
-          <DecisionCard
-            submissionId={submissionId}
-            latestRound={latestRound}
-            history={decisions}
-            onChanged={() => void reload()}
-          />
-          <PublicationsCard
-            submissionId={submissionId}
-            publications={publications}
-            onChanged={() => void reload()}
-          />
-          <AuditLogCard entries={auditLog} />
+          <div id="tab-submission" className="scroll-mt-44">
+            <MetadataView submission={submission} />
+          </div>
+          <div id="tab-review" className="scroll-mt-44">
+            <RoundsCard
+              submissionId={submissionId}
+              rounds={rounds}
+              onChanged={() => void reload()}
+            />
+          </div>
+          <div id="tab-workflow" className="scroll-mt-44">
+            <DecisionCard
+              submissionId={submissionId}
+              submission={submission}
+              latestRound={latestRound}
+              history={decisions}
+              onChanged={() => void reload()}
+            />
+          </div>
+          <div id="tab-publication" className="scroll-mt-44">
+            <PublicationsCard
+              submissionId={submissionId}
+              publications={publications}
+              onChanged={() => void reload()}
+            />
+          </div>
+          <div id="tab-participants" className="scroll-mt-44">
+            <ParticipantsCard
+              submissionId={submissionId}
+              participants={participants}
+              onChanged={() => void reload()}
+            />
+          </div>
+          <div id="tab-history" className="scroll-mt-44">
+            <AuditLogCard entries={auditLog} />
+          </div>
         </div>
 
         {/* RAIL — submission metadata + contributors + files */}
@@ -226,6 +255,43 @@ function EditorialSubmissionDetailPage(): ReactNode {
         </aside>
       </div>
     </>
+  );
+}
+
+/**
+ * In-page tab strip — anchor-jumps to the matching card sections so the
+ * editor can navigate the workflow detail without scrolling. Tabs that have
+ * no backing data today render in a muted state.
+ */
+function WorkflowTabStrip(): ReactNode {
+  const TABS = [
+    { id: "workflow", label: "Workflow", live: true },
+    { id: "submission", label: "Submission", live: true },
+    { id: "review", label: "Review", live: true },
+    { id: "editing", label: "Editing", live: false },
+    { id: "production", label: "Production", live: false },
+    { id: "publication", label: "Publication", live: true },
+    { id: "participants", label: "Participants", live: true },
+    { id: "discussions", label: "Discussions", live: false },
+    { id: "history", label: "History", live: true },
+  ];
+  return (
+    <div className="-mb-px mt-3 flex flex-wrap gap-0 border-b border-border">
+      {TABS.map((tab) => (
+        <a
+          key={tab.id}
+          href={tab.live ? `#tab-${tab.id}` : undefined}
+          aria-disabled={!tab.live}
+          className={`-mb-px border-b-2 px-3.5 py-2 text-[13px] font-medium tracking-tight transition-colors ${
+            tab.live
+              ? "border-transparent text-fg-2 hover:border-cobalt hover:text-fg"
+              : "cursor-not-allowed border-transparent text-muted-2"
+          }`}
+        >
+          {tab.label}
+        </a>
+      ))}
+    </div>
   );
 }
 
@@ -1133,13 +1199,31 @@ function InviteForm({
 
 // ---------- Decisions ----------
 
+type DecisionPreview = components["schemas"]["DecisionPreviewResponse"];
+type DecisionEmailPreview = components["schemas"]["DecisionEmailPreview"];
+type EmailRenderResponse = components["schemas"]["EmailTemplateRenderResponse"];
+
+interface WizardEmailDraft {
+  stepId: string;
+  templateKey: string;
+  recipientUserIds: number[];
+  recipientLabel: string;
+  locale: string;
+  subject: string;
+  body: string;
+  configured: boolean;
+  skipped: boolean;
+}
+
 function DecisionCard({
   submissionId,
+  submission,
   latestRound,
   history,
   onChanged,
 }: {
   submissionId: number;
+  submission: Submission;
   latestRound: ReviewRound | null;
   history: Decision[];
   onChanged: () => void;
@@ -1148,9 +1232,92 @@ function DecisionCard({
   const [summary, setSummary] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [wizard, setWizard] = useState<{
+    preview: DecisionPreview;
+    drafts: WizardEmailDraft[];
+  } | null>(null);
 
-  const submit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
+  const openWizard = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
+    setBusy(true);
+    setError(null);
+    const preview = await api<DecisionPreview>(
+      `/api/v1/submissions/${submissionId}/decisions/preview`,
+      {
+        method: "POST",
+        body: {
+          type,
+          reviewRoundId: latestRound?.id ?? null,
+        },
+      },
+    );
+    if (!preview) {
+      setBusy(false);
+      setError("Preview failed — this decision may not be valid for the current stage.");
+      toast.error("Preview failed.");
+      return;
+    }
+    const steps: DecisionEmailPreview[] = preview.emailSteps ?? [];
+    const journalConfig = await api<{ name?: Record<string, string>; defaultLocale?: string }>(
+      "/api/v1/journal/config",
+    );
+    const drafts: WizardEmailDraft[] = await Promise.all(
+      steps.map(async (s) => {
+        const recipient = (s.recipients ?? [])[0];
+        const submissionTitle =
+          submission.title?.[s.locale ?? "en"] ??
+          (submission.title ? Object.values(submission.title)[0] : null) ??
+          `Submission #${submission.id}`;
+        const journalName =
+          (journalConfig?.name?.[s.locale ?? "en"] as string | undefined) ??
+          (journalConfig?.name
+            ? (Object.values(journalConfig.name)[0] as string)
+            : "The Academic Journal");
+        const baseUrl = window.location.origin;
+        const vars = {
+          recipient: {
+            givenName: recipient?.fullName?.split(" ")[0] ?? "",
+            familyName: recipient?.fullName?.split(" ").slice(1).join(" ") ?? "",
+            fullName: recipient?.fullName ?? "",
+            email: recipient?.email ?? "",
+          },
+          submission: {
+            id: submission.id,
+            title: submissionTitle,
+            url: `${baseUrl}/author/submissions/${submission.id}`,
+          },
+          journal: { name: journalName, url: window.location.origin.replace(":5173", ":3000") },
+          decision: { type },
+        };
+        const rendered = await api<EmailRenderResponse>(
+          `/api/v1/email-templates/${encodeURIComponent(s.templateKey ?? "")}/render`,
+          {
+            method: "POST",
+            body: { locale: s.locale ?? "en", vars },
+          },
+        );
+        return {
+          stepId: s.stepId ?? "step",
+          templateKey: s.templateKey ?? "",
+          recipientUserIds: (s.recipients ?? [])
+            .map((r) => r.userId)
+            .filter((id): id is number => id != null),
+          recipientLabel:
+            recipient?.fullName ?? recipient?.email ?? `User #${recipient?.userId ?? "?"}`,
+          locale: rendered?.locale ?? s.locale ?? "en",
+          subject: rendered?.subject ?? "",
+          body: rendered?.body ?? "",
+          configured: rendered?.configured ?? false,
+          skipped: false,
+        };
+      }),
+    );
+    setBusy(false);
+    setWizard({ preview, drafts });
+  };
+
+  const commit = async (): Promise<void> => {
+    if (!wizard) return;
     setBusy(true);
     setError(null);
     const result = await api<Decision>(
@@ -1161,19 +1328,30 @@ function DecisionCard({
           type,
           reviewRoundId: latestRound?.id ?? null,
           summary: summary.trim() || null,
+          emailOverrides: wizard.drafts.map((d) => ({
+            stepId: d.stepId,
+            templateKey: d.templateKey,
+            skipped: d.skipped,
+            subject: d.subject,
+            body: d.body,
+            recipientUserIds: d.recipientUserIds,
+          })),
         },
       },
     );
     setBusy(false);
     if (result === null) {
-      setError("Decision failed — it may not be valid for the current stage.");
+      setError("Decision failed.");
       toast.error("Decision failed.");
-    } else {
-      toast.success(`Decision recorded: ${type.replace(/_/g, " ").toLowerCase()}.`);
-      setSummary("");
-      onChanged();
+      return;
     }
+    toast.success(`Decision recorded: ${type.replace(/_/g, " ").toLowerCase()}.`);
+    setSummary("");
+    setWizard(null);
+    onChanged();
   };
+
+  const submit = openWizard;
 
   return (
     <Card>
@@ -1280,11 +1458,253 @@ function DecisionCard({
         <div>
           <Button type="submit" disabled={busy}>
             <Gavel />
-            {busy ? "Recording…" : "Record decision"}
+            {busy ? "Loading preview…" : "Continue → Preview email"}
           </Button>
         </div>
       </form>
+
+      {wizard && (
+        <DecisionWizardDrawer
+          preview={wizard.preview}
+          drafts={wizard.drafts}
+          summary={summary}
+          busy={busy}
+          onChange={(drafts) => setWizard({ ...wizard, drafts })}
+          onClose={() => setWizard(null)}
+          onCommit={() => void commit()}
+        />
+      )}
     </Card>
+  );
+}
+
+interface WizardDrawerProps {
+  preview: DecisionPreview;
+  drafts: WizardEmailDraft[];
+  summary: string;
+  busy: boolean;
+  onChange: (drafts: WizardEmailDraft[]) => void;
+  onClose: () => void;
+  onCommit: () => void;
+}
+
+function DecisionWizardDrawer({
+  preview,
+  drafts,
+  summary,
+  busy,
+  onChange,
+  onClose,
+  onCommit,
+}: WizardDrawerProps): ReactNode {
+  const updateDraft = (idx: number, patch: Partial<WizardEmailDraft>): void => {
+    onChange(drafts.map((d, i) => (i === idx ? { ...d, ...patch } : d)));
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.45)",
+        display: "flex",
+        alignItems: "stretch",
+        justifyContent: "flex-end",
+        zIndex: 60,
+      }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "min(720px, 100%)",
+          background: "var(--bg)",
+          borderLeft: "1px solid var(--border)",
+          padding: 24,
+          overflowY: "auto",
+        }}
+      >
+        <header style={{ marginBottom: 16 }}>
+          <p
+            style={{
+              fontSize: 11,
+              color: "var(--muted)",
+              textTransform: "uppercase",
+              letterSpacing: 1,
+              fontFamily: "var(--mono)",
+            }}
+          >
+            Decision wizard · step 2 of 2
+          </p>
+          <h2 style={{ margin: "4px 0", fontFamily: "var(--font-mono)" }}>
+            {(preview.type ?? "").replace(/_/g, " ").toLowerCase()}
+          </h2>
+          <p style={{ color: "var(--muted)", fontSize: 13, margin: 0 }}>
+            <strong>{preview.previousStage}</strong> →{" "}
+            <strong>{preview.newStage}</strong> · status {preview.newStatus}
+            {summary ? ` · note: ${summary}` : ""}
+          </p>
+        </header>
+
+        {drafts.length === 0 ? (
+          <p style={{ color: "var(--muted)", fontSize: 13 }}>
+            This decision sends no automatic email.
+          </p>
+        ) : (
+          drafts.map((d, idx) => (
+            <section
+              key={d.stepId}
+              style={{
+                marginBottom: 16,
+                padding: 12,
+                border: "1px solid var(--border)",
+                borderRadius: "var(--r-2)",
+                background: "var(--surface)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 10,
+                }}
+              >
+                <div>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 11,
+                      textTransform: "uppercase",
+                      letterSpacing: 1,
+                      color: "var(--muted)",
+                      fontFamily: "var(--mono)",
+                    }}
+                  >
+                    To: {d.recipientLabel} · locale {d.locale.toUpperCase()}
+                  </p>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 11,
+                      color: d.configured ? "var(--muted)" : "var(--danger)",
+                    }}
+                  >
+                    {d.configured
+                      ? `template: ${d.templateKey}`
+                      : `template ${d.templateKey} not configured — write your own`}
+                  </p>
+                </div>
+                <label
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: 12,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={d.skipped}
+                    onChange={(e) => updateDraft(idx, { skipped: e.target.checked })}
+                  />
+                  <span>Skip this email</span>
+                </label>
+              </div>
+              {!d.skipped && (
+                <>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: 10,
+                      fontSize: 12,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Subject
+                    <input
+                      type="text"
+                      value={d.subject}
+                      onChange={(e) => updateDraft(idx, { subject: e.target.value })}
+                      maxLength={512}
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        marginTop: 4,
+                        padding: "6px 10px",
+                        border: "1px solid var(--border)",
+                        borderRadius: 4,
+                        fontFamily: "inherit",
+                      }}
+                    />
+                  </label>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600 }}>
+                    Body
+                    <textarea
+                      value={d.body}
+                      onChange={(e) => updateDraft(idx, { body: e.target.value })}
+                      rows={12}
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        marginTop: 4,
+                        padding: "6px 10px",
+                        border: "1px solid var(--border)",
+                        borderRadius: 4,
+                        fontFamily: "var(--font-mono)",
+                        fontSize: 13,
+                        resize: "vertical",
+                      }}
+                    />
+                  </label>
+                </>
+              )}
+            </section>
+          ))
+        )}
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 8,
+            marginTop: 16,
+          }}
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={busy}
+            style={{
+              padding: "6px 14px",
+              border: "1px solid var(--border)",
+              borderRadius: 4,
+              background: "transparent",
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onCommit}
+            disabled={busy}
+            style={{
+              padding: "6px 14px",
+              border: "1px solid var(--cobalt)",
+              borderRadius: 4,
+              background: "var(--cobalt)",
+              color: "white",
+              cursor: busy ? "wait" : "pointer",
+            }}
+          >
+            {busy ? "Sending…" : "Send & record decision"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1361,3 +1781,302 @@ const btnSecondary = {
   fontSize: 12,
   cursor: "pointer",
 };
+
+interface ParticipantsCardProps {
+  submissionId: number;
+  participants: Participant[];
+  onChanged: () => void;
+}
+
+function ParticipantsCard({
+  submissionId,
+  participants,
+  onChanged,
+}: ParticipantsCardProps): ReactNode {
+  const [showForm, setShowForm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({
+    stage: "EXTERNAL_REVIEW" as Stage,
+    userId: "",
+    role: "EDITOR" as StageRole,
+    canChangeMetadata: true,
+    recommendOnly: false,
+  });
+  const [err, setErr] = useState<string | null>(null);
+
+  const grouped = STAGE_ORDER.map((stage) => ({
+    stage,
+    rows: participants.filter((p) => p.stage === stage),
+  })).filter((g) => g.rows.length > 0);
+
+  const submit = async (e: FormEvent): Promise<void> => {
+    e.preventDefault();
+    setErr(null);
+    const userIdNum = Number.parseInt(form.userId, 10);
+    if (!Number.isFinite(userIdNum) || userIdNum <= 0) {
+      setErr("User id must be a positive number.");
+      return;
+    }
+    setBusy(true);
+    const result = await api(
+      `/api/v1/submissions/${submissionId}/participants`,
+      {
+        method: "POST",
+        body: {
+          stage: form.stage,
+          userId: userIdNum,
+          role: form.role,
+          canChangeMetadata: form.canChangeMetadata,
+          recommendOnly: form.recommendOnly,
+        },
+      },
+    );
+    setBusy(false);
+    if (result == null) {
+      setErr("Could not assign — verify the user id and try again.");
+      return;
+    }
+    setShowForm(false);
+    setForm((f) => ({ ...f, userId: "" }));
+    onChanged();
+  };
+
+  const remove = async (assignmentId?: number): Promise<void> => {
+    if (assignmentId == null) return;
+    if (!window.confirm("Remove this participant from the stage?")) return;
+    setBusy(true);
+    await api(
+      `/api/v1/submissions/${submissionId}/participants/${assignmentId}`,
+      { method: "DELETE" },
+    );
+    setBusy(false);
+    onChanged();
+  };
+
+  return (
+    <Card>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 12,
+        }}
+      >
+        <h3
+          style={{
+            margin: 0,
+            fontSize: 14,
+            textTransform: "uppercase",
+            letterSpacing: 1,
+          }}
+        >
+          Participants
+        </h3>
+        <button
+          type="button"
+          onClick={() => setShowForm((s) => !s)}
+          style={{ ...btnSecondary, fontSize: 12 }}
+        >
+          {showForm ? "Cancel" : "+ Assign"}
+        </button>
+      </div>
+
+      {showForm && (
+        <form
+          onSubmit={submit}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            gap: 8,
+            padding: 12,
+            border: "1px solid var(--border)",
+            borderRadius: 6,
+            background: "var(--bg-tint)",
+            marginBottom: 12,
+          }}
+        >
+          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12 }}>
+            <span style={{ fontWeight: 600 }}>Stage</span>
+            <select
+              value={form.stage}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, stage: e.target.value as Stage }))
+              }
+              style={{ padding: 6 }}
+            >
+              {STAGE_ORDER.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12 }}>
+            <span style={{ fontWeight: 600 }}>User id</span>
+            <input
+              type="number"
+              value={form.userId}
+              onChange={(e) => setForm((f) => ({ ...f, userId: e.target.value }))}
+              min={1}
+              style={{ padding: 6 }}
+            />
+          </label>
+          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12 }}>
+            <span style={{ fontWeight: 600 }}>Role</span>
+            <select
+              value={form.role}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, role: e.target.value as StageRole }))
+              }
+              style={{ padding: 6 }}
+            >
+              {STAGE_ROLES.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label
+            style={{
+              display: "inline-flex",
+              gap: 6,
+              alignItems: "center",
+              fontSize: 12,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={form.canChangeMetadata}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, canChangeMetadata: e.target.checked }))
+              }
+            />
+            <span>Can change metadata</span>
+          </label>
+          <label
+            style={{
+              display: "inline-flex",
+              gap: 6,
+              alignItems: "center",
+              fontSize: 12,
+              opacity: form.role === "SECTION_EDITOR" ? 1 : 0.5,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={form.recommendOnly}
+              disabled={form.role !== "SECTION_EDITOR"}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, recommendOnly: e.target.checked }))
+              }
+            />
+            <span>Recommend only</span>
+          </label>
+          <div
+            style={{
+              gridColumn: "1 / -1",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 8,
+              marginTop: 4,
+            }}
+          >
+            {err && (
+              <span style={{ color: "var(--danger)", fontSize: 12, marginRight: "auto" }}>
+                {err}
+              </span>
+            )}
+            <button
+              type="submit"
+              disabled={busy}
+              style={{
+                padding: "6px 14px",
+                border: "1px solid var(--cobalt)",
+                borderRadius: 4,
+                background: "var(--cobalt)",
+                color: "white",
+                fontFamily: "var(--sans)",
+                fontSize: 13,
+                cursor: busy ? "wait" : "pointer",
+              }}
+            >
+              {busy ? "Assigning…" : "Assign"}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {grouped.length === 0 ? (
+        <p style={{ color: "var(--muted)", fontSize: 13, margin: 0 }}>
+          No participants assigned yet.
+        </p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {grouped.map(({ stage, rows }) => (
+            <section key={stage}>
+              <h4
+                style={{
+                  margin: "0 0 6px 0",
+                  fontSize: 11,
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                  color: "var(--muted)",
+                }}
+              >
+                {stage}
+              </h4>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ textAlign: "left", color: "var(--muted)" }}>
+                    <th style={{ padding: "4px 0", width: "12%" }}>User</th>
+                    <th style={{ padding: "4px 0", width: "20%" }}>Role</th>
+                    <th style={{ padding: "4px 0", width: "20%" }}>Flags</th>
+                    <th style={{ padding: "4px 0", width: "20%" }}>Assigned</th>
+                    <th style={{ padding: "4px 0" }} />
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((p) => (
+                    <tr key={p.id} style={{ borderTop: "1px solid var(--border)" }}>
+                      <td style={{ padding: "6px 0", fontFamily: "var(--font-mono)" }}>
+                        #{p.userId}
+                      </td>
+                      <td style={{ padding: "6px 0" }}>{p.role}</td>
+                      <td style={{ padding: "6px 0", color: "var(--muted)" }}>
+                        {p.canChangeMetadata && "metadata · "}
+                        {p.recommendOnly && "recommend-only"}
+                        {!p.canChangeMetadata && !p.recommendOnly && "—"}
+                      </td>
+                      <td style={{ padding: "6px 0", color: "var(--muted)" }}>
+                        {p.dateAssigned
+                          ? new Date(p.dateAssigned).toLocaleDateString()
+                          : "—"}
+                      </td>
+                      <td style={{ padding: "6px 0", textAlign: "right" }}>
+                        <button
+                          type="button"
+                          onClick={() => void remove(p.id)}
+                          disabled={busy}
+                          style={{
+                            ...btnSecondary,
+                            padding: "4px 10px",
+                            fontSize: 12,
+                            color: "var(--danger)",
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}

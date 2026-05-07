@@ -23,16 +23,20 @@ import java.util.Optional;
  * commonly requested by readers and reference-manager imports:
  *
  * <ul>
- *   <li>{@code BIBTEX}  — LaTeX/BibTeX entry, the de-facto standard for math/physics/CS.</li>
- *   <li>{@code RIS}     — RIS records, eaten by EndNote, Mendeley, Zotero.</li>
- *   <li>{@code APA}     — Plain-text APA-style line; fine for copy-paste.</li>
+ *   <li>{@code BIBTEX}    — LaTeX/BibTeX entry, the de-facto standard for math/physics/CS.</li>
+ *   <li>{@code RIS}       — RIS records, eaten by EndNote, Mendeley, Zotero.</li>
+ *   <li>{@code ENDNOTE}   — EndNote tagged format (.enw).</li>
+ *   <li>{@code APA}       — Plain-text APA 7th edition.</li>
+ *   <li>{@code MLA}       — Plain-text MLA 9th edition.</li>
+ *   <li>{@code CHICAGO}   — Plain-text Chicago author-date.</li>
+ *   <li>{@code VANCOUVER} — Plain-text Vancouver / ICMJE.</li>
  * </ul>
  */
 @Service
 @RequiredArgsConstructor
 public class CitationFormatter {
 
-    public enum Format { BIBTEX, RIS, APA }
+    public enum Format { BIBTEX, RIS, ENDNOTE, APA, MLA, CHICAGO, VANCOUVER }
 
     private final SubmissionLookup submissionLookup;
     private final IssueLookup issueLookup;
@@ -56,9 +60,13 @@ public class CitationFormatter {
                 : issue.map(IssueSummary::year).orElse(null);
 
         return switch (format) {
-            case BIBTEX -> bibtex(pub, title, authors, journalTitle, issue, doi, year);
-            case RIS    -> ris(pub, title, authors, journalTitle, issue, doi, year);
-            case APA    -> apa(pub, title, authors, journalTitle, issue, doi, year);
+            case BIBTEX    -> bibtex(pub, title, authors, journalTitle, issue, doi, year);
+            case RIS       -> ris(pub, title, authors, journalTitle, issue, doi, year);
+            case ENDNOTE   -> endnote(pub, title, authors, journalTitle, issue, doi, year);
+            case APA       -> apa(pub, title, authors, journalTitle, issue, doi, year);
+            case MLA       -> mla(pub, title, authors, journalTitle, issue, doi, year);
+            case CHICAGO   -> chicago(pub, title, authors, journalTitle, issue, doi, year);
+            case VANCOUVER -> vancouver(pub, title, authors, journalTitle, issue, doi, year);
         };
     }
 
@@ -118,6 +126,28 @@ public class CitationFormatter {
         return sb.toString();
     }
 
+    private String endnote(PublicationSummary pub, String title,
+                           List<SubmissionAuthorSummary> authors, String journalTitle,
+                           Optional<IssueSummary> issue, Optional<DoiSummary> doi,
+                           Integer year) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("%0 Journal Article\n");
+        sb.append("%T ").append(safe(title)).append('\n');
+        for (SubmissionAuthorSummary a : authors) {
+            String name = (orEmpty(a.familyName()) + ", " + orEmpty(a.givenName())).trim();
+            if (name.startsWith(",")) name = name.substring(1).trim();
+            if (!name.isBlank()) sb.append("%A ").append(safe(name)).append('\n');
+        }
+        sb.append("%J ").append(safe(journalTitle)).append('\n');
+        if (year != null) sb.append("%D ").append(year).append('\n');
+        issue.ifPresent(i -> {
+            if (i.volume() != null) sb.append("%V ").append(i.volume()).append('\n');
+            if (i.number() != null) sb.append("%N ").append(safe(i.number())).append('\n');
+        });
+        doi.ifPresent(d -> sb.append("%R ").append(safe(d.doi())).append('\n'));
+        return sb.toString();
+    }
+
     private String apa(PublicationSummary pub, String title,
                        List<SubmissionAuthorSummary> authors, String journalTitle,
                        Optional<IssueSummary> issue, Optional<DoiSummary> doi,
@@ -141,6 +171,72 @@ public class CitationFormatter {
         });
         sb.append(". ");
         doi.ifPresent(d -> sb.append("https://doi.org/").append(d.doi()));
+        return sb.toString().trim() + "\n";
+    }
+
+    private String mla(PublicationSummary pub, String title,
+                       List<SubmissionAuthorSummary> authors, String journalTitle,
+                       Optional<IssueSummary> issue, Optional<DoiSummary> doi,
+                       Integer year) {
+        StringBuilder sb = new StringBuilder();
+        if (!authors.isEmpty()) {
+            sb.append(authorsMla(authors)).append(". ");
+        }
+        sb.append('"').append(title.trim());
+        if (!title.endsWith(".") && !title.endsWith("?") && !title.endsWith("!")) sb.append('.');
+        sb.append("\" ");
+        sb.append(journalTitle);
+        issue.ifPresent(i -> {
+            if (i.volume() != null) sb.append(", vol. ").append(i.volume());
+            if (i.number() != null) sb.append(", no. ").append(safe(i.number()));
+        });
+        if (year != null) sb.append(", ").append(year);
+        sb.append('.');
+        doi.ifPresent(d -> sb.append(" https://doi.org/").append(d.doi()));
+        return sb.toString().trim() + "\n";
+    }
+
+    private String chicago(PublicationSummary pub, String title,
+                           List<SubmissionAuthorSummary> authors, String journalTitle,
+                           Optional<IssueSummary> issue, Optional<DoiSummary> doi,
+                           Integer year) {
+        StringBuilder sb = new StringBuilder();
+        if (!authors.isEmpty()) {
+            sb.append(authorsChicago(authors)).append('.');
+            if (year != null) sb.append(' ').append(year).append('.');
+        }
+        sb.append(' ');
+        sb.append('"').append(title.trim());
+        if (!title.endsWith(".") && !title.endsWith("?") && !title.endsWith("!")) sb.append('.');
+        sb.append("\" *").append(journalTitle).append("*");
+        issue.ifPresent(i -> {
+            if (i.volume() != null) sb.append(' ').append(i.volume());
+            if (i.number() != null) sb.append(", no. ").append(safe(i.number()));
+        });
+        if (year != null) sb.append(" (").append(year).append(')');
+        sb.append('.');
+        doi.ifPresent(d -> sb.append(" https://doi.org/").append(d.doi()));
+        return sb.toString().trim() + "\n";
+    }
+
+    private String vancouver(PublicationSummary pub, String title,
+                             List<SubmissionAuthorSummary> authors, String journalTitle,
+                             Optional<IssueSummary> issue, Optional<DoiSummary> doi,
+                             Integer year) {
+        StringBuilder sb = new StringBuilder();
+        if (!authors.isEmpty()) {
+            sb.append(authorsVancouver(authors)).append(". ");
+        }
+        sb.append(title.trim());
+        if (!title.endsWith(".") && !title.endsWith("?") && !title.endsWith("!")) sb.append('.');
+        sb.append(' ').append(journalTitle).append('.');
+        if (year != null) sb.append(' ').append(year).append(';');
+        issue.ifPresent(i -> {
+            if (i.volume() != null) sb.append(i.volume());
+            if (i.number() != null) sb.append('(').append(safe(i.number())).append(')');
+        });
+        sb.append('.');
+        doi.ifPresent(d -> sb.append(" doi:").append(d.doi()));
         return sb.toString().trim() + "\n";
     }
 
@@ -194,6 +290,55 @@ public class CitationFormatter {
             }
             sb.append(formatted);
         }
+        return sb.toString();
+    }
+
+    private static String authorsMla(List<SubmissionAuthorSummary> authors) {
+        // First author "Family, Given"; subsequent "Given Family"; ", and " before last.
+        if (authors.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        SubmissionAuthorSummary first = authors.get(0);
+        String firstFam = orEmpty(first.familyName()).trim();
+        String firstGiv = orEmpty(first.givenName()).trim();
+        sb.append(firstFam.isBlank() ? firstGiv : firstFam);
+        if (!firstFam.isBlank() && !firstGiv.isBlank()) sb.append(", ").append(firstGiv);
+        for (int i = 1; i < authors.size(); i++) {
+            SubmissionAuthorSummary a = authors.get(i);
+            String fam = orEmpty(a.familyName()).trim();
+            String giv = orEmpty(a.givenName()).trim();
+            if (i == authors.size() - 1) sb.append(", and ");
+            else sb.append(", ");
+            if (giv.isBlank()) sb.append(fam);
+            else if (fam.isBlank()) sb.append(giv);
+            else sb.append(giv).append(' ').append(fam);
+        }
+        return sb.toString();
+    }
+
+    private static String authorsChicago(List<SubmissionAuthorSummary> authors) {
+        // Same as MLA in author-date convention.
+        return authorsMla(authors);
+    }
+
+    private static String authorsVancouver(List<SubmissionAuthorSummary> authors) {
+        // "Family GI" comma-separated; up to 6 authors, then "et al" (ICMJE).
+        StringBuilder sb = new StringBuilder();
+        int max = Math.min(authors.size(), 6);
+        for (int i = 0; i < max; i++) {
+            SubmissionAuthorSummary a = authors.get(i);
+            String fam = orEmpty(a.familyName()).trim();
+            String giv = orEmpty(a.givenName()).trim();
+            String initials = giv.isBlank()
+                    ? ""
+                    : java.util.Arrays.stream(giv.split("\\s+"))
+                            .filter(s -> !s.isBlank())
+                            .map(s -> String.valueOf(s.charAt(0)))
+                            .reduce("", String::concat);
+            String entry = fam.isBlank() ? initials : (fam + (initials.isBlank() ? "" : " " + initials));
+            if (i > 0) sb.append(", ");
+            sb.append(entry);
+        }
+        if (authors.size() > 6) sb.append(", et al");
         return sb.toString();
     }
 

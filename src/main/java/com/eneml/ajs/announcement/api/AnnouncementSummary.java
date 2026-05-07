@@ -12,6 +12,9 @@ public record AnnouncementSummary(
         Instant datePosted,
         Instant dateExpires,
         boolean pinned,
-        boolean visible
+        boolean visible,
+        String ctaLabel,
+        String ctaUrl,
+        String guestEditors
 ) {
 }

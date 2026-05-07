@@ -42,6 +42,7 @@ public class NotificationService {
         n.setAssocType(draft.assocType());
         n.setAssocId(draft.assocId());
         n.setHref(draft.href());
+        n.setTemplateKey(draft.templateKey());
         Notification saved = repository.save(n);
         events.publishEvent(NotificationCreated.of(saved.getId(), saved.getUserId(), saved.getType()));
         return saved;

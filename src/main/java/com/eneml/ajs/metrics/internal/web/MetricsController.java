@@ -1,5 +1,6 @@
 package com.eneml.ajs.metrics.internal.web;
 
+import com.eneml.ajs.metrics.api.DailyMetricsBucket;
 import com.eneml.ajs.metrics.api.MetricsLookup;
 import com.eneml.ajs.metrics.api.PublicationMetricsSummary;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,5 +39,17 @@ class MetricsController {
     List<PublicationMetricsSummary> topViewed(
             @RequestParam(defaultValue = "10") int limit) {
         return lookup.topByViews(limit);
+    }
+
+    @GetMapping("/publications/{publicationId}/metrics/timeseries")
+    @Operation(summary = "Daily view+download series for one article (last N days)")
+    List<DailyMetricsBucket> publicationTimeseries(
+            @PathVariable long publicationId,
+            @RequestParam(defaultValue = "30") int days
+    ) {
+        int safeDays = Math.min(Math.max(days, 1), 365);
+        java.time.LocalDate to = java.time.LocalDate.now();
+        java.time.LocalDate from = to.minusDays(safeDays - 1L);
+        return lookup.publicationDaily(publicationId, from, to);
     }
 }

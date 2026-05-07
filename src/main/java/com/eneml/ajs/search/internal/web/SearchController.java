@@ -26,8 +26,15 @@ class SearchController {
     List<SearchHit> search(@RequestParam String q,
                            @RequestParam(required = false) Long section,
                            @RequestParam(required = false) Integer year,
+                           @RequestParam(name = "type", required = false) List<String> types,
+                           @RequestParam(name = "oa", required = false) Boolean openAccess,
                            @RequestParam(defaultValue = "0") int page,
                            @RequestParam(defaultValue = "20") int size) {
-        return service.search(new SearchQuery(q, section, year, page, size));
+        return service.search(new SearchQuery(
+                q, section, year,
+                types == null ? List.of() : types,
+                openAccess,
+                page, size
+        ));
     }
 }

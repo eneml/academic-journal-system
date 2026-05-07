@@ -15,6 +15,9 @@ public record AnnouncementResponse(
         Instant dateExpires,
         boolean pinned,
         boolean visible,
+        String ctaLabel,
+        String ctaUrl,
+        String guestEditors,
         Instant updatedAt
 ) {
 }

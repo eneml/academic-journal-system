@@ -52,6 +52,9 @@ public class Publication extends AuditableEntity {
     @Column(name = "issue_id")
     private Long issueId;
 
+    @Column(name = "display_order", nullable = false)
+    private int displayOrder = 0;
+
     @Column(name = "primary_author_email", length = 254)
     private String primaryAuthorEmail;
 

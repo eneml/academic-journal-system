@@ -66,6 +66,12 @@ public record JournalConfigUpdateRequest(
 
         @Pattern(regexp = "^[A-Z]{2}$",
                 message = "Country must be a 2-letter ISO 3166-1 code (e.g. RO, GB, US)")
-        String countryOfPublication
+        String countryOfPublication,
+
+        @Size(max = 120)
+        String tagline,
+
+        @Size(max = 8)
+        String taglineOrnament
 ) {
 }

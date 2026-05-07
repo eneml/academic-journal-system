@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
-import { Rss, Search } from "lucide-react";
-import { Button, LanguageSwitcher } from "@ajs/ui";
+import { Search } from "lucide-react";
+import { Button, LanguageSwitcher, UtilityBar } from "@ajs/ui";
 import { UserMenu } from "@/components/UserMenu";
 import { resolveLocale } from "@/lib/locale";
 import { cn } from "@/lib/cn";
@@ -43,32 +43,22 @@ export async function PublicHeader({ activePath: explicit }: PublicHeaderProps =
 
   return (
     <header className="border-b border-border bg-bg">
-      {/* Top utility bar */}
-      <div className="flex items-center justify-between border-b border-border px-6 py-2 text-[11px] tracking-[0.04em] text-muted lg:px-14">
-        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-          <span className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em]">
-            ISSN {ISSN}
-          </span>
-          <span className="hidden text-border-strong sm:inline">·</span>
-          <span className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em]">
-            Open Access
-          </span>
-          <span className="hidden text-border-strong sm:inline">·</span>
-          <span className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em]">
-            Peer Reviewed
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <a
-            href="/feed.xml"
-            className="inline-flex items-center gap-1 text-[11px] hover:text-fg"
-          >
-            <Rss className="h-3 w-3" /> RSS
-          </a>
-          <LanguageSwitcher current={locale} />
-          <UserMenu />
-        </div>
-      </div>
+      <UtilityBar
+        issn={ISSN}
+        openAccess
+        ribbons={["Peer Reviewed"]}
+        rssHref="/feed.xml"
+        rightSlot={
+          <>
+            <LanguageSwitcher current={locale} variant="inline" />
+            <span
+              className="hidden h-3.5 w-px bg-border sm:inline-block"
+              aria-hidden
+            />
+            <UserMenu />
+          </>
+        }
+      />
 
       {/* Masthead */}
       <div className="border-b border-border px-6 pt-7 pb-5 text-center lg:px-14">

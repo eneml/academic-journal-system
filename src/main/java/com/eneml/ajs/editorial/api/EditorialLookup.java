@@ -1,5 +1,7 @@
 package com.eneml.ajs.editorial.api;
 
+import com.eneml.ajs.submission.api.SubmissionStage;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -7,6 +9,12 @@ import java.util.Map;
 public interface EditorialLookup {
 
     List<EditorialDecisionSummary> historyOf(Long submissionId);
+
+    /** Participants assigned to {@code submissionId} at {@code stage}. */
+    List<StageParticipantSummary> participantsAt(Long submissionId, SubmissionStage stage);
+
+    /** All participants for {@code submissionId} across every stage they appear in. */
+    List<StageParticipantSummary> allParticipantsOf(Long submissionId);
 
     /** Decisions logged on or after {@code since}, broken down by type. Empty buckets omitted. */
     Map<DecisionType, Long> decisionsByType(Instant since);

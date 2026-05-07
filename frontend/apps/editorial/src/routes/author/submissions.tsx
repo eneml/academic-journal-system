@@ -5,15 +5,29 @@ import {
   useLocation,
 } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { ArrowUpRight, FileText, Plus } from "lucide-react";
+import { ArrowUpRight, FileText, MoreHorizontal, Plus } from "lucide-react";
 import { useAuth } from "../../auth/AuthContext";
 import { api, type Page } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { EmptyState } from "../../components/EmptyState";
-import { StatusChip } from "../../components/StatusChip";
 import { SignInPrompt } from "../../components/SignInPrompt";
-import { Badge } from "@ajs/ui";
-import { Button } from "@ajs/ui";
+import { Button, StageStepper } from "@ajs/ui";
+
+const STAGE_KEYS = ["SUBMISSION", "EXTERNAL_REVIEW", "EDITING", "PRODUCTION", "PUBLISHED"] as const;
+
+function stageIndex(stage: string | null | undefined): 0 | 1 | 2 | 3 | 4 | null {
+  if (!stage) return null;
+  const i = (STAGE_KEYS as readonly string[]).indexOf(stage.toUpperCase());
+  return i === -1 ? null : (i as 0 | 1 | 2 | 3 | 4);
+}
+
+function actionNeeded(submission: Submission): boolean {
+  const status = submission.status?.toUpperCase() ?? "";
+  // The author needs to act when the editor has issued a Request Revisions
+  // decision (status flips back to QUEUED with stage SUBMISSION while waiting
+  // for the upload), or when a draft is sitting unsubmitted.
+  return status === "DRAFT";
+}
 
 export const Route = createFileRoute("/author/submissions")({
   component: AuthorSubmissionsPage,
@@ -124,87 +138,76 @@ function AuthorSubmissionsPage(): ReactNode {
       ) : null}
 
       {!fetching && submissions.length > 0 ? (
-        <div className="rounded-lg border border-border bg-white overflow-hidden">
-          <ul className="divide-y divide-border">
-            {submissions.map((s) => (
-              <SubmissionRow key={s.id} submission={s} />
-            ))}
-          </ul>
+        <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+          {submissions.map((s) => (
+            <SubmissionCard key={s.id} submission={s} />
+          ))}
         </div>
       ) : null}
     </>
   );
 }
 
-function SubmissionRow({
-  submission,
-}: {
-  submission: Submission;
-}): ReactNode {
+function SubmissionCard({ submission }: { submission: Submission }): ReactNode {
   const title = pickLocalized(submission.title) ?? `Submission #${submission.id}`;
-  const summary = truncate(pickLocalized(submission.abstractText) ?? "", 220);
+  const stage = stageIndex(submission.stage);
   const date = submission.dateLastActivity ?? submission.dateSubmitted;
+  const needsAction = actionNeeded(submission);
 
   return (
-    <li className="hover:bg-bg-tint/50 transition-colors">
-      <Link
-        to="/author/submissions/$id"
-        params={{ id: String(submission.id) }}
-        className="grid grid-cols-[64px_1fr_auto] gap-4 items-start p-5 no-underline text-inherit group"
-      >
-        <span className="font-mono tnum tabular-nums text-[11px] text-cobalt font-semibold mt-1">
+    <Link
+      to="/author/submissions/$id"
+      params={{ id: String(submission.id) }}
+      className={`group flex flex-col gap-3 rounded-md border bg-white p-4 no-underline transition-shadow text-inherit ${
+        needsAction
+          ? "border-amber/60 shadow-[0_0_0_3px_var(--amber-soft)] hover:shadow-[0_0_0_3px_var(--amber-soft),0_4px_8px_-2px_oklch(20%_0.02_270/0.06)]"
+          : "border-border hover:shadow-[0_4px_8px_-2px_oklch(20%_0.02_270/0.06)]"
+      }`}
+    >
+      <div className="flex items-center justify-between">
+        <span className="lnum tnum font-mono text-[11px] font-semibold text-cobalt">
           AJ-{String(submission.id).padStart(4, "0")}
         </span>
-        <div className="min-w-0">
-          <div className="flex gap-3 items-baseline justify-between">
-            <p className="font-serif-display text-[16px] font-medium text-fg m-0 tracking-tight">
-              {title}
-            </p>
-          </div>
-          {summary ? (
-            <p className="font-serif-body text-[13.5px] text-fg-2 mt-1 leading-relaxed">
-              {summary}
-            </p>
-          ) : null}
-          <div className="flex gap-1.5 mt-2.5 flex-wrap items-center">
-            {submission.status ? <StatusChip status={submission.status} /> : null}
-            {submission.stage ? (
-              <Badge variant="outline">
-                {submission.stage.replace(/_/g, " ").toLowerCase()}
-              </Badge>
-            ) : null}
-            {submission.progress ? (
-              <Badge variant="ghost" className="font-mono normal-case">
-                {submission.progress}
-              </Badge>
-            ) : null}
-          </div>
+        <MoreHorizontal className="size-4 text-muted-2" />
+      </div>
+      <div
+        className="font-serif-display text-[14px] font-medium leading-tight text-ink"
+        style={{ minHeight: 56 }}
+      >
+        {title}
+      </div>
+      {stage != null ? (
+        <StageStepper stage={stage} size="lg" showLabels />
+      ) : null}
+      <div className="border-t border-border pt-2.5">
+        <div
+          className={`text-[12px] font-medium ${
+            needsAction ? "text-amber-deep" : "text-fg-2"
+          }`}
+        >
+          {needsAction ? "Action needed — finish your draft" : (
+            submission.status?.replace(/_/g, " ").toLowerCase() ?? "—"
+          )}
         </div>
-        <div className="flex items-center gap-2 text-muted-2 group-hover:text-cobalt transition-colors mt-1">
-          {date ? (
-            <span className="text-[11px] font-mono">
-              {new Date(date).toLocaleDateString()}
-            </span>
-          ) : null}
-          <ArrowUpRight className="size-4" />
+        <div className="mt-0.5 font-mono text-[10.5px] text-muted">
+          {date ? new Date(date).toLocaleDateString() : "—"}
         </div>
-      </Link>
-    </li>
+      </div>
+      <div className="flex items-center gap-1.5 text-[11px] text-muted-2 transition-colors group-hover:text-cobalt">
+        <span className="flex-1" />
+        <span>Open submission</span>
+        <ArrowUpRight className="size-3.5" />
+      </div>
+    </Link>
   );
 }
 
 function pickLocalized(map: Record<string, string> | undefined): string | undefined {
   if (!map) return undefined;
-  // Prefer English variants, then the first available value.
   return (
     map["en"] ??
     map["en-US"] ??
     map["en_GB"] ??
     Object.values(map).find((v) => v && v.trim().length > 0)
   );
-}
-
-function truncate(s: string, n: number): string {
-  if (s.length <= n) return s;
-  return `${s.slice(0, n - 1)}…`;
 }

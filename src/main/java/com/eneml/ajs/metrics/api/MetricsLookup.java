@@ -35,4 +35,11 @@ public interface MetricsLookup {
      * at least one event in the window appear in the result.
      */
     List<PublicationMetricsRange> articleTotalsForRange(LocalDate from, LocalDate to);
+
+    /**
+     * Daily series of view counts for a single publication. Empty list when
+     * no daily rows exist (e.g. for an unpublished article). Days with no
+     * activity are omitted — the caller fills gaps with zeros if needed.
+     */
+    List<DailyMetricsBucket> publicationDaily(long publicationId, LocalDate from, LocalDate to);
 }

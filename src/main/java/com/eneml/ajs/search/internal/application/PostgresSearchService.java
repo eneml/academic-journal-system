@@ -32,6 +32,9 @@ class PostgresSearchService implements SearchService {
         // explicitly. With CAST(... AS bigint) on every reference to a
         // nullable filter, the JDBC driver gets a concrete type and the
         // query plans correctly whether the param is null or set.
+        var types = query.articleTypes() == null || query.articleTypes().isEmpty()
+                ? null
+                : query.articleTypes();
         @SuppressWarnings("unchecked")
         List<Object[]> rows = em.createNativeQuery("""
                 SELECT publication_id,
@@ -46,12 +49,18 @@ class PostgresSearchService implements SearchService {
                        OR section_id = CAST(:sectionId AS bigint))
                   AND (CAST(:year AS integer) IS NULL
                        OR year = CAST(:year AS integer))
+                  AND (CAST(:openAccess AS boolean) IS NULL
+                       OR open_access = CAST(:openAccess AS boolean))
+                  AND (CAST(:types AS text[]) IS NULL
+                       OR article_type = ANY(CAST(:types AS text[])))
                 ORDER BY rank DESC, date_published DESC
                 LIMIT :limit OFFSET :offset
                 """)
                 .setParameter("q", query.text())
                 .setParameter("sectionId", query.sectionId())
                 .setParameter("year", query.year())
+                .setParameter("openAccess", query.openAccess())
+                .setParameter("types", types == null ? null : types.toArray(new String[0]))
                 .setParameter("limit", query.size())
                 .setParameter("offset", query.page() * (long) query.size())
                 .getResultList();
