@@ -43,9 +43,21 @@ public interface PublicationRepository extends JpaRepository<Publication, Long> 
             SELECT p FROM Publication p
             WHERE p.status = com.eneml.ajs.publication.api.PublicationStatus.PUBLISHED
               AND p.issueId = :issueId
-            ORDER BY p.sectionId ASC, p.datePublished ASC, p.id ASC
+            ORDER BY p.sectionId ASC, p.displayOrder ASC, p.datePublished ASC, p.id ASC
             """)
     List<Publication> findPublishedInIssue(Long issueId);
+
+    /**
+     * All publications attached to an issue regardless of status — needed by
+     * the editor curation screen, which lists in-production rows alongside
+     * already-published ones.
+     */
+    @Query("""
+            SELECT p FROM Publication p
+            WHERE p.issueId = :issueId
+            ORDER BY p.sectionId ASC, p.displayOrder ASC, p.id ASC
+            """)
+    List<Publication> findInIssueOrdered(Long issueId);
 
     /** Used by the scheduled-publication sweep — find SCHEDULED rows whose target time has arrived. */
     List<Publication> findByStatusAndDatePublishedBefore(

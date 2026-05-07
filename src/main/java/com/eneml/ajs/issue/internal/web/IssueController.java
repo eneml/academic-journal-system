@@ -8,6 +8,7 @@ import com.eneml.ajs.issue.internal.web.dto.IssueResponse;
 import com.eneml.ajs.issue.internal.web.dto.IssueUpsertRequest;
 import com.eneml.ajs.issue.internal.web.mapper.IssueMapper;
 import com.eneml.ajs.publication.api.PublicationLookup;
+import com.eneml.ajs.publication.api.PublicationOrderService;
 import com.eneml.ajs.publication.api.PublicationSummary;
 import com.eneml.ajs.shared.exception.ConflictException;
 import com.eneml.ajs.shared.exception.NotFoundException;
@@ -28,6 +29,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -80,6 +82,7 @@ class IssueController {
     private final IssueService service;
     private final IssueMapper mapper;
     private final PublicationLookup publicationLookup;
+    private final PublicationOrderService publicationOrder;
     private final IssuePdfService issuePdfService;
     private final FileStorageService fileStorage;
     private final UserDirectoryService userDirectory;
@@ -111,6 +114,29 @@ class IssueController {
     @Operation(summary = "List the published articles in an issue (public TOC)")
     List<PublicationSummary> tableOfContents(@PathVariable Long id) {
         return publicationLookup.publishedInIssue(id);
+    }
+
+    @PatchMapping("/{id}/articles")
+    @PreAuthorize("hasAnyRole('ADMIN','EDITOR','SECTION_EDITOR','PRODUCTION_STAFF')")
+    @Operation(summary = "Reorder articles in an issue (drag-drop curation)")
+    ResponseEntity<Void> reorderArticles(
+            @PathVariable Long id,
+            @Valid @RequestBody com.eneml.ajs.issue.internal.web.dto.IssueArticleOrderRequest body
+    ) {
+        publicationOrder.reorderInIssue(id, body.order());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/articles/{publicationId}/section")
+    @PreAuthorize("hasAnyRole('ADMIN','EDITOR','SECTION_EDITOR','PRODUCTION_STAFF')")
+    @Operation(summary = "Move an article between sections within the same issue")
+    ResponseEntity<Void> moveArticleToSection(
+            @PathVariable Long id,
+            @PathVariable Long publicationId,
+            @Valid @RequestBody com.eneml.ajs.issue.internal.web.dto.IssueArticleSectionRequest body
+    ) {
+        publicationOrder.moveToSection(publicationId, body.sectionId());
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping(value = "/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)

@@ -18,6 +18,7 @@ public record PublicationSummary(
         List<String> keywords,
         String locale,
         Instant datePublished,
-        Long doiId
+        Long doiId,
+        int displayOrder
 ) {
 }

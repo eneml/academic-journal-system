@@ -31,6 +31,7 @@ public interface PublicationMapper {
     @Mapping(target = "status",            ignore = true)
     @Mapping(target = "datePublished",     ignore = true)
     @Mapping(target = "doiId",             ignore = true)
+    @Mapping(target = "displayOrder",      ignore = true)
     @Mapping(target = "createdAt",         ignore = true)
     @Mapping(target = "updatedAt",         ignore = true)
     void applyUpdate(PublicationUpsertRequest src, @MappingTarget Publication dst);
