@@ -4,18 +4,14 @@ import {
   useNavigate,
   useSearch,
 } from "@tanstack/react-router";
-import {
-  useEffect,
-  useState,
-  type FormEvent,
-  type ReactNode,
-} from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { Button, Input } from "@ajs/ui";
 import { useAuth } from "../auth/AuthContext";
 import {
+  AuthError,
+  AuthField,
   AuthLayout,
-  errorBoxStyle,
-  fieldStyle,
-  labelStyle,
+  PasswordField,
 } from "../components/AuthLayout";
 
 export const Route = createFileRoute("/login")({
@@ -24,6 +20,11 @@ export const Route = createFileRoute("/login")({
     redirect: typeof s.redirect === "string" ? s.redirect : undefined,
   }),
 });
+
+const KEYCLOAK_ISSUER =
+  (import.meta.env.VITE_KEYCLOAK_ISSUER as string | undefined) ?? "";
+const KEYCLOAK_CLIENT_ID =
+  (import.meta.env.VITE_KEYCLOAK_CLIENT_ID as string | undefined) ?? "";
 
 function LoginPage(): ReactNode {
   const { user, loading: authLoading, loginWithPassword } = useAuth();
@@ -36,8 +37,6 @@ function LoginPage(): ReactNode {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // If we're already signed in (e.g. revisited /login from a bookmark),
-  // jump straight to the requested destination.
   useEffect(() => {
     if (!authLoading && user) {
       void navigate({ to: redirectTo as never, replace: true });
@@ -71,8 +70,10 @@ function LoginPage(): ReactNode {
           New here?{" "}
           <Link
             to="/register"
-            search={{ redirect: redirectTo === "/" ? undefined : redirectTo }}
-            style={{ color: "var(--cobalt)", textDecoration: "none", fontWeight: 500 }}
+            search={{
+              redirect: redirectTo === "/" ? undefined : redirectTo,
+            }}
+            className="font-medium text-cobalt no-underline hover:underline"
           >
             Create an account →
           </Link>
@@ -80,9 +81,8 @@ function LoginPage(): ReactNode {
       }
     >
       <form onSubmit={handleSubmit} noValidate>
-        <div style={{ marginBottom: 14 }}>
-          <label htmlFor="email" style={labelStyle}>Email</label>
-          <input
+        <AuthField label="Email" htmlFor="email">
+          <Input
             id="email"
             name="email"
             type="email"
@@ -90,52 +90,29 @@ function LoginPage(): ReactNode {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={fieldStyle}
             placeholder="you@example.org"
           />
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <label htmlFor="password" style={labelStyle}>Password</label>
-          <input
+        </AuthField>
+        <AuthField label="Password" htmlFor="password">
+          <PasswordField
             id="password"
             name="password"
-            type="password"
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            style={fieldStyle}
             placeholder="••••••••"
           />
-        </div>
-        {error ? <div style={errorBoxStyle}>{error}</div> : null}
-        <button
-          type="submit"
-          disabled={busy}
-          className="btn btn-primary"
-          style={{
-            width: "100%",
-            justifyContent: "center",
-            fontSize: 14,
-            padding: "10px 14px",
-            opacity: busy ? 0.7 : 1,
-            cursor: busy ? "wait" : "pointer",
-          }}
-        >
+        </AuthField>
+        {error ? <AuthError>{error}</AuthError> : null}
+        <Button type="submit" disabled={busy} className="w-full">
           {busy ? "Signing in…" : "Sign in"}
-        </button>
-        <p
-          style={{
-            fontSize: 12,
-            color: "var(--muted)",
-            margin: "14px 0 0",
-            textAlign: "center",
-          }}
-        >
+        </Button>
+        <p className="mt-4 text-center text-[12px] text-muted">
           Forgot your password?{" "}
           <a
-            href={`${import.meta.env.VITE_KEYCLOAK_ISSUER ?? ""}/login-actions/reset-credentials?client_id=${import.meta.env.VITE_KEYCLOAK_CLIENT_ID ?? ""}`}
-            style={{ color: "var(--cobalt)", textDecoration: "none" }}
+            href={`${KEYCLOAK_ISSUER}/login-actions/reset-credentials?client_id=${KEYCLOAK_CLIENT_ID}`}
+            className="text-cobalt no-underline hover:underline"
           >
             Reset it →
           </a>
@@ -145,13 +122,8 @@ function LoginPage(): ReactNode {
   );
 }
 
-/** Only allow internal redirects; never let an attacker bounce us off-site. */
 function sanitizeRedirect(raw: string): string {
   if (!raw) return "/";
-  try {
-    if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
-  } catch {
-    /* fall through */
-  }
+  if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
   return "/";
 }

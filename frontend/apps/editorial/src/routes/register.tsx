@@ -4,18 +4,14 @@ import {
   useNavigate,
   useSearch,
 } from "@tanstack/react-router";
-import {
-  useEffect,
-  useState,
-  type FormEvent,
-  type ReactNode,
-} from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { Button, Input } from "@ajs/ui";
 import { useAuth } from "../auth/AuthContext";
 import {
+  AuthError,
+  AuthField,
   AuthLayout,
-  errorBoxStyle,
-  fieldStyle,
-  labelStyle,
+  PasswordField,
 } from "../components/AuthLayout";
 
 export const Route = createFileRoute("/register")({
@@ -25,7 +21,7 @@ export const Route = createFileRoute("/register")({
   }),
 });
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "";
 
 interface RegisterPayload {
   email: string;
@@ -91,14 +87,10 @@ function RegisterPage(): ReactNode {
       return;
     }
 
-    // Auto-login the freshly-created account so the user lands signed in.
     try {
       await loginWithPassword(payload.email, payload.password);
       void navigate({ to: redirectTo as never, replace: true });
     } catch (err) {
-      // Account was created but auto-login failed — send them to /login
-      // with their email pre-filled would require state plumbing; for now
-      // just give a friendly message.
       setError(
         err instanceof Error
           ? `Account created, but sign-in failed: ${err.message}`
@@ -118,8 +110,10 @@ function RegisterPage(): ReactNode {
           Already have an account?{" "}
           <Link
             to="/login"
-            search={{ redirect: redirectTo === "/" ? undefined : redirectTo }}
-            style={{ color: "var(--cobalt)", textDecoration: "none", fontWeight: 500 }}
+            search={{
+              redirect: redirectTo === "/" ? undefined : redirectTo,
+            }}
+            className="font-medium text-cobalt no-underline hover:underline"
           >
             Sign in →
           </Link>
@@ -127,17 +121,9 @@ function RegisterPage(): ReactNode {
       }
     >
       <form onSubmit={handleSubmit} noValidate>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 12,
-            marginBottom: 14,
-          }}
-        >
-          <div>
-            <label htmlFor="given" style={labelStyle}>First name</label>
-            <input
+        <div className="grid grid-cols-2 gap-3">
+          <AuthField label="First name" htmlFor="given">
+            <Input
               id="given"
               name="given_name"
               autoComplete="given-name"
@@ -145,12 +131,10 @@ function RegisterPage(): ReactNode {
               onChange={(e) => setGivenName(e.target.value)}
               required
               maxLength={80}
-              style={fieldStyle}
             />
-          </div>
-          <div>
-            <label htmlFor="family" style={labelStyle}>Last name</label>
-            <input
+          </AuthField>
+          <AuthField label="Last name" htmlFor="family">
+            <Input
               id="family"
               name="family_name"
               autoComplete="family-name"
@@ -158,13 +142,11 @@ function RegisterPage(): ReactNode {
               onChange={(e) => setFamilyName(e.target.value)}
               required
               maxLength={80}
-              style={fieldStyle}
             />
-          </div>
+          </AuthField>
         </div>
-        <div style={{ marginBottom: 14 }}>
-          <label htmlFor="email" style={labelStyle}>Email</label>
-          <input
+        <AuthField label="Email" htmlFor="email">
+          <Input
             id="email"
             name="email"
             type="email"
@@ -172,63 +154,41 @@ function RegisterPage(): ReactNode {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={fieldStyle}
             placeholder="you@example.org"
           />
-        </div>
-        <div style={{ marginBottom: 14 }}>
-          <label htmlFor="password" style={labelStyle}>Password</label>
-          <input
+        </AuthField>
+        <AuthField
+          label="Password"
+          htmlFor="password"
+          hint="At least 8 characters."
+        >
+          <PasswordField
             id="password"
             name="new-password"
-            type="password"
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={8}
-            style={fieldStyle}
-            placeholder="At least 8 characters"
+            placeholder="••••••••"
           />
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <label htmlFor="confirm" style={labelStyle}>Confirm password</label>
-          <input
+        </AuthField>
+        <AuthField label="Confirm password" htmlFor="confirm">
+          <PasswordField
             id="confirm"
-            type="password"
             autoComplete="new-password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             required
             minLength={8}
-            style={fieldStyle}
+            placeholder="••••••••"
           />
-        </div>
-        {error ? <div style={errorBoxStyle}>{error}</div> : null}
-        <button
-          type="submit"
-          disabled={busy}
-          className="btn btn-primary"
-          style={{
-            width: "100%",
-            justifyContent: "center",
-            fontSize: 14,
-            padding: "10px 14px",
-            opacity: busy ? 0.7 : 1,
-            cursor: busy ? "wait" : "pointer",
-          }}
-        >
+        </AuthField>
+        {error ? <AuthError>{error}</AuthError> : null}
+        <Button type="submit" disabled={busy} className="w-full">
           {busy ? "Creating account…" : "Create account"}
-        </button>
-        <p
-          style={{
-            fontSize: 11.5,
-            color: "var(--muted)",
-            margin: "14px 0 0",
-            lineHeight: 1.55,
-            textAlign: "center",
-          }}
-        >
+        </Button>
+        <p className="mt-4 text-center text-[11.5px] leading-[1.55] text-muted">
           By creating an account you agree to be contacted about submissions
           you make to the journal.
         </p>
