@@ -31,6 +31,11 @@ public final class DecisionEmailPlan {
         AUTHOR_KEYS.put(DecisionType.BACK_FROM_PRODUCTION, "decision.backFromProduction.notifyAuthor");
         AUTHOR_KEYS.put(DecisionType.BACK_FROM_COPYEDITING, "decision.backFromCopyediting.notifyAuthor");
         AUTHOR_KEYS.put(DecisionType.EXTERNAL_REVIEW, "decision.generic.notifyAuthor");
+        AUTHOR_KEYS.put(DecisionType.REVERT_DECLINE, "decision.revertDecline.notifyAuthor");
+        AUTHOR_KEYS.put(DecisionType.REVERT_INITIAL_DECLINE, "decision.revertInitialDecline.notifyAuthor");
+        // Recommendations are advisory and don't notify the author —
+        // intentionally absent from this map. The deciding editor sees them
+        // through the in-app feed but no auto-email is sent.
     }
 
     private DecisionEmailPlan() {}
