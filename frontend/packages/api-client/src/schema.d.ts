@@ -474,8 +474,25 @@ export interface paths {
         /** List the decision history for a submission */
         get: operations["history"];
         put?: never;
-        /** Take a decision (workflow transition) */
+        /** Take a decision; optional emailOverrides bypass the auto-render path */
         post: operations["take"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/submissions/{submissionId}/decisions/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview a decision without committing — returns the predicted outcome and email steps */
+        post: operations["preview"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1026,6 +1043,22 @@ export interface paths {
         put?: never;
         /** Manually enqueue a deposit attempt to CrossRef or ORCID */
         post: operations["enqueue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/email-templates/{key}/render": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["render"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2667,12 +2700,21 @@ export interface components {
             sizeBytes?: number;
             originalFilename?: string;
         };
+        DecisionEmailOverride: {
+            stepId: string;
+            templateKey: string;
+            skipped?: boolean;
+            subject?: string;
+            body?: string;
+            recipientUserIds?: number[];
+        };
         TakeDecisionRequest: {
             /** @enum {string} */
             type: "EXTERNAL_REVIEW" | "SKIP_REVIEW" | "INITIAL_DECLINE" | "ACCEPT" | "DECLINE" | "REQUEST_REVISIONS" | "RESUBMIT_FOR_REVIEW" | "NEW_REVIEW_ROUND" | "CANCEL_REVIEW_ROUND" | "SEND_TO_PRODUCTION" | "BACK_FROM_PRODUCTION" | "BACK_FROM_COPYEDITING";
             /** Format: int64 */
             reviewRoundId?: number;
             summary?: string;
+            emailOverrides?: components["schemas"]["DecisionEmailOverride"][];
         };
         EditorialDecisionResponse: {
             /** Format: int64 */
@@ -2698,6 +2740,42 @@ export interface components {
             version?: number;
             /** Format: date-time */
             updatedAt?: string;
+        };
+        DecisionPreviewRequest: {
+            /** @enum {string} */
+            type: "EXTERNAL_REVIEW" | "SKIP_REVIEW" | "INITIAL_DECLINE" | "ACCEPT" | "DECLINE" | "REQUEST_REVISIONS" | "RESUBMIT_FOR_REVIEW" | "NEW_REVIEW_ROUND" | "CANCEL_REVIEW_ROUND" | "SEND_TO_PRODUCTION" | "BACK_FROM_PRODUCTION" | "BACK_FROM_COPYEDITING";
+            /** Format: int64 */
+            reviewRoundId?: number;
+        };
+        DecisionEmailPreview: {
+            stepId?: string;
+            label?: string;
+            templateKey?: string;
+            locale?: string;
+            templateConfigured?: boolean;
+            canSkip?: boolean;
+            recipients?: components["schemas"]["DecisionEmailRecipient"][];
+            subject?: string;
+            body?: string;
+        };
+        DecisionEmailRecipient: {
+            /** Format: int64 */
+            userId?: number;
+            email?: string;
+            fullName?: string;
+            locale?: string;
+            role?: string;
+        };
+        DecisionPreviewResponse: {
+            /** @enum {string} */
+            type?: "EXTERNAL_REVIEW" | "SKIP_REVIEW" | "INITIAL_DECLINE" | "ACCEPT" | "DECLINE" | "REQUEST_REVISIONS" | "RESUBMIT_FOR_REVIEW" | "NEW_REVIEW_ROUND" | "CANCEL_REVIEW_ROUND" | "SEND_TO_PRODUCTION" | "BACK_FROM_PRODUCTION" | "BACK_FROM_COPYEDITING";
+            /** @enum {string} */
+            previousStage?: "SUBMISSION" | "EXTERNAL_REVIEW" | "EDITING" | "PRODUCTION" | "PUBLISHED";
+            /** @enum {string} */
+            newStage?: "SUBMISSION" | "EXTERNAL_REVIEW" | "EDITING" | "PRODUCTION" | "PUBLISHED";
+            /** @enum {string} */
+            newStatus?: "DRAFT" | "QUEUED" | "PUBLISHED" | "DECLINED" | "SCHEDULED";
+            emailSteps?: components["schemas"]["DecisionEmailPreview"][];
         };
         ReorderRequest: {
             orderedIds: number[];
@@ -2811,6 +2889,19 @@ export interface components {
             completedAt?: string;
             errorMessage?: string;
         };
+        EmailTemplateRenderRequest: {
+            locale: string;
+            vars?: {
+                [key: string]: Record<string, never>;
+            };
+        };
+        EmailTemplateRenderResponse: {
+            key?: string;
+            locale?: string;
+            configured?: boolean;
+            subject?: string;
+            body?: string;
+        };
         RegisterRequest: {
             email: string;
             password: string;
@@ -2835,16 +2926,16 @@ export interface components {
             sort?: string[];
         };
         PageUserResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
+            /** Format: int64 */
+            totalElements?: number;
             sort?: components["schemas"]["SortObject"];
             pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["UserResponse"][];
@@ -2869,16 +2960,16 @@ export interface components {
             empty?: boolean;
         };
         PageSubmissionResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
+            /** Format: int64 */
+            totalElements?: number;
             sort?: components["schemas"]["SortObject"];
             pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["SubmissionResponse"][];
@@ -4446,6 +4537,32 @@ export interface operations {
             };
         };
     };
+    preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submissionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DecisionPreviewResponse"];
+                };
+            };
+        };
+    };
     list_4: {
         parameters: {
             query?: never;
@@ -5413,6 +5530,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["DepositSummary"];
+                };
+            };
+        };
+    };
+    render: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailTemplateRenderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EmailTemplateRenderResponse"];
                 };
             };
         };
