@@ -51,6 +51,8 @@ export { Sparkline } from "./Sparkline";
 export type { SparklineProps } from "./Sparkline";
 export { UtilityBar } from "./UtilityBar";
 export type { UtilityBarProps } from "./UtilityBar";
+export { Fleuron } from "./Fleuron";
+export type { FleuronProps } from "./Fleuron";
 export { OrcidBadge } from "./OrcidBadge";
 export type { OrcidBadgeProps } from "./OrcidBadge";
 export { DoiChip } from "./DoiChip";
