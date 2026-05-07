@@ -46,23 +46,49 @@ public class ArticleStatsService {
             String search,
             String locale,
             int page,
-            int size) {
+            int size,
+            String sort,
+            String dir) {
         int safePage = Math.max(0, page);
         int safeSize = Math.max(1, Math.min(size, 200));
         String needle = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
 
         List<PublicationMetricsRange> totals = metrics.articleTotalsForRange(from, to);
 
+        Comparator<ArticleStatsRow> comparator = comparatorFor(sort);
+        boolean descending = dir == null || !"asc".equalsIgnoreCase(dir);
+        if (descending) comparator = comparator.reversed();
+
         List<ArticleStatsRow> all = totals.stream()
                 .map(t -> enrich(t, locale))
                 .filter(row -> matches(row, needle))
-                .sorted(Comparator.comparingLong(ArticleStatsRow::total).reversed())
+                .sorted(comparator)
                 .toList();
 
         int totalRows = all.size();
         int fromIdx = Math.min(safePage * safeSize, totalRows);
         int toIdx = Math.min(fromIdx + safeSize, totalRows);
         return new ArticleStatsPage(all.subList(fromIdx, toIdx), totalRows, safePage, safeSize);
+    }
+
+    private static Comparator<ArticleStatsRow> comparatorFor(String sort) {
+        if (sort == null) return Comparator.comparingLong(ArticleStatsRow::total);
+        return switch (sort.toLowerCase(Locale.ROOT)) {
+            case "abstract", "abstractviews" ->
+                    Comparator.comparingLong(ArticleStatsRow::abstractViews);
+            case "file", "fileviews" ->
+                    Comparator.comparingLong(ArticleStatsRow::fileViews);
+            case "pdf", "pdfviews" ->
+                    Comparator.comparingLong(ArticleStatsRow::pdfViews);
+            case "html", "htmlviews" ->
+                    Comparator.comparingLong(ArticleStatsRow::htmlViews);
+            case "other", "otherviews" ->
+                    Comparator.comparingLong(ArticleStatsRow::otherViews);
+            case "title" -> Comparator.comparing(
+                    ArticleStatsRow::title,
+                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+            default -> Comparator.comparingLong(ArticleStatsRow::total);
+        };
     }
 
     private ArticleStatsRow enrich(PublicationMetricsRange totals, String locale) {

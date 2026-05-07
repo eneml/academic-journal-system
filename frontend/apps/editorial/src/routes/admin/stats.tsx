@@ -14,7 +14,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Calendar, Download, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, Calendar, Download, Search } from "lucide-react";
 import { Button, Input } from "@ajs/ui";
 import { useAuth } from "../../auth/AuthContext";
 import { isEditorial } from "../../auth/roles";
@@ -59,6 +59,16 @@ interface PageResp {
   size: number;
 }
 
+type SortKey =
+  | "title"
+  | "abstract"
+  | "file"
+  | "pdf"
+  | "html"
+  | "other"
+  | "total";
+type SortDir = "asc" | "desc";
+
 const PAGE_SIZE = 30;
 
 function StatsPage(): ReactNode {
@@ -101,6 +111,18 @@ function StatsAdmin(): ReactNode {
   const [loadingTable, setLoadingTable] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
+  const [sortKey, setSortKey] = useState<SortKey>("total");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  function toggleSort(key: SortKey): void {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+    setPage(0);
+  }
 
   // KPI overview — fired once on mount.
   useEffect(() => {
@@ -129,7 +151,7 @@ function StatsAdmin(): ReactNode {
     };
   }, [from, to, granularity]);
 
-  // Table — re-fires on range / search / page change.
+  // Table — re-fires on range / search / page / sort change.
   useEffect(() => {
     let cancelled = false;
     setLoadingTable(true);
@@ -138,6 +160,8 @@ function StatsAdmin(): ReactNode {
       to,
       page: String(page),
       size: String(PAGE_SIZE),
+      sort: sortKey,
+      dir: sortDir,
     });
     if (search.trim()) qs.set("q", search.trim());
     void (async () => {
@@ -152,7 +176,7 @@ function StatsAdmin(): ReactNode {
     return () => {
       cancelled = true;
     };
-  }, [from, to, search, page]);
+  }, [from, to, search, page, sortKey, sortDir]);
 
   const totalRows = details?.totalRows ?? 0;
   const lastPage = Math.max(0, Math.ceil(totalRows / PAGE_SIZE) - 1);
@@ -276,36 +300,32 @@ function StatsAdmin(): ReactNode {
             </span>
           </div>
 
-          <div className="border-b border-border px-5 py-3">
-            <div className="relative max-w-md">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted" />
-              <Input
-                value={search}
-                onChange={(e) => {
-                  setPage(0);
-                  setSearch(e.target.value);
-                }}
-                placeholder="Search by title, author and ID"
-                className="pl-9"
-              />
-            </div>
-          </div>
-
-          {loadingTable ? (
+          {loadingTable && (!details || details.rows.length === 0) ? (
             <div className="grid h-[200px] place-items-center text-[13px] text-muted">
               Loading…
             </div>
-          ) : !details || details.rows.length === 0 ? (
-            <div className="px-5 py-10">
-              <EmptyState
-                icon="inbox"
-                title="No articles match"
-                description="Try widening the date range or clearing the search."
-              />
-            </div>
           ) : (
             <>
-              <DetailsTable rows={details.rows} />
+              <DetailsTable
+                rows={details?.rows ?? []}
+                search={search}
+                onSearch={(s) => {
+                  setPage(0);
+                  setSearch(s);
+                }}
+                sortKey={sortKey}
+                sortDir={sortDir}
+                onSort={toggleSort}
+              />
+              {!details || details.rows.length === 0 ? (
+                <div className="border-t border-border px-5 py-10">
+                  <EmptyState
+                    icon="inbox"
+                    title="No articles match"
+                    description="Try widening the date range or clearing the search."
+                  />
+                </div>
+              ) : null}
               <Pagination
                 page={page}
                 lastPage={lastPage}
@@ -401,23 +421,84 @@ function prettyKey(k: string): string {
 // Table
 // ----------------------------------------------------------------------
 
-function DetailsTable({ rows }: { rows: Row[] }): ReactNode {
+function DetailsTable({
+  rows,
+  search,
+  onSearch,
+  sortKey,
+  sortDir,
+  onSort,
+}: {
+  rows: Row[];
+  search: string;
+  onSearch: (s: string) => void;
+  sortKey: SortKey;
+  sortDir: SortDir;
+  onSort: (k: SortKey) => void;
+}): ReactNode {
   return (
-    <div className="grid grid-cols-[1fr_120px_120px_70px_70px_70px_80px] gap-3 px-5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">
-      <div className="border-b border-border py-2.5">Title</div>
-      <div className="border-b border-border py-2.5 text-right">
-        Abstract views
+    <div className="grid grid-cols-[1fr_120px_120px_70px_70px_70px_80px] gap-3 px-5">
+      <div className="border-b border-border py-2.5">
+        <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+          Title
+        </div>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted" />
+          <Input
+            value={search}
+            onChange={(e) => onSearch(e.target.value)}
+            placeholder="Search by title, author and ID"
+            className="h-8 pl-8 text-[12px]"
+          />
+        </div>
       </div>
-      <div className="border-b border-border py-2.5 text-right">File views</div>
-      <div className="border-b border-border py-2.5 text-right">PDF</div>
-      <div className="border-b border-border py-2.5 text-right">HTML</div>
-      <div className="border-b border-border py-2.5 text-right">Other</div>
-      <div className="border-b border-border py-2.5 text-right">Total</div>
+      <SortHeader k="abstract" label="Abstract Views" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+      <SortHeader k="file" label="File Views" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+      <SortHeader k="pdf" label="PDF" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+      <SortHeader k="html" label="HTML" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+      <SortHeader k="other" label="Other" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
+      <SortHeader k="total" label="Total" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
 
       {rows.map((r) => (
         <RowCells key={r.publicationId} row={r} />
       ))}
     </div>
+  );
+}
+
+function SortHeader({
+  k,
+  label,
+  sortKey,
+  sortDir,
+  onSort,
+}: {
+  k: SortKey;
+  label: string;
+  sortKey: SortKey;
+  sortDir: SortDir;
+  onSort: (k: SortKey) => void;
+}): ReactNode {
+  const active = sortKey === k;
+  const Icon = active && sortDir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(k)}
+      aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
+      className={cn(
+        "flex h-full items-end justify-end gap-1 self-stretch border-b border-border py-2.5 text-right text-[10.5px] font-semibold uppercase tracking-[0.08em] transition-colors",
+        active ? "text-fg" : "text-muted hover:text-fg-2",
+      )}
+    >
+      <span>{label}</span>
+      <Icon
+        className={cn(
+          "size-3 shrink-0 transition-opacity",
+          active ? "opacity-100" : "opacity-30",
+        )}
+      />
+    </button>
   );
 }
 

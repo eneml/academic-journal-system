@@ -42,7 +42,9 @@ class ArticleStatsController {
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "en") String locale,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "30") int size) {
-        return service.articles(from, to, q, locale, page, size);
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(defaultValue = "total") String sort,
+            @RequestParam(defaultValue = "desc") String dir) {
+        return service.articles(from, to, q, locale, page, size, sort, dir);
     }
 }
