@@ -13,6 +13,9 @@ public record AnnouncementUpsertRequest(
         String urlPath,
         Instant dateExpires,
         Boolean pinned,
-        Boolean visible
+        Boolean visible,
+        String ctaLabel,
+        String ctaUrl,
+        String guestEditors
 ) {
 }

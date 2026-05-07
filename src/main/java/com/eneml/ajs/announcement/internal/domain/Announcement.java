@@ -55,4 +55,13 @@ public class Announcement extends AuditableEntity {
 
     @Column(nullable = false)
     private boolean visible = true;
+
+    @Column(name = "cta_label", length = 64)
+    private String ctaLabel;
+
+    @Column(name = "cta_url", length = 512)
+    private String ctaUrl;
+
+    @Column(name = "guest_editors", columnDefinition = "text")
+    private String guestEditors;
 }
