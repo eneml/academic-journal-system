@@ -10,14 +10,12 @@ import {
   BadgeCheck,
   Bell,
   BookOpen,
-  ChevronDown,
   ChevronRight,
   FileText,
   Flag,
   Home,
   Inbox,
   Layers,
-  LogOut,
   Plus,
   Search,
   Settings,
@@ -32,13 +30,8 @@ import { api } from "../lib/api";
 import { cn } from "../lib/cn";
 import {
   Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
   LanguageSwitcher,
+  UserMenu as SharedUserMenu,
 } from "@ajs/ui";
 import { NotificationsBell } from "./NotificationsBell";
 
@@ -359,80 +352,35 @@ function SidebarLink({
 function UserBadge(): ReactNode {
   const { user, roles, signOut } = useAuth();
 
-  if (!user) {
-    return (
-      <div className="p-3 border-t border-border">
-        <Button asChild className="w-full">
-          <Link to="/login" search={{ redirect: undefined }}>Sign in</Link>
-        </Button>
-      </div>
-    );
-  }
-
-  const given = (user.profile.given_name as string | undefined) ?? "";
-  const family = (user.profile.family_name as string | undefined) ?? "";
+  const given = (user?.profile.given_name as string | undefined) ?? "";
+  const family = (user?.profile.family_name as string | undefined) ?? "";
   const username =
-    (user.profile.preferred_username as string | undefined) ?? "user";
-  const email = (user.profile.email as string | undefined) ?? username;
+    (user?.profile.preferred_username as string | undefined) ?? "user";
+  const email = (user?.profile.email as string | undefined) ?? username;
   const fullName = `${given} ${family}`.trim() || username;
   const initials = computeInitials(given, family, username);
-  const roleLabel = formatPrimaryRole(roles);
 
   return (
-    <div className="p-2 border-t border-border">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-bg-tint transition-colors text-left"
-          >
-            <span className="size-8 rounded-full bg-cobalt-soft text-cobalt-deep border border-cobalt/15 grid place-items-center font-semibold text-[11.5px] flex-none">
-              {initials}
-            </span>
-            <span className="flex-1 min-w-0">
-              <span className="block text-[12.5px] font-medium text-fg truncate">
-                {fullName}
-              </span>
-              <span className="block text-[10.5px] text-muted truncate">
-                {roleLabel}
-              </span>
-            </span>
-            <ChevronDown className="size-3.5 text-muted shrink-0" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" side="top" className="w-[228px]">
-          <DropdownMenuLabel>Signed in as</DropdownMenuLabel>
-          <div className="px-2.5 pb-2">
-            <div className="text-[12.5px] font-medium text-fg truncate">
-              {fullName}
-            </div>
-            <div className="text-[11px] text-muted truncate font-mono">
-              {email}
-            </div>
-          </div>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <Link to="/profile">
-              <UserCog />
-              Profile settings
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/notifications">
-              <Bell />
-              Notifications
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => void signOut()}
-            className="text-[#b91c1c] focus:text-[#b91c1c] focus:bg-[#fff5f5] [&_svg]:text-[#b91c1c]"
-          >
-            <LogOut />
-            Sign out
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+    <div className={user ? "p-2 border-t border-border" : "p-3 border-t border-border"}>
+      <SharedUserMenu
+        variant="badge"
+        user={
+          user
+            ? {
+                displayName: fullName,
+                email,
+                initials,
+                subtitle: formatPrimaryRole(roles),
+              }
+            : null
+        }
+        items={[
+          { type: "link", label: "Profile settings", href: "/profile", icon: UserCog },
+          { type: "link", label: "Notifications", href: "/notifications", icon: Bell },
+        ]}
+        onSignOut={() => void signOut()}
+        signInHref="/login"
+      />
     </div>
   );
 }

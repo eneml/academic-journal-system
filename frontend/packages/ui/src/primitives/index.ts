@@ -43,3 +43,5 @@ export {
 } from "./DropdownMenu";
 export { LanguageSwitcher } from "./LanguageSwitcher";
 export type { LanguageSwitcherProps } from "./LanguageSwitcher";
+export { UserMenu } from "./UserMenu";
+export type { UserMenuProps, UserMenuItem, UserMenuUser } from "./UserMenu";
