@@ -8,12 +8,14 @@ import { Button, CoverArt, Fleuron } from "@ajs/ui";
 import {
   fetchActiveSections,
   fetchAnnouncements,
+  fetchIndexingMemberships,
   fetchIssueTableOfContents,
   fetchIssues,
   fetchJournalConfig,
   fetchMasthead,
   fetchPublicationMetricsBatch,
   pickLocale,
+  type IndexingMembership,
   type PublicationMetrics,
   type PublicationSummary,
 } from "@/lib/api";
@@ -26,15 +28,15 @@ const NUMBER = new Intl.NumberFormat("en-US");
 const ISSN = process.env.NEXT_PUBLIC_JOURNAL_ISSN ?? null;
 
 export default async function HomePage(): Promise<ReactNode> {
-  const [config, issues, sections, masthead, announcements] = await Promise.all(
-    [
+  const [config, issues, sections, masthead, announcements, indexing] =
+    await Promise.all([
       fetchJournalConfig(),
       fetchIssues(),
       fetchActiveSections(),
       fetchMasthead(),
       fetchAnnouncements(1),
-    ],
-  );
+      fetchIndexingMemberships(),
+    ]);
 
   const locale = config?.defaultLocale ?? "en";
 
@@ -148,10 +150,7 @@ export default async function HomePage(): Promise<ReactNode> {
             </Link>
           </Panel>
           <Panel title="Indexed in">
-            {/* TODO(phase-F): wire to indexing_membership table (V128). */}
-            <p className="m-0 font-serif-body text-[13px] italic text-muted">
-              Indexing details coming soon.
-            </p>
+            <IndexingChips memberships={indexing ?? []} />
           </Panel>
         </div>
       </section>
@@ -162,14 +161,19 @@ export default async function HomePage(): Promise<ReactNode> {
             title={pickLocale(announcement.title, locale) || "Special call for papers"}
             body={pickLocale(announcement.body, locale)}
             dueAt={announcement.dateExpires}
-            ctaLabel="Submit a manuscript"
-            ctaHref="/for-authors"
+            ctaLabel={announcement.ctaLabel ?? "Submit a manuscript"}
+            ctaHref={announcement.ctaUrl ?? "/for-authors"}
+            guestEditors={announcement.guestEditors ?? null}
             locale={locale}
           />
         </section>
       ) : null}
 
-      <PublicFooter />
+      <PublicFooter
+        tagline={config?.tagline ?? null}
+        taglineOrnament={config?.taglineOrnament ?? null}
+        indexedIn={(indexing ?? []).map((m) => m.code)}
+      />
     </div>
   );
 }
@@ -558,6 +562,7 @@ function OpenCallCard({
   dueAt,
   ctaLabel,
   ctaHref,
+  guestEditors,
   locale,
 }: {
   title: string;
@@ -565,6 +570,7 @@ function OpenCallCard({
   dueAt: string | null;
   ctaLabel: string;
   ctaHref: string;
+  guestEditors: string | null;
   locale: string;
 }) {
   const dueLabel = dueAt
@@ -598,6 +604,11 @@ function OpenCallCard({
         {body ? (
           <p className="m-0 mt-2 max-w-[600px] font-serif-body text-[14px] italic leading-[1.55] text-[oklch(80%_0.02_270)]">
             {truncate(body, 220)}
+          </p>
+        ) : null}
+        {guestEditors ? (
+          <p className="m-0 mt-2 font-serif-body text-[12.5px] italic text-[oklch(70%_0.02_270)]">
+            Guest editors: {guestEditors}
           </p>
         ) : null}
       </div>
@@ -654,6 +665,34 @@ function Panel({ title, children }: { title: string; children: ReactNode }) {
     <div className="bg-paper p-7 lg:p-8">
       <div className="sc mb-3.5 text-cobalt">{title}</div>
       {children}
+    </div>
+  );
+}
+
+function IndexingChips({ memberships }: { memberships: IndexingMembership[] }): ReactNode {
+  if (memberships.length === 0) {
+    return (
+      <p className="m-0 font-serif-body text-[13px] italic text-muted">
+        Indexing details coming soon.
+      </p>
+    );
+  }
+  return (
+    <div className="flex flex-wrap gap-2">
+      {memberships.map((m) => (
+        <span
+          key={m.id}
+          className="chip"
+          style={{ height: 24 }}
+        >
+          {m.label}
+          {m.quartile ? (
+            <span className="ml-1.5 rounded-sm bg-amber-soft px-1 font-mono text-[9.5px] font-semibold text-amber-deep">
+              {m.quartile}
+            </span>
+          ) : null}
+        </span>
+      ))}
     </div>
   );
 }

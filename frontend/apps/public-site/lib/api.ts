@@ -13,11 +13,34 @@ const REVALIDATE_SECONDS = 60;
 
 export type JournalConfig = {
   name: Record<string, string>;
+  issnPrint: string | null;
+  issnOnline: string | null;
   defaultLocale: string;
   supportedLocales: string[];
   contactEmail: string | null;
   submissionsOpen: boolean;
+  acronym: string | null;
+  subtitle: Record<string, string>;
+  foundingYear: number | null;
+  frequency: string | null;
+  publisher: string | null;
+  countryOfPublication: string | null;
+  tagline: string | null;
+  taglineOrnament: string | null;
 };
+
+export type IndexingMembership = {
+  id: number;
+  code: string;
+  label: string;
+  url: string | null;
+  quartile: string | null;
+  sortOrder: number;
+  active: boolean;
+};
+
+export const fetchIndexingMemberships = () =>
+  getJson<IndexingMembership[]>(`/api/v1/journal/indexing`);
 
 export type SectionSummary = {
   id: number;
@@ -152,6 +175,9 @@ export type Announcement = {
   dateExpires: string | null;
   pinned: boolean;
   visible: boolean;
+  ctaLabel: string | null;
+  ctaUrl: string | null;
+  guestEditors: string | null;
 };
 
 export const fetchAnnouncements = (limit = 20) =>

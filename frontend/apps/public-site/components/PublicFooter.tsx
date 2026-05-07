@@ -39,12 +39,15 @@ const JOURNAL_NAME = process.env.NEXT_PUBLIC_JOURNAL_NAME ?? "The Academic Journ
 export interface PublicFooterProps {
   /** Optional Latin / motto line rendered with flanking rules. Hidden when null. */
   tagline?: string | null;
+  /** Optional decorative glyph rendered alongside the tagline strip (e.g. "❦"). */
+  taglineOrnament?: string | null;
   /** Optional indexing chips strip (rendered next to the journal blurb). */
   indexedIn?: string[];
 }
 
 export function PublicFooter({
   tagline = null,
+  taglineOrnament = null,
   indexedIn = [],
 }: PublicFooterProps = {}) {
   const year = new Date().getFullYear();
@@ -59,9 +62,14 @@ export function PublicFooter({
             aria-hidden
           />
           <span
-            className="font-sans text-[10.5px] font-semibold uppercase"
+            className="flex items-center gap-2 font-sans text-[10.5px] font-semibold uppercase"
             style={{ letterSpacing: "0.22em" }}
           >
+            {taglineOrnament ? (
+              <span aria-hidden className="text-[14px] text-[oklch(60%_0.02_270)]">
+                {taglineOrnament}
+              </span>
+            ) : null}
             {tagline}
           </span>
           <span
