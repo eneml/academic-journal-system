@@ -3,8 +3,10 @@ package com.eneml.ajs.editorial.internal.application;
 import com.eneml.ajs.editorial.api.DecisionType;
 import com.eneml.ajs.editorial.api.EditorialDecisionSummary;
 import com.eneml.ajs.editorial.api.EditorialLookup;
+import com.eneml.ajs.editorial.api.StageParticipantSummary;
 import com.eneml.ajs.editorial.internal.persistence.EditorialDecisionRepository;
 import com.eneml.ajs.editorial.internal.web.mapper.EditorialDecisionMapper;
+import com.eneml.ajs.submission.api.SubmissionStage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,10 +24,21 @@ class EditorialLookupAdapter implements EditorialLookup {
 
     private final EditorialDecisionRepository repository;
     private final EditorialDecisionMapper mapper;
+    private final StageAssignmentService stageAssignments;
 
     @Override
     public List<EditorialDecisionSummary> historyOf(Long submissionId) {
         return mapper.toSummaries(repository.findBySubmissionIdOrderByDateDecided(submissionId));
+    }
+
+    @Override
+    public List<StageParticipantSummary> participantsAt(Long submissionId, SubmissionStage stage) {
+        return stageAssignments.participantsAt(submissionId, stage);
+    }
+
+    @Override
+    public List<StageParticipantSummary> allParticipantsOf(Long submissionId) {
+        return stageAssignments.allParticipants(submissionId);
     }
 
     @Override
