@@ -86,4 +86,10 @@ public class JournalConfig extends AuditableEntity {
 
     @Column(name = "country_of_publication", length = 2)
     private String countryOfPublication;
+
+    @Column(name = "tagline", length = 120)
+    private String tagline;
+
+    @Column(name = "tagline_ornament", length = 8)
+    private String taglineOrnament;
 }

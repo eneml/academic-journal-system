@@ -22,6 +22,8 @@ public record JournalConfigResponse(
         String frequency,
         String publisher,
         String countryOfPublication,
+        String tagline,
+        String taglineOrnament,
         long version,
         Instant updatedAt
 ) {
