@@ -11,18 +11,20 @@ package com.eneml.ajs.metrics.api;
 public interface MetricsRecorder {
 
     /**
-     * Bump the view counter for the given publication. The publication's
-     * metrics row is created lazily on the first call.
+     * Bump the abstract-page view counter for the given publication. Bumps
+     * both the cumulative {@code publication_metrics} row and today's row
+     * in {@code publication_metric_daily}.
      */
     void recordView(long publicationId);
 
     /**
-     * Bump the download counter for the given publication.
+     * Bump the download counter for the given publication. The cumulative
+     * row is bumped under the catch-all {@code download_count}; the daily
+     * row is bumped under the column matching {@code format} so the admin
+     * Statistics page can break out PDF vs HTML vs other-format downloads.
      *
-     * @param galleyId galley whose underlying file the user is downloading;
-     *                 currently informational only (we don't break out
-     *                 per-galley counters yet) but reserved for future
-     *                 expansion.
+     * @param galleyId galley whose underlying file the user is downloading
+     * @param format   coarse format classification (caller derives from label)
      */
-    void recordDownload(long publicationId, long galleyId);
+    void recordDownload(long publicationId, long galleyId, FormatKind format);
 }

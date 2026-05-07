@@ -1,7 +1,9 @@
 package com.eneml.ajs.metrics.internal.application;
 
+import com.eneml.ajs.metrics.api.FormatKind;
 import com.eneml.ajs.metrics.api.MetricsRecorder;
 import com.eneml.ajs.metrics.internal.domain.PublicationMetrics;
+import com.eneml.ajs.metrics.internal.persistence.PublicationMetricDailyRepository;
 import com.eneml.ajs.metrics.internal.persistence.PublicationMetricsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +13,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 
 /**
  * Implements {@link MetricsRecorder}. Each bump is its own transaction
@@ -31,12 +35,14 @@ import java.time.Instant;
 class MetricsService implements MetricsRecorder {
 
     private final PublicationMetricsRepository repository;
+    private final PublicationMetricDailyRepository dailyRepository;
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordView(long publicationId) {
         try {
             bump(publicationId, Counter.VIEW);
+            bumpDaily(publicationId, "abstract");
         } catch (RuntimeException e) {
             // Never let a counter problem propagate to the page render.
             log.warn("Failed to record view for publication {}: {}",
@@ -46,13 +52,32 @@ class MetricsService implements MetricsRecorder {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void recordDownload(long publicationId, long galleyId) {
+    public void recordDownload(long publicationId, long galleyId, FormatKind format) {
         try {
             bump(publicationId, Counter.DOWNLOAD);
+            bumpDaily(publicationId, formatColumn(format));
         } catch (RuntimeException e) {
             log.warn("Failed to record download for publication {} galley {}: {}",
                     publicationId, galleyId, e.getMessage());
         }
+    }
+
+    private void bumpDaily(long publicationId, String column) {
+        LocalDate today = LocalDate.now(ZoneId.systemDefault());
+        try {
+            dailyRepository.bump(publicationId, today, column);
+        } catch (RuntimeException e) {
+            log.warn("Failed to bump daily counter for publication {} column {}: {}",
+                    publicationId, column, e.getMessage());
+        }
+    }
+
+    private static String formatColumn(FormatKind format) {
+        return switch (format) {
+            case PDF -> "pdf";
+            case HTML -> "html";
+            case OTHER -> "other";
+        };
     }
 
     private void bump(long publicationId, Counter counter) {

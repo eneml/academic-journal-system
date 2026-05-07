@@ -149,7 +149,14 @@ class PublicationController {
         // we want the counter even if the storage layer hiccups during URL
         // generation, since the user clicked download. Metrics service is
         // best-effort and swallows its own errors.
-        metricsRecorder.recordDownload(summary.id(), galleyId);
+        String label = galley.label() == null
+                ? null
+                : galley.label().getOrDefault(galley.locale(),
+                        galley.label().values().stream().findFirst().orElse(null));
+        metricsRecorder.recordDownload(
+                summary.id(),
+                galleyId,
+                com.eneml.ajs.metrics.api.FormatKind.classify(label));
         if (galley.remoteUrl() != null && !galley.remoteUrl().isBlank()) {
             return java.util.Map.of("url", galley.remoteUrl());
         }

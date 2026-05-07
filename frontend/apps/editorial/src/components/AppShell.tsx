@@ -164,6 +164,12 @@ const NAV_GROUPS: NavGroup[] = [
         when: isEditorial,
       },
       {
+        to: "/admin/stats/articles",
+        label: "Article statistics",
+        icon: FileText,
+        when: isEditorial,
+      },
+      {
         to: "/admin/audit-log",
         label: "Audit log",
         icon: ScrollText,
