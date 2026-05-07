@@ -430,6 +430,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/submissions/{submissionId}/participants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_2"];
+        put?: never;
+        post: operations["assign_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/submissions/{submissionId}/files": {
         parameters: {
             query?: never;
@@ -438,7 +454,7 @@ export interface paths {
             cookie?: never;
         };
         /** List files on a submission */
-        get: operations["list_2"];
+        get: operations["list_3"];
         put?: never;
         /** Upload a file (multipart) and attach to the submission */
         post: operations["upload"];
@@ -474,7 +490,7 @@ export interface paths {
             cookie?: never;
         };
         /** List authors on a submission */
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
         /** Add an author to the submission */
         post: operations["add"];
@@ -628,7 +644,7 @@ export interface paths {
             cookie?: never;
         };
         /** List galleys for a publication */
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
         /** Add a galley (PDF/HTML/JATS) to the publication */
         post: operations["add_1"];
@@ -730,7 +746,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
         post: operations["save"];
         delete?: never;
@@ -747,7 +763,7 @@ export interface paths {
             cookie?: never;
         };
         /** List sections (public) */
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
         /** Create a section */
         post: operations["create_1"];
@@ -799,7 +815,7 @@ export interface paths {
             cookie?: never;
         };
         /** List masthead entries (public, enriched with author info) */
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
         /** Add an entry to the masthead */
         post: operations["add_2"];
@@ -833,7 +849,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_9"];
         put?: never;
         post: operations["create_2"];
         delete?: never;
@@ -850,7 +866,7 @@ export interface paths {
             cookie?: never;
         };
         /** List genres (public) */
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
         /** Create a genre */
         post: operations["create_3"];
@@ -919,7 +935,7 @@ export interface paths {
             cookie?: never;
         };
         /** List all issues */
-        get: operations["list_10"];
+        get: operations["list_11"];
         put?: never;
         /** Create an issue */
         post: operations["create_4"];
@@ -1041,7 +1057,7 @@ export interface paths {
             cookie?: never;
         };
         /** List currently visible announcements (public) */
-        get: operations["list_11"];
+        get: operations["list_12"];
         put?: never;
         /** Post an announcement */
         post: operations["create_5"];
@@ -1083,6 +1099,22 @@ export interface paths {
         head?: never;
         /** Patch user preferences (locale, …) without resending the whole profile */
         patch: operations["updatePreferences"];
+        trace?: never;
+    };
+    "/api/v1/submissions/{submissionId}/participants/{assignmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["unassign"];
+        options?: never;
+        head?: never;
+        patch: operations["update_11"];
         trace?: never;
     };
     "/api/v1/issues/{id}/articles": {
@@ -1533,7 +1565,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_12"];
+        get: operations["list_13"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2575,6 +2607,34 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        AssignParticipantRequest: {
+            /** @enum {string} */
+            stage: "SUBMISSION" | "EXTERNAL_REVIEW" | "EDITING" | "PRODUCTION" | "PUBLISHED";
+            /** Format: int64 */
+            userId: number;
+            /** @enum {string} */
+            role: "EDITOR" | "SECTION_EDITOR" | "AUTHOR" | "PRODUCTION_STAFF";
+            canChangeMetadata?: boolean;
+            recommendOnly?: boolean;
+        };
+        StageParticipantSummary: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            submissionId?: number;
+            /** @enum {string} */
+            stage?: "SUBMISSION" | "EXTERNAL_REVIEW" | "EDITING" | "PRODUCTION" | "PUBLISHED";
+            /** Format: int64 */
+            userId?: number;
+            /** @enum {string} */
+            role?: "EDITOR" | "SECTION_EDITOR" | "AUTHOR" | "PRODUCTION_STAFF";
+            canChangeMetadata?: boolean;
+            recommendOnly?: boolean;
+            /** Format: date-time */
+            dateAssigned?: string;
+            /** Format: int64 */
+            assignedByUserId?: number;
+        };
         SubmissionFileResponse: {
             /** Format: int64 */
             id?: number;
@@ -2760,6 +2820,10 @@ export interface components {
         UserPreferencesPatch: {
             locale?: string;
         };
+        UpdateParticipantRequest: {
+            canChangeMetadata?: boolean;
+            recommendOnly?: boolean;
+        };
         IssueArticleOrderRequest: {
             order: number[];
         };
@@ -2775,12 +2839,12 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            sort?: components["schemas"]["SortObject"];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            sort?: components["schemas"]["SortObject"];
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["UserResponse"][];
@@ -2800,8 +2864,8 @@ export interface components {
             offset?: number;
         };
         SortObject: {
-            sorted?: boolean;
             unsorted?: boolean;
+            sorted?: boolean;
             empty?: boolean;
         };
         PageSubmissionResponse: {
@@ -2809,12 +2873,12 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            sort?: components["schemas"]["SortObject"];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            sort?: components["schemas"]["SortObject"];
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["SubmissionResponse"][];
@@ -4231,6 +4295,56 @@ export interface operations {
     };
     list_2: {
         parameters: {
+            query?: {
+                stage?: "SUBMISSION" | "EXTERNAL_REVIEW" | "EDITING" | "PRODUCTION" | "PUBLISHED";
+            };
+            header?: never;
+            path: {
+                submissionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StageParticipantSummary"][];
+                };
+            };
+        };
+    };
+    assign_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submissionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignParticipantRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StageParticipantSummary"];
+                };
+            };
+        };
+    };
+    list_3: {
+        parameters: {
             query?: never;
             header?: never;
             path: {
@@ -4332,7 +4446,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -4568,7 +4682,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -4733,7 +4847,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: {
                 page?: number;
@@ -4780,7 +4894,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_7: {
         parameters: {
             query?: {
                 includeInactive?: boolean;
@@ -4870,7 +4984,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query?: {
                 visibleOnly?: boolean;
@@ -4938,7 +5052,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_9: {
         parameters: {
             query?: {
                 includeInactive?: boolean;
@@ -4984,7 +5098,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_10: {
         parameters: {
             query?: {
                 enabledOnly?: boolean;
@@ -5096,7 +5210,7 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -5325,7 +5439,7 @@ export interface operations {
             };
         };
     };
-    list_11: {
+    list_12: {
         parameters: {
             query?: {
                 limit?: number;
@@ -5413,6 +5527,54 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["UserResponse"];
+                };
+            };
+        };
+    };
+    unassign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submissionId: number;
+                assignmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_11: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submissionId: number;
+                assignmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateParticipantRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StageParticipantSummary"];
                 };
             };
         };
@@ -6017,7 +6179,7 @@ export interface operations {
             };
         };
     };
-    list_12: {
+    list_13: {
         parameters: {
             query?: never;
             header?: never;

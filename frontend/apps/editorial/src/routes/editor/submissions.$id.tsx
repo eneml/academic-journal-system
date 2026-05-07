@@ -49,6 +49,12 @@ type Decision = components["schemas"]["EditorialDecisionResponse"];
 type UserSummary = components["schemas"]["UserResponse"];
 type Publication = components["schemas"]["PublicationResponse"];
 type AuditEntry = components["schemas"]["EventLogEntrySummary"];
+type Participant = components["schemas"]["StageParticipantSummary"];
+type StageRole = NonNullable<Participant["role"]>;
+type Stage = NonNullable<Participant["stage"]>;
+
+const STAGE_ROLES: StageRole[] = ["EDITOR", "SECTION_EDITOR", "AUTHOR", "PRODUCTION_STAFF"];
+const STAGE_ORDER: Stage[] = ["SUBMISSION", "EXTERNAL_REVIEW", "EDITING", "PRODUCTION", "PUBLISHED"];
 
 const DECISION_TYPES = [
   "EXTERNAL_REVIEW",
@@ -81,10 +87,11 @@ function EditorialSubmissionDetailPage(): ReactNode {
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [publications, setPublications] = useState<Publication[]>([]);
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [errored, setErrored] = useState(false);
 
   const reload = useCallback(async (): Promise<void> => {
-    const [s, a, f, r, d, p, log] = await Promise.all([
+    const [s, a, f, r, d, p, log, parts] = await Promise.all([
       api<Submission>(`/api/v1/submissions/${submissionId}`),
       api<AuthorRow[]>(`/api/v1/submissions/${submissionId}/authors`),
       api<FileRow[]>(`/api/v1/submissions/${submissionId}/files`),
@@ -92,6 +99,7 @@ function EditorialSubmissionDetailPage(): ReactNode {
       api<Decision[]>(`/api/v1/submissions/${submissionId}/decisions`),
       api<Publication[]>(`/api/v1/submissions/${submissionId}/publications`),
       api<AuditEntry[]>(`/api/v1/submissions/${submissionId}/event-log`),
+      api<Participant[]>(`/api/v1/submissions/${submissionId}/participants`),
     ]);
     if (!s) {
       setErrored(true);
@@ -105,6 +113,7 @@ function EditorialSubmissionDetailPage(): ReactNode {
     setDecisions(d ?? []);
     setPublications(p ?? []);
     setAuditLog(log ?? []);
+    setParticipants(parts ?? []);
   }, [submissionId]);
 
   useEffect(() => {
@@ -225,6 +234,13 @@ function EditorialSubmissionDetailPage(): ReactNode {
               onChanged={() => void reload()}
             />
           </div>
+          <div id="tab-participants" className="scroll-mt-44">
+            <ParticipantsCard
+              submissionId={submissionId}
+              participants={participants}
+              onChanged={() => void reload()}
+            />
+          </div>
           <div id="tab-history" className="scroll-mt-44">
             <AuditLogCard entries={auditLog} />
           </div>
@@ -254,7 +270,7 @@ function WorkflowTabStrip(): ReactNode {
     { id: "editing", label: "Editing", live: false },
     { id: "production", label: "Production", live: false },
     { id: "publication", label: "Publication", live: true },
-    { id: "participants", label: "Participants", live: false },
+    { id: "participants", label: "Participants", live: true },
     { id: "discussions", label: "Discussions", live: false },
     { id: "history", label: "History", live: true },
   ];
@@ -1410,3 +1426,302 @@ const btnSecondary = {
   fontSize: 12,
   cursor: "pointer",
 };
+
+interface ParticipantsCardProps {
+  submissionId: number;
+  participants: Participant[];
+  onChanged: () => void;
+}
+
+function ParticipantsCard({
+  submissionId,
+  participants,
+  onChanged,
+}: ParticipantsCardProps): ReactNode {
+  const [showForm, setShowForm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({
+    stage: "EXTERNAL_REVIEW" as Stage,
+    userId: "",
+    role: "EDITOR" as StageRole,
+    canChangeMetadata: true,
+    recommendOnly: false,
+  });
+  const [err, setErr] = useState<string | null>(null);
+
+  const grouped = STAGE_ORDER.map((stage) => ({
+    stage,
+    rows: participants.filter((p) => p.stage === stage),
+  })).filter((g) => g.rows.length > 0);
+
+  const submit = async (e: FormEvent): Promise<void> => {
+    e.preventDefault();
+    setErr(null);
+    const userIdNum = Number.parseInt(form.userId, 10);
+    if (!Number.isFinite(userIdNum) || userIdNum <= 0) {
+      setErr("User id must be a positive number.");
+      return;
+    }
+    setBusy(true);
+    const result = await api(
+      `/api/v1/submissions/${submissionId}/participants`,
+      {
+        method: "POST",
+        body: {
+          stage: form.stage,
+          userId: userIdNum,
+          role: form.role,
+          canChangeMetadata: form.canChangeMetadata,
+          recommendOnly: form.recommendOnly,
+        },
+      },
+    );
+    setBusy(false);
+    if (result == null) {
+      setErr("Could not assign — verify the user id and try again.");
+      return;
+    }
+    setShowForm(false);
+    setForm((f) => ({ ...f, userId: "" }));
+    onChanged();
+  };
+
+  const remove = async (assignmentId?: number): Promise<void> => {
+    if (assignmentId == null) return;
+    if (!window.confirm("Remove this participant from the stage?")) return;
+    setBusy(true);
+    await api(
+      `/api/v1/submissions/${submissionId}/participants/${assignmentId}`,
+      { method: "DELETE" },
+    );
+    setBusy(false);
+    onChanged();
+  };
+
+  return (
+    <Card>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 12,
+        }}
+      >
+        <h3
+          style={{
+            margin: 0,
+            fontSize: 14,
+            textTransform: "uppercase",
+            letterSpacing: 1,
+          }}
+        >
+          Participants
+        </h3>
+        <button
+          type="button"
+          onClick={() => setShowForm((s) => !s)}
+          style={{ ...btnSecondary, fontSize: 12 }}
+        >
+          {showForm ? "Cancel" : "+ Assign"}
+        </button>
+      </div>
+
+      {showForm && (
+        <form
+          onSubmit={submit}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            gap: 8,
+            padding: 12,
+            border: "1px solid var(--border)",
+            borderRadius: 6,
+            background: "var(--bg-tint)",
+            marginBottom: 12,
+          }}
+        >
+          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12 }}>
+            <span style={{ fontWeight: 600 }}>Stage</span>
+            <select
+              value={form.stage}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, stage: e.target.value as Stage }))
+              }
+              style={{ padding: 6 }}
+            >
+              {STAGE_ORDER.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12 }}>
+            <span style={{ fontWeight: 600 }}>User id</span>
+            <input
+              type="number"
+              value={form.userId}
+              onChange={(e) => setForm((f) => ({ ...f, userId: e.target.value }))}
+              min={1}
+              style={{ padding: 6 }}
+            />
+          </label>
+          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12 }}>
+            <span style={{ fontWeight: 600 }}>Role</span>
+            <select
+              value={form.role}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, role: e.target.value as StageRole }))
+              }
+              style={{ padding: 6 }}
+            >
+              {STAGE_ROLES.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label
+            style={{
+              display: "inline-flex",
+              gap: 6,
+              alignItems: "center",
+              fontSize: 12,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={form.canChangeMetadata}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, canChangeMetadata: e.target.checked }))
+              }
+            />
+            <span>Can change metadata</span>
+          </label>
+          <label
+            style={{
+              display: "inline-flex",
+              gap: 6,
+              alignItems: "center",
+              fontSize: 12,
+              opacity: form.role === "SECTION_EDITOR" ? 1 : 0.5,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={form.recommendOnly}
+              disabled={form.role !== "SECTION_EDITOR"}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, recommendOnly: e.target.checked }))
+              }
+            />
+            <span>Recommend only</span>
+          </label>
+          <div
+            style={{
+              gridColumn: "1 / -1",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 8,
+              marginTop: 4,
+            }}
+          >
+            {err && (
+              <span style={{ color: "var(--danger)", fontSize: 12, marginRight: "auto" }}>
+                {err}
+              </span>
+            )}
+            <button
+              type="submit"
+              disabled={busy}
+              style={{
+                padding: "6px 14px",
+                border: "1px solid var(--cobalt)",
+                borderRadius: 4,
+                background: "var(--cobalt)",
+                color: "white",
+                fontFamily: "var(--sans)",
+                fontSize: 13,
+                cursor: busy ? "wait" : "pointer",
+              }}
+            >
+              {busy ? "Assigning…" : "Assign"}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {grouped.length === 0 ? (
+        <p style={{ color: "var(--muted)", fontSize: 13, margin: 0 }}>
+          No participants assigned yet.
+        </p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {grouped.map(({ stage, rows }) => (
+            <section key={stage}>
+              <h4
+                style={{
+                  margin: "0 0 6px 0",
+                  fontSize: 11,
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                  color: "var(--muted)",
+                }}
+              >
+                {stage}
+              </h4>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ textAlign: "left", color: "var(--muted)" }}>
+                    <th style={{ padding: "4px 0", width: "12%" }}>User</th>
+                    <th style={{ padding: "4px 0", width: "20%" }}>Role</th>
+                    <th style={{ padding: "4px 0", width: "20%" }}>Flags</th>
+                    <th style={{ padding: "4px 0", width: "20%" }}>Assigned</th>
+                    <th style={{ padding: "4px 0" }} />
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((p) => (
+                    <tr key={p.id} style={{ borderTop: "1px solid var(--border)" }}>
+                      <td style={{ padding: "6px 0", fontFamily: "var(--font-mono)" }}>
+                        #{p.userId}
+                      </td>
+                      <td style={{ padding: "6px 0" }}>{p.role}</td>
+                      <td style={{ padding: "6px 0", color: "var(--muted)" }}>
+                        {p.canChangeMetadata && "metadata · "}
+                        {p.recommendOnly && "recommend-only"}
+                        {!p.canChangeMetadata && !p.recommendOnly && "—"}
+                      </td>
+                      <td style={{ padding: "6px 0", color: "var(--muted)" }}>
+                        {p.dateAssigned
+                          ? new Date(p.dateAssigned).toLocaleDateString()
+                          : "—"}
+                      </td>
+                      <td style={{ padding: "6px 0", textAlign: "right" }}>
+                        <button
+                          type="button"
+                          onClick={() => void remove(p.id)}
+                          disabled={busy}
+                          style={{
+                            ...btnSecondary,
+                            padding: "4px 10px",
+                            fontSize: 12,
+                            color: "var(--danger)",
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
