@@ -40,6 +40,10 @@ class EditorialEventsListener {
         if (event.suppressDefaultEmail()) {
             return;
         }
+        // Recommendations are advisory only — no notification to the author.
+        if (isRecommendation(event.type())) {
+            return;
+        }
         SubmissionSummary submission = submissionLookup.findById(event.submissionId()).orElse(null);
         if (submission == null || submission.submittedByUserId() == null) {
             return;
@@ -137,6 +141,26 @@ class EditorialEventsListener {
                     NotificationType.DECISION_GENERIC, NotificationLevel.NORMAL,
                     CanonicalEmailTemplateKey.DECISION_GENERIC_NOTIFY_AUTHOR,
                     "Submission moved to external review");
+            case REVERT_DECLINE -> new Category(
+                    NotificationType.DECISION_GENERIC, NotificationLevel.NORMAL,
+                    CanonicalEmailTemplateKey.DECISION_REVERT_DECLINE_NOTIFY_AUTHOR,
+                    "Your manuscript is back under review");
+            case REVERT_INITIAL_DECLINE -> new Category(
+                    NotificationType.DECISION_GENERIC, NotificationLevel.NORMAL,
+                    CanonicalEmailTemplateKey.DECISION_REVERT_INITIAL_DECLINE_NOTIFY_AUTHOR,
+                    "Your manuscript is back in the queue");
+            // Recommendations bail out earlier — never reach categoryOf.
+            case RECOMMEND_ACCEPT, RECOMMEND_DECLINE,
+                 RECOMMEND_REVISIONS, RECOMMEND_RESUBMIT -> throw new IllegalStateException(
+                    "Recommendation types must be filtered before categoryOf");
+        };
+    }
+
+    private static boolean isRecommendation(DecisionType type) {
+        return switch (type) {
+            case RECOMMEND_ACCEPT, RECOMMEND_DECLINE,
+                 RECOMMEND_REVISIONS, RECOMMEND_RESUBMIT -> true;
+            default -> false;
         };
     }
 }

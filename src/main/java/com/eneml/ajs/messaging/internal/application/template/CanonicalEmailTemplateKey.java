@@ -56,6 +56,13 @@ public enum CanonicalEmailTemplateKey {
             "decision.generic.notifyAuthor",
             "Generic editorial update — used as the fallback key for novel decision types."),
 
+    DECISION_REVERT_DECLINE_NOTIFY_AUTHOR(
+            "decision.revertDecline.notifyAuthor",
+            "Sent to the author when a previous decline is reversed and the submission re-enters review."),
+    DECISION_REVERT_INITIAL_DECLINE_NOTIFY_AUTHOR(
+            "decision.revertInitialDecline.notifyAuthor",
+            "Sent to the author when a previous desk-rejection is reversed and the submission re-enters the queue."),
+
     REVIEW_REQUEST(
             "review.request",
             "Sent to a reviewer with the initial assignment invitation.");
