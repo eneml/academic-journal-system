@@ -1,5 +1,10 @@
 import { User } from "oidc-client-ts";
-import { createKeycloakUserManager, type KeycloakClientConfig } from "@ajs/auth";
+import {
+  clearSessionCookie,
+  createKeycloakUserManager,
+  setSessionCookie,
+  type KeycloakClientConfig,
+} from "@ajs/auth";
 
 // Pull config from Vite env. Throw early if anything's missing so misconfiguration
 // fails loudly instead of producing cryptic OIDC errors at the redirect step.
@@ -37,6 +42,7 @@ export async function signIn(): Promise<void> {
 }
 
 export async function signOut(): Promise<void> {
+  clearSessionCookie();
   await getUserManager().signoutRedirect();
 }
 
@@ -109,6 +115,7 @@ export async function loginWithPassword(
   await manager.storeUser(user);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (manager.events as any)?.load?.(user);
+  setSessionCookie();
   return user;
 }
 
