@@ -1,5 +1,6 @@
 package com.eneml.ajs.editorial.internal.engine;
 
+import com.eneml.ajs.editorial.api.DecisionEmailRequested;
 import com.eneml.ajs.editorial.api.DecisionMade;
 import com.eneml.ajs.editorial.api.DecisionType;
 import com.eneml.ajs.editorial.internal.domain.EditorialDecision;
@@ -55,6 +56,29 @@ public class WorkflowEngine {
         this.events = events;
     }
 
+    /**
+     * Computes the (newStage, newStatus) the engine would land on for the
+     * given decision without persisting anything. Used by the wizard preview
+     * so the editor can see the destination before committing.
+     */
+    @Transactional(readOnly = true)
+    public PredictedOutcome predict(Long submissionId, DecisionType type, DecisionContext context) {
+        DecisionHandler handler = handlers.get(type);
+        if (handler == null) {
+            throw new IllegalArgumentException("No handler registered for decision " + type);
+        }
+        SubmissionSummary current = submissionLookup.findById(submissionId)
+                .orElseThrow(() -> NotFoundException.of("Submission", submissionId));
+        DecisionOutcome outcome = handler.decide(current, context);
+        return new PredictedOutcome(current.stage(), outcome.newStage(), outcome.newStatus());
+    }
+
+    public record PredictedOutcome(
+            SubmissionStage previousStage,
+            SubmissionStage newStage,
+            com.eneml.ajs.submission.api.SubmissionStatus newStatus) {
+    }
+
     @Transactional
     public EditorialDecision handle(Long submissionId, DecisionType type, DecisionContext context) {
         DecisionHandler handler = handlers.get(type);
@@ -93,9 +117,25 @@ public class WorkflowEngine {
         row.setSummary(context.summary());
         EditorialDecision saved = decisionRepository.save(row);
 
-        events.publishEvent(DecisionMade.of(saved.getId(), submissionId, type,
-                saved.getPreviousStage(), saved.getNewStage(), saved.getNewStatus(),
-                context.actorUserId()));
+        boolean wizardOverrides = context.hasEmailOverrides();
+        DecisionMade event = wizardOverrides
+                ? DecisionMade.withSuppression(saved.getId(), submissionId, type,
+                        saved.getPreviousStage(), saved.getNewStage(), saved.getNewStatus(),
+                        context.actorUserId())
+                : DecisionMade.of(saved.getId(), submissionId, type,
+                        saved.getPreviousStage(), saved.getNewStage(), saved.getNewStatus(),
+                        context.actorUserId());
+        events.publishEvent(event);
+
+        if (wizardOverrides) {
+            for (DecisionContext.EmailOverride o : context.emailOverrides()) {
+                events.publishEvent(DecisionEmailRequested.of(
+                        saved.getId(), submissionId, type,
+                        o.recipientUserId(), o.templateKey(),
+                        o.subject(), o.body()));
+            }
+        }
+
         if (stageChanged) {
             events.publishEvent(SubmissionStageChanged.of(submissionId,
                     saved.getPreviousStage(), saved.getNewStage(), saved.getNewStatus()));
