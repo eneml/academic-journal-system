@@ -266,12 +266,12 @@ function UtilityRightSlot(): ReactNode {
     <>
       <LanguageSwitcher
         variant="inline"
-        onPick={(next) =>
-          api("/api/v1/users/me/preferences", {
+        onPick={async (next) => {
+          await api("/api/v1/users/me/preferences", {
             method: "PATCH",
             body: { locale: next },
-          })
-        }
+          });
+        }}
       />
       <span className="hidden h-3.5 w-px bg-border sm:inline-block" aria-hidden />
       <SharedUserMenu

@@ -10,9 +10,8 @@ import { useAuth } from "../../auth/AuthContext";
 import { api, type Page } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { EmptyState } from "../../components/EmptyState";
-import { StatusChip } from "../../components/StatusChip";
 import { SignInPrompt } from "../../components/SignInPrompt";
-import { Badge, Button, StageStepper } from "@ajs/ui";
+import { Button, StageStepper } from "@ajs/ui";
 
 const STAGE_KEYS = ["SUBMISSION", "EXTERNAL_REVIEW", "EDITING", "PRODUCTION", "PUBLISHED"] as const;
 
