@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { AuthProvider } from "../auth/AuthContext";
 import { AppShell } from "../components/AppShell";
 import { Toaster } from "../components/ui/sonner";
-import { TooltipProvider } from "../components/ui/tooltip";
+import { TooltipProvider } from "@ajs/ui";
 
 export const Route = createRootRoute({
   component: RootLayout,

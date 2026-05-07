@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { ChevronDown, Globe, Rss, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@ajs/ui";
 import { UserMenu } from "@/components/UserMenu";
 import { cn } from "@/lib/cn";
 

@@ -5,8 +5,9 @@ import {
   type ComponentPropsWithoutRef,
   type ElementRef,
   type HTMLAttributes,
+  type ReactElement,
 } from "react";
-import { cn } from "../../lib/cn";
+import { cn } from "../lib/cn";
 
 const DropdownMenu = DropdownMenuPrimitive.Root;
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
@@ -169,7 +170,7 @@ DropdownMenuSeparator.displayName =
 const DropdownMenuShortcut = ({
   className,
   ...props
-}: HTMLAttributes<HTMLSpanElement>): React.ReactElement => (
+}: HTMLAttributes<HTMLSpanElement>): ReactElement => (
   <span
     className={cn(
       "ml-auto text-xs tracking-widest text-muted font-mono",

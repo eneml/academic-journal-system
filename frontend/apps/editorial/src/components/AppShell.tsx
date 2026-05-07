@@ -31,8 +31,8 @@ import { useAuth } from "../auth/AuthContext";
 import { hasRole, isEditorial, type RealmRole } from "../auth/roles";
 import { api } from "../lib/api";
 import { cn } from "../lib/cn";
-import { Badge } from "./ui/badge";
-import { Button } from "./ui/button";
+import { Badge } from "@ajs/ui";
+import { Button } from "@ajs/ui";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,8 +40,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+} from "@ajs/ui";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@ajs/ui";
 import { NotificationsBell } from "./NotificationsBell";
 
 /**

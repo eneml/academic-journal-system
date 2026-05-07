@@ -10,7 +10,7 @@ import {
 } from "../auth/roles";
 import { api, type Page } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
-import { Button } from "../components/ui/button";
+import { Button } from "@ajs/ui";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,

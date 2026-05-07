@@ -5,8 +5,8 @@ import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
 import { CoverArt } from "@/components/CoverArt";
 import { Avatar } from "@/components/Avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@ajs/ui";
+import { Button } from "@ajs/ui";
 import {
   fetchActiveSections,
   fetchAnnouncements,

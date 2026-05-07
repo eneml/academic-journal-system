@@ -25,9 +25,9 @@ import { PageHeader } from "../../components/PageHeader";
 import { EmptyState } from "../../components/EmptyState";
 import { SignInPrompt } from "../../components/SignInPrompt";
 import { StatusChip } from "../../components/StatusChip";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
+import { Badge } from "@ajs/ui";
+import { Button } from "@ajs/ui";
+import { Input } from "@ajs/ui";
 
 type SubmissionResponse = components["schemas"]["SubmissionResponse"];
 type SectionResponse = components["schemas"]["SectionResponse"];

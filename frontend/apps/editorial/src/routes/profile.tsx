@@ -5,7 +5,7 @@ import { api } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
 import { Card } from "../components/Card";
 import { SignInPrompt } from "../components/SignInPrompt";
-import { Badge } from "../components/ui/badge";
+import { Badge } from "@ajs/ui";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,

@@ -14,8 +14,8 @@ import { cn } from "../lib/cn";
 import { PageHeader } from "../components/PageHeader";
 import { EmptyState } from "../components/EmptyState";
 import { SignInPrompt } from "../components/SignInPrompt";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
+import { Badge } from "@ajs/ui";
+import { Button } from "@ajs/ui";
 
 export const Route = createFileRoute("/notifications")({
   component: NotificationsPage,

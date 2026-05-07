@@ -9,7 +9,7 @@ import {
   Quote,
   Share2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@ajs/ui";
 import { cn } from "@/lib/cn";
 import type { Article } from "@/lib/api";
 import { pickLocale } from "@/lib/api";

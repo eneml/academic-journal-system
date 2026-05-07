@@ -4,7 +4,7 @@ import {
   type ComponentPropsWithoutRef,
   type ElementRef,
 } from "react";
-import { cn } from "../../lib/cn";
+import { cn } from "../lib/cn";
 
 const TooltipProvider = TooltipPrimitive.Provider;
 const Tooltip = TooltipPrimitive.Root;

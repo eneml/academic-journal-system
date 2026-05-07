@@ -10,14 +10,14 @@ import {
 } from "lucide-react";
 import type { components } from "@ajs/api-client/schema";
 import { api } from "../lib/api";
-import { Button } from "./ui/button";
+import { Button } from "@ajs/ui";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+} from "@ajs/ui";
 import { ScrollArea } from "./ui/scroll-area";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@ajs/ui";
 
 type Notification = components["schemas"]["NotificationResponse"];
 

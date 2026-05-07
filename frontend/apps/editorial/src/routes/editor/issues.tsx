@@ -26,9 +26,9 @@ import { api, apiMultipart } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { EmptyState } from "../../components/EmptyState";
 import { SignInPrompt } from "../../components/SignInPrompt";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
+import { Badge } from "@ajs/ui";
+import { Button } from "@ajs/ui";
+import { Input } from "@ajs/ui";
 import { Textarea } from "../../components/ui/textarea";
 import {
   Sheet,
@@ -38,7 +38,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "../../components/ui/sheet";
-import { Separator } from "../../components/ui/separator";
+import { Separator } from "@ajs/ui";
 
 export const Route = createFileRoute("/editor/issues")({
   component: IssuesAdminPage,

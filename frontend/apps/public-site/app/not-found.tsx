@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@ajs/ui";
 
 export default function NotFound(): ReactNode {
   return (

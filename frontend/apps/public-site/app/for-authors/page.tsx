@@ -2,8 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight, Download } from "lucide-react";
 import { StaticPage } from "@/components/StaticPage";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@ajs/ui";
+import { Badge } from "@ajs/ui";
 
 const EDITORIAL_APP_URL =
   process.env.NEXT_PUBLIC_EDITORIAL_APP_URL ?? "http://localhost:5173";

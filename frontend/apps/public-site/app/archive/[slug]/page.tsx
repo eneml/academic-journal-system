@@ -6,7 +6,7 @@ import { ChevronRight, Download, Rss } from "lucide-react";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
 import { CoverArt } from "@/components/CoverArt";
-import { Button } from "@/components/ui/button";
+import { Button } from "@ajs/ui";
 import {
   fetchActiveSections,
   fetchIssueById,

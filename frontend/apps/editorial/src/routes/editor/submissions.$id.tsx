@@ -33,8 +33,8 @@ import { Card } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
 import { SignInPrompt } from "../../components/SignInPrompt";
 import { StatusChip } from "../../components/StatusChip";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
+import { Badge } from "@ajs/ui";
+import { Button } from "@ajs/ui";
 
 export const Route = createFileRoute("/editor/submissions/$id")({
   component: EditorialSubmissionDetailPage,

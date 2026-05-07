@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { ChevronRight, History } from "lucide-react";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@ajs/ui";
 import { DoiChip } from "@/components/DoiChip";
 import { OrcidBadge } from "@/components/OrcidBadge";
 import { ArticleToolbar } from "@/components/ArticleToolbar";
