@@ -305,6 +305,14 @@ body {
   border-radius: 1px 1px 0 0;
 }
 
+/* Search highlight (server-rendered <mark> from ts_headline) */
+mark {
+  background: var(--amber-soft);
+  color: var(--amber-deep);
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
 /* Open Access badge */
 .oa-badge {
   display: inline-flex;

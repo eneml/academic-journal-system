@@ -72,9 +72,7 @@ export function SearchFilters({
 
   return (
     <aside>
-      <div className="mb-3.5 font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted">
-        Refine
-      </div>
+      <div className="sc mb-3.5 text-muted">Refine</div>
       {groups.map((group) => (
         <div key={group.title} className="mb-6">
           <div className="mb-2 text-[11.5px] font-semibold text-fg-2">

@@ -6,7 +6,6 @@ import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
 import { SearchInput } from "@/components/SearchInput";
 import { SearchFilters } from "@/components/SearchFilters";
-import { Badge } from "@ajs/ui";
 import { Button } from "@ajs/ui";
 import {
   fetchActiveSections,
@@ -192,7 +191,7 @@ export default async function SearchPage({
                     ) : null}
                     <div className="flex flex-wrap items-center gap-3.5 text-[11px] text-muted">
                       {hit.publication.accessStatus === "OPEN" ? (
-                        <Badge variant="mono">OA</Badge>
+                        <span className="oa-badge">OA</span>
                       ) : null}
                       <Link
                         href={articlePath(hit.publication)}
