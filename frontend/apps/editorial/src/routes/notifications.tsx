@@ -114,12 +114,20 @@ function NotificationsPage(): ReactNode {
               : "Notifications could not be loaded."
         }
         actions={
-          unread > 0 ? (
-            <Button variant="secondary" size="sm" onClick={markAll}>
-              <CheckCheck />
-              Mark all read
-            </Button>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            {unread > 0 && (
+              <Button variant="secondary" size="sm" onClick={markAll}>
+                <CheckCheck />
+                Mark all read
+              </Button>
+            )}
+            <Link
+              to="/preferences"
+              className="rounded-md border border-border px-3 py-1.5 text-[13px] hover:bg-bg-tint"
+            >
+              Preferences
+            </Link>
+          </div>
         }
       />
 
