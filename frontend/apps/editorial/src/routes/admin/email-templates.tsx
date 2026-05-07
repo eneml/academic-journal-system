@@ -34,6 +34,9 @@ const VARIABLE_HINTS: Record<string, string[]> = {
     "{{submission.title}}",
     "{{submission.url}}",
     "{{decision.type}}",
+    "{{sender.givenName}}",
+    "{{sender.familyName}}",
+    "{{sender.fullName}}",
   ],
   "review.": [
     "{{assignment.id}}",
@@ -45,6 +48,8 @@ const COMMON_HINTS = [
   "{{recipient.familyName}}",
   "{{recipient.fullName}}",
   "{{recipient.email}}",
+  "{{journal.name}}",
+  "{{journal.url}}",
 ];
 
 function EmailTemplatesAdminPage(): ReactNode {
