@@ -394,23 +394,25 @@ body {
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-size: 11px;
   font-weight: 500;
-  padding: 3px 7px;
+  padding: 3px 8px;
   border-radius: var(--r-1);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--fg-2);
   letter-spacing: 0.01em;
   font-family: var(--sans);
-  height: 20px;
+  height: 22px;
+  white-space: nowrap;
 }
-.chip-mono { font-family: var(--mono); font-size: 10.5px; font-weight: 500; }
+.chip-mono   { font-family: var(--mono); font-size: 10.5px; font-weight: 500; }
 .chip-cobalt { background: var(--cobalt-soft); border-color: oklch(85% 0.06 255); color: var(--cobalt-deep); }
-.chip-amber { background: var(--amber-soft); border-color: oklch(88% 0.08 80); color: var(--amber-deep); }
-.chip-green { background: oklch(94% 0.05 155); border-color: oklch(85% 0.08 155); color: oklch(40% 0.14 155); }
-.chip-red { background: oklch(95% 0.04 25); border-color: oklch(88% 0.08 25); color: oklch(45% 0.18 25); }
+.chip-amber  { background: var(--amber-soft);  border-color: oklch(88% 0.08 80);  color: var(--amber-deep); }
+.chip-green  { background: oklch(94% 0.05 155); border-color: var(--success-border); color: oklch(40% 0.14 155); }
+.chip-red    { background: oklch(95% 0.04 25);  border-color: var(--danger-border);  color: oklch(45% 0.18 25); }
+.chip-ink    { background: var(--ink); border-color: var(--ink); color: oklch(96% 0.005 90); }
 .chip-dot::before {
   content: "";
   width: 6px; height: 6px; border-radius: 50%;
