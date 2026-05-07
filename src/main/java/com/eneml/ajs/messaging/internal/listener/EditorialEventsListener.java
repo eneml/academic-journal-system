@@ -34,6 +34,12 @@ class EditorialEventsListener {
 
     @ApplicationModuleListener
     void on(DecisionMade event) {
+        // The wizard already let the editor compose the outgoing email and
+        // emits a DecisionEmailRequested per recipient — auto-rendering here
+        // would queue a duplicate.
+        if (event.suppressDefaultEmail()) {
+            return;
+        }
         SubmissionSummary submission = submissionLookup.findById(event.submissionId()).orElse(null);
         if (submission == null || submission.submittedByUserId() == null) {
             return;
