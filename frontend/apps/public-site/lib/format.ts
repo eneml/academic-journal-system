@@ -57,3 +57,9 @@ export function formatDate(iso: string | null | undefined): string {
     year: "numeric",
   });
 }
+
+export function truncate(s: string, max: number): string {
+  if (!s) return "";
+  if (s.length <= max) return s;
+  return s.slice(0, max).replace(/\s+\S*$/, "") + "…";
+}

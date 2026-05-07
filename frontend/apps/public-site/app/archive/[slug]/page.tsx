@@ -6,19 +6,21 @@ import { ChevronRight, Download, Rss } from "lucide-react";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
 import { CoverArt } from "@/components/CoverArt";
-import { Button } from "@ajs/ui";
+import { ArticleStats } from "@/components/ArticleStats";
+import { Badge, Button } from "@ajs/ui";
 import {
   fetchActiveSections,
   fetchIssueById,
   fetchIssueBySlug,
   fetchIssueTableOfContents,
   fetchJournalConfig,
+  fetchPublicationMetricsBatch,
   pickLocale,
   type IssueSummary,
   type PublicationSummary,
   type SectionSummary,
 } from "@/lib/api";
-import { articlePath, coverLabel } from "@/lib/format";
+import { articlePath, coverLabel, truncate } from "@/lib/format";
 import { SectionScrollSpy } from "@/components/SectionScrollSpy";
 
 export const revalidate = 60;
@@ -56,6 +58,9 @@ export default async function IssueDetailPage({ params }: Props): Promise<ReactN
   const locale = config?.defaultLocale ?? "en";
   const toc = (await fetchIssueTableOfContents(issue.id)) ?? [];
   const grouped = groupBySection(toc, sections ?? [], locale);
+  const metricsByPublication = await fetchPublicationMetricsBatch(
+    toc.map((p) => p.id),
+  );
 
   return (
     <div className="min-h-screen bg-bg">
@@ -189,41 +194,69 @@ export default async function IssueDetailPage({ params }: Props): Promise<ReactN
                 </span>
               </div>
               <ol className="m-0 p-0 list-none">
-                {g.items.map((p, i) => (
-                  <li
-                    key={p.id}
-                    className="grid grid-cols-[44px_1fr_110px] items-start gap-4 border-t border-border py-4"
-                  >
-                    <div className="pt-1 font-serif-display text-[12px] uppercase tracking-[0.04em] text-muted-2">
-                      {String(i + 1).padStart(2, "0")}
-                    </div>
-                    <div>
-                      <h4 className="m-0 mb-1 font-serif-display text-[17px] font-medium leading-[1.3]">
-                        <Link
-                          href={articlePath(p)}
-                          className="hover:text-cobalt-deep no-underline text-inherit"
-                        >
-                          {pickLocale(p.title, locale) || `Article ${p.id}`}
-                        </Link>
-                      </h4>
-                    </div>
-                    <div className="flex justify-end gap-2 pt-0.5">
-                      <Link
-                        href={articlePath(p)}
-                        className="text-[12px] text-cobalt hover:underline no-underline"
-                      >
-                        HTML
-                      </Link>
-                      <span className="text-border-strong">·</span>
-                      <Link
-                        href={`${articlePath(p)}#download`}
-                        className="text-[12px] text-cobalt hover:underline no-underline"
-                      >
-                        PDF
-                      </Link>
-                    </div>
-                  </li>
-                ))}
+                {g.items.map((p, i) => {
+                  const abstract = pickLocale(p.abstractText, locale);
+                  return (
+                    <li
+                      key={p.id}
+                      className="grid grid-cols-[44px_1fr] gap-5 border-t border-border py-5 md:grid-cols-[44px_1fr_auto]"
+                    >
+                      <div className="pt-1 font-serif-display text-[12px] uppercase tracking-[0.04em] text-muted-2">
+                        {String(i + 1).padStart(2, "0")}
+                      </div>
+                      <div>
+                        <div className="mb-2 flex items-center gap-2.5">
+                          <span className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-cobalt">
+                            {g.title}
+                          </span>
+                          {p.accessStatus === "OPEN" ? (
+                            <Badge variant="mono">OA</Badge>
+                          ) : null}
+                        </div>
+                        <h4 className="m-0 mb-1 font-serif-display text-[20px] font-medium leading-[1.3] tracking-[-0.005em]">
+                          <Link
+                            href={articlePath(p)}
+                            className="hover:text-cobalt-deep no-underline text-inherit"
+                          >
+                            {pickLocale(p.title, locale) || `Article ${p.id}`}
+                          </Link>
+                        </h4>
+                        {abstract ? (
+                          <p className="m-0 max-w-[640px] font-serif-body text-[14px] leading-[1.55] text-fg-2">
+                            {truncate(abstract, 220)}
+                          </p>
+                        ) : null}
+                        <div className="mt-3 flex flex-wrap items-center gap-3.5 text-[11px]">
+                          {p.urlPath ? (
+                            <span className="font-mono text-[10.5px] text-muted">
+                              /{p.urlPath}
+                            </span>
+                          ) : null}
+                          <span className="text-border-strong">·</span>
+                          <Link
+                            href={articlePath(p)}
+                            className="text-cobalt hover:underline no-underline"
+                          >
+                            HTML
+                          </Link>
+                          <Link
+                            href={`${articlePath(p)}#download`}
+                            className="text-cobalt hover:underline no-underline"
+                          >
+                            PDF
+                          </Link>
+                          <Link
+                            href={`${articlePath(p)}#cite`}
+                            className="text-cobalt hover:underline no-underline"
+                          >
+                            Cite
+                          </Link>
+                        </div>
+                      </div>
+                      <ArticleStats metrics={metricsByPublication.get(p.id)} />
+                    </li>
+                  );
+                })}
               </ol>
             </div>
           ))}

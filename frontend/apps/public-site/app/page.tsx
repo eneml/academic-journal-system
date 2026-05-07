@@ -5,6 +5,7 @@ import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
 import { CoverArt } from "@/components/CoverArt";
 import { Avatar } from "@/components/Avatar";
+import { ArticleStats } from "@/components/ArticleStats";
 import { Badge } from "@ajs/ui";
 import { Button } from "@ajs/ui";
 import {
@@ -14,10 +15,11 @@ import {
   fetchIssues,
   fetchJournalConfig,
   fetchMasthead,
+  fetchPublicationMetricsBatch,
   pickLocale,
   type PublicationSummary,
 } from "@/lib/api";
-import { articlePath, coverLabel, issueLabel, issuePath } from "@/lib/format";
+import { articlePath, coverLabel, issueLabel, issuePath, truncate } from "@/lib/format";
 
 export const revalidate = 60;
 
@@ -58,6 +60,9 @@ export default async function HomePage(): Promise<ReactNode> {
 
   const featured = pickFeatured(toc);
   const sectionsList = sections ?? [];
+  const featuredMetrics = await fetchPublicationMetricsBatch(
+    featured.map((p) => p.id),
+  );
   const visibleMasthead = (masthead ?? []).filter((m) => m.visible);
   const seniorEditors = visibleMasthead.filter((m) => {
     const role = pickLocale(m.roleLabel, locale).toLowerCase();
@@ -233,10 +238,11 @@ export default async function HomePage(): Promise<ReactNode> {
                   const sectionTitle =
                     sec ? pickLocale(sec.title, locale) || sec.code : "Article";
                   const abstract = pickLocale(p.abstractText, locale);
+                  const metrics = featuredMetrics.get(p.id);
                   return (
                     <li
                       key={p.id}
-                      className="grid grid-cols-[44px_1fr] gap-5 border-t border-border py-5"
+                      className="grid grid-cols-[44px_1fr] gap-5 border-t border-border py-5 md:grid-cols-[44px_1fr_auto]"
                     >
                       <div className="pt-1 font-serif-display text-[12px] uppercase tracking-[0.04em] text-muted-2">
                         {String(i + 1).padStart(2, "0")}
@@ -291,6 +297,7 @@ export default async function HomePage(): Promise<ReactNode> {
                           </Link>
                         </div>
                       </div>
+                      <ArticleStats metrics={metrics} />
                     </li>
                   );
                 })
@@ -300,7 +307,8 @@ export default async function HomePage(): Promise<ReactNode> {
         </section>
       ) : null}
 
-      <section className="mt-16 grid gap-px bg-border lg:grid-cols-3">
+      <section className="mt-16 px-6 lg:px-14">
+        <div className="mx-auto grid max-w-[1280px] gap-px bg-border lg:grid-cols-3">
         <Panel title="Scope">
           <p className="m-0 font-serif-body text-[14.5px] leading-[1.6] text-fg-2">
             We publish original research, systematic reviews, and methodological
@@ -355,6 +363,7 @@ export default async function HomePage(): Promise<ReactNode> {
             ))}
           </div>
         </Panel>
+        </div>
       </section>
 
       {announcement ? (
@@ -407,12 +416,6 @@ function pickFeatured(toc: PublicationSummary[]): PublicationSummary[] {
     if (out.length === 3) break;
   }
   return out.length ? out : toc.slice(0, 3);
-}
-
-function truncate(s: string, max: number): string {
-  if (!s) return "";
-  if (s.length <= max) return s;
-  return s.slice(0, max).replace(/\s+\S*$/, "") + "…";
 }
 
 function Stat({ value, label }: { value: string; label: string }) {

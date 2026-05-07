@@ -203,6 +203,30 @@ export const fetchArticleGalleys = (slugOrId: string) =>
     `/api/v1/articles/${encodeURIComponent(slugOrId)}/galleys`,
   );
 
+export type PublicationMetrics = {
+  publicationId: number;
+  viewCount: number;
+  downloadCount: number;
+  lastViewedAt: string | null;
+  lastDownloadedAt: string | null;
+};
+
+export const fetchPublicationMetrics = (publicationId: number) =>
+  getJson<PublicationMetrics>(
+    `/api/v1/publications/${publicationId}/metrics`,
+  );
+
+export const fetchPublicationMetricsBatch = async (
+  ids: readonly number[],
+): Promise<Map<number, PublicationMetrics>> => {
+  const results = await Promise.all(ids.map(fetchPublicationMetrics));
+  const out = new Map<number, PublicationMetrics>();
+  results.forEach((m, i) => {
+    if (m) out.set(ids[i]!, m);
+  });
+  return out;
+};
+
 export type AuthorProfile = {
   orcidUrl: string;
   givenName: string | null;
