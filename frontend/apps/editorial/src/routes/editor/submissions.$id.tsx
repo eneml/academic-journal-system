@@ -69,8 +69,45 @@ const DECISION_TYPES = [
   "SEND_TO_PRODUCTION",
   "BACK_FROM_PRODUCTION",
   "BACK_FROM_COPYEDITING",
+  "RECOMMEND_ACCEPT",
+  "RECOMMEND_DECLINE",
+  "RECOMMEND_REVISIONS",
+  "RECOMMEND_RESUBMIT",
+  "REVERT_DECLINE",
+  "REVERT_INITIAL_DECLINE",
 ] as const;
 type DecisionType = (typeof DECISION_TYPES)[number];
+
+const RECOMMEND_TYPES: DecisionType[] = [
+  "RECOMMEND_ACCEPT",
+  "RECOMMEND_DECLINE",
+  "RECOMMEND_REVISIONS",
+  "RECOMMEND_RESUBMIT",
+];
+
+function isRecommendation(t: DecisionType): boolean {
+  return RECOMMEND_TYPES.includes(t);
+}
+
+/**
+ * True when the current user's stage assignment for the submission's
+ * current stage carries {@code recommendOnly=true}. Section editors in
+ * that mode see only the four RECOMMEND_* options. Admins always see
+ * everything.
+ */
+function resolveRecommendOnly(
+  participants: Participant[],
+  meId: number | null,
+  stage: string | undefined,
+  roles: readonly string[],
+): boolean {
+  if (!meId || !stage) return false;
+  if (roles.includes("ADMIN")) return false;
+  const mine = participants.find(
+    (p) => p.userId === meId && p.stage === stage,
+  );
+  return mine?.recommendOnly === true;
+}
 
 const REVIEW_METHODS = ["OPEN", "ANONYMOUS", "DOUBLE_ANONYMOUS"] as const;
 type ReviewMethod = (typeof REVIEW_METHODS)[number];
@@ -88,10 +125,11 @@ function EditorialSubmissionDetailPage(): ReactNode {
   const [publications, setPublications] = useState<Publication[]>([]);
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [meId, setMeId] = useState<number | null>(null);
   const [errored, setErrored] = useState(false);
 
   const reload = useCallback(async (): Promise<void> => {
-    const [s, a, f, r, d, p, log, parts] = await Promise.all([
+    const [s, a, f, r, d, p, log, parts, me] = await Promise.all([
       api<Submission>(`/api/v1/submissions/${submissionId}`),
       api<AuthorRow[]>(`/api/v1/submissions/${submissionId}/authors`),
       api<FileRow[]>(`/api/v1/submissions/${submissionId}/files`),
@@ -100,6 +138,7 @@ function EditorialSubmissionDetailPage(): ReactNode {
       api<Publication[]>(`/api/v1/submissions/${submissionId}/publications`),
       api<AuditEntry[]>(`/api/v1/submissions/${submissionId}/event-log`),
       api<Participant[]>(`/api/v1/submissions/${submissionId}/participants`),
+      api<{ id?: number }>(`/api/v1/users/me`),
     ]);
     if (!s) {
       setErrored(true);
@@ -114,6 +153,7 @@ function EditorialSubmissionDetailPage(): ReactNode {
     setPublications(p ?? []);
     setAuditLog(log ?? []);
     setParticipants(parts ?? []);
+    setMeId(me?.id ?? null);
   }, [submissionId]);
 
   useEffect(() => {
@@ -226,6 +266,7 @@ function EditorialSubmissionDetailPage(): ReactNode {
               latestRound={latestRound}
               history={decisions}
               onChanged={() => void reload()}
+              recommendOnly={resolveRecommendOnly(participants, meId, submission.stage, roles)}
             />
           </div>
           <div id="tab-publication" className="scroll-mt-44">
@@ -1221,14 +1262,21 @@ function DecisionCard({
   latestRound,
   history,
   onChanged,
+  recommendOnly,
 }: {
   submissionId: number;
   submission: Submission;
   latestRound: ReviewRound | null;
   history: Decision[];
   onChanged: () => void;
+  recommendOnly: boolean;
 }): ReactNode {
-  const [type, setType] = useState<DecisionType>("EXTERNAL_REVIEW");
+  const visibleTypes: DecisionType[] = recommendOnly
+    ? [...RECOMMEND_TYPES]
+    : DECISION_TYPES.filter((t) => !isRecommendation(t));
+  const [type, setType] = useState<DecisionType>(
+    recommendOnly ? "RECOMMEND_ACCEPT" : "EXTERNAL_REVIEW",
+  );
   const [summary, setSummary] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1355,7 +1403,22 @@ function DecisionCard({
 
   return (
     <Card>
-      <h2 style={h2Style}>Editorial decisions</h2>
+      <h2 style={h2Style}>
+        {recommendOnly ? "Recommendations" : "Editorial decisions"}
+      </h2>
+      {recommendOnly && (
+        <p
+          style={{
+            margin: "0 0 12px 0",
+            fontSize: 12,
+            color: "var(--muted)",
+          }}
+        >
+          You are assigned as section editor with recommend-only authority.
+          Your input is recorded as a recommendation; the deciding editor
+          takes the terminal call.
+        </p>
+      )}
 
       {history.length > 0 ? (
         <ul
@@ -1419,7 +1482,7 @@ function DecisionCard({
             onChange={(e) => setType(e.target.value as DecisionType)}
             style={inputStyle}
           >
-            {DECISION_TYPES.map((t) => (
+            {visibleTypes.map((t) => (
               <option key={t} value={t}>
                 {t.replace(/_/g, " ").toLowerCase()}
               </option>
