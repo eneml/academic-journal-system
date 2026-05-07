@@ -417,7 +417,7 @@ function Topbar(): ReactNode {
           <LanguageSwitcher />
         </div>
       ) : (
-        <Button asChild size="sm">
+        <Button asChild variant="ghost" size="sm">
           <Link to="/login" search={{ redirect: undefined }}>Sign in</Link>
         </Button>
       )}

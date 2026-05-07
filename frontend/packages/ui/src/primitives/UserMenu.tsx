@@ -5,6 +5,7 @@ import {
   type ReactNode,
 } from "react";
 import { ChevronDown, LogOut } from "lucide-react";
+import { Button } from "./Button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,19 +66,13 @@ export function UserMenu({
 }: UserMenuProps): ReactNode {
   if (!user) {
     return variant === "badge" ? (
-      <a
-        href={signInHref}
-        className="flex items-center justify-center h-9 px-4 rounded-md bg-cobalt text-white font-sans text-sm font-medium hover:bg-cobalt-deep transition-colors"
-      >
-        {signInLabel}
-      </a>
+      <Button asChild className="w-full">
+        <a href={signInHref}>{signInLabel}</a>
+      </Button>
     ) : (
-      <a
-        href={signInHref}
-        className="text-[11px] font-medium text-fg-2 hover:text-fg no-underline"
-      >
-        {signInLabel}
-      </a>
+      <Button asChild variant="ghost" size="sm">
+        <a href={signInHref}>{signInLabel}</a>
+      </Button>
     );
   }
 
