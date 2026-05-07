@@ -239,6 +239,67 @@ function ReviewerAssignmentDetailPage(): ReactNode {
 }
 
 /**
+ * 5-step strip rendered above the reviewer submit form. Steps light up as
+ * the reviewer fills in each section — purely informational, the form is
+ * still single-page (no pagination). Submit happens via the page header CTA.
+ */
+function ReviewStepIndicator({
+  recommendation,
+  commentsAuthor,
+  commentsEditor,
+}: {
+  recommendation: string;
+  commentsAuthor: string;
+  commentsEditor: string;
+}): ReactNode {
+  const steps = [
+    { label: "1. Recommendation", done: !!recommendation },
+    { label: "2. Comments", done: commentsAuthor.trim().length >= 50 },
+    { label: "3. Confidential", done: commentsEditor.trim().length > 0 },
+    { label: "4. Files", done: false },
+    { label: "5. Confirm", done: false },
+  ];
+  return (
+    <div
+      style={{ gridColumn: "1 / -1" }}
+      className="mb-2 flex items-center gap-0 overflow-x-auto"
+    >
+      {steps.map((s, i) => (
+        <div
+          key={s.label}
+          className="flex flex-1 items-center gap-2 min-w-0"
+        >
+          <span
+            className={`inline-flex size-6 flex-none items-center justify-center rounded-full font-mono text-[11px] font-semibold ${
+              s.done
+                ? "bg-cobalt text-white"
+                : "border border-border-strong bg-white text-muted"
+            }`}
+          >
+            {s.done ? "✓" : i + 1}
+          </span>
+          <span
+            className={`truncate text-[11.5px] ${
+              s.done ? "font-semibold text-fg" : "text-muted"
+            }`}
+          >
+            {s.label}
+          </span>
+          {i < steps.length - 1 ? (
+            <span
+              className={`mx-2 h-px flex-1 ${
+                s.done ? "bg-cobalt" : "bg-border"
+              }`}
+              aria-hidden
+            />
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
  * Days until an ISO timestamp, rounded down. Negative when overdue.
  */
 function daysUntil(iso: string): number {
@@ -444,6 +505,11 @@ function SubmitReviewLayout({
         alignItems: "start",
       }}
     >
+      <ReviewStepIndicator
+        recommendation={recommendation}
+        commentsAuthor={commentsToAuthor}
+        commentsEditor={commentsToEditor}
+      />
       {/* ─── Left column ─── */}
       <div style={{ display: "flex", flexDirection: "column", gap: 18, minWidth: 0 }}>
         <RecommendationCard
