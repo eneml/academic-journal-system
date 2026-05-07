@@ -1,6 +1,28 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { ChevronDown, ChevronUp, FileText, Inbox } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  GripVertical,
+  Inbox,
+} from "lucide-react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useAuth } from "../../auth/AuthContext";
 import { isEditorial } from "../../auth/roles";
 import { api } from "../../lib/api";
@@ -71,6 +93,11 @@ function IssueCuratePage(): ReactNode {
     };
   }, [user, allowed, issueId]);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
   if (loading) return <p className="text-muted text-sm">Loading session…</p>;
   if (!user) return <SignInPrompt />;
   if (!allowed) {
@@ -88,7 +115,6 @@ function IssueCuratePage(): ReactNode {
 
   async function persistOrder(sectionId: number, ordered: PublicationRow[]) {
     setBusy(true);
-    // Build the full issue order: sections by id ASC, ordered list by section.
     const allOrdered = grouped
       .map((g) => (g.section.id === sectionId ? ordered : g.items))
       .flat();
@@ -97,16 +123,23 @@ function IssueCuratePage(): ReactNode {
       method: "PATCH",
       body: { order: ids },
     });
-    // Optimistic local mutation; the server response is 204.
     setPubs(allOrdered.map((p, i) => ({ ...p, displayOrder: i })));
     setBusy(false);
   }
 
   function move(section: SectionRow, items: PublicationRow[], from: number, to: number) {
     if (to < 0 || to >= items.length) return;
-    const next = items.slice();
-    const [row] = next.splice(from, 1);
-    next.splice(to, 0, row!);
+    const next = arrayMove(items, from, to);
+    void persistOrder(section.id, next);
+  }
+
+  function handleDragEnd(section: SectionRow, items: PublicationRow[], event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const from = items.findIndex((p) => p.id === active.id);
+    const to = items.findIndex((p) => p.id === over.id);
+    if (from === -1 || to === -1) return;
+    const next = arrayMove(items, from, to);
     void persistOrder(section.id, next);
   }
 
@@ -121,7 +154,7 @@ function IssueCuratePage(): ReactNode {
         }
         description={
           issue
-            ? `${pubs.length} article${pubs.length === 1 ? "" : "s"} assigned · use the up/down arrows on each row to reorder`
+            ? `${pubs.length} article${pubs.length === 1 ? "" : "s"} assigned · drag rows to reorder, or use the arrow buttons`
             : "Loading…"
         }
         actions={
@@ -155,63 +188,124 @@ function IssueCuratePage(): ReactNode {
                 </h3>
                 <Badge variant="mono">{g.items.length}</Badge>
               </div>
-              {g.items.map((p, i) => (
-                <div
-                  key={p.id}
-                  className="grid grid-cols-[24px_1fr_100px_120px_72px] items-center gap-3 border-b border-border px-3.5 py-2.5 last:border-b-0"
+
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(e) => handleDragEnd(g.section, g.items, e)}
+              >
+                <SortableContext
+                  items={g.items.map((p) => p.id)}
+                  strategy={verticalListSortingStrategy}
                 >
-                  <span className="font-mono text-[10.5px] text-muted-2">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <div>
-                    <div className="font-serif-display text-[14px] font-medium leading-tight text-ink">
-                      {pickEn(p.title) || `Article ${p.id}`}
-                    </div>
-                    <div className="font-mono text-[10.5px] text-muted">
-                      AJ-{String(p.id).padStart(4, "0")} · {p.status.toLowerCase()}
-                    </div>
-                  </div>
-                  <span className="font-mono text-[11px] text-muted">
-                    {p.pages ? `pp. ${p.pages}` : "—"}
-                  </span>
-                  <span>
-                    {p.status === "PUBLISHED" ? (
-                      <Badge variant="success" withDot>
-                        Galleys ready
-                      </Badge>
-                    ) : (
-                      <Badge variant="amber" withDot>
-                        In production
-                      </Badge>
-                    )}
-                  </span>
-                  <div className="flex justify-end gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      aria-label="Move up"
-                      disabled={busy || i === 0}
-                      onClick={() => move(g.section, g.items, i, i - 1)}
-                    >
-                      <ChevronUp className="size-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      aria-label="Move down"
-                      disabled={busy || i === g.items.length - 1}
-                      onClick={() => move(g.section, g.items, i, i + 1)}
-                    >
-                      <ChevronDown className="size-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                  {g.items.map((p, i) => (
+                    <SortableRow
+                      key={p.id}
+                      pub={p}
+                      index={i}
+                      total={g.items.length}
+                      busy={busy}
+                      onMoveUp={() => move(g.section, g.items, i, i - 1)}
+                      onMoveDown={() => move(g.section, g.items, i, i + 1)}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
             </div>
           ))}
         </div>
       )}
     </>
+  );
+}
+
+function SortableRow({
+  pub,
+  index,
+  total,
+  busy,
+  onMoveUp,
+  onMoveDown,
+}: {
+  pub: PublicationRow;
+  index: number;
+  total: number;
+  busy: boolean;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+}): ReactNode {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: pub.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="grid grid-cols-[24px_24px_36px_1fr_100px_120px_72px] items-center gap-3 border-b border-border px-3.5 py-2.5 last:border-b-0 bg-white"
+    >
+      <button
+        type="button"
+        aria-label="Drag handle"
+        className="flex cursor-grab items-center justify-center text-muted-2 hover:text-cobalt active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="size-4" />
+      </button>
+      <span className="font-mono text-[10.5px] text-muted-2">
+        {String(index + 1).padStart(2, "0")}
+      </span>
+      <span className="font-mono text-[10.5px] text-cobalt">
+        AJ-{String(pub.id).padStart(4, "0")}
+      </span>
+      <div>
+        <div className="font-serif-display text-[14px] font-medium leading-tight text-ink">
+          {pickEn(pub.title) || `Article ${pub.id}`}
+        </div>
+        <div className="font-mono text-[10.5px] text-muted">
+          {pub.status.toLowerCase()}
+        </div>
+      </div>
+      <span className="font-mono text-[11px] text-muted">
+        {pub.pages ? `pp. ${pub.pages}` : "—"}
+      </span>
+      <span>
+        {pub.status === "PUBLISHED" ? (
+          <Badge variant="success" withDot>
+            Galleys ready
+          </Badge>
+        ) : (
+          <Badge variant="amber" withDot>
+            In production
+          </Badge>
+        )}
+      </span>
+      <div className="flex justify-end gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-label="Move up"
+          disabled={busy || index === 0}
+          onClick={onMoveUp}
+        >
+          <ChevronUp className="size-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-label="Move down"
+          disabled={busy || index === total - 1}
+          onClick={onMoveDown}
+        >
+          <ChevronDown className="size-4" />
+        </Button>
+      </div>
+    </div>
   );
 }
 
