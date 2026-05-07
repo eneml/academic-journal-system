@@ -17,6 +17,7 @@ import {
   Inbox,
   Layers,
   Plus,
+  BarChart3,
   ScrollText,
   Search,
   Settings,
@@ -155,6 +156,12 @@ const NAV_GROUPS: NavGroup[] = [
         label: "Users",
         icon: Users,
         when: (r) => hasRole(r, "ADMIN"),
+      },
+      {
+        to: "/admin/stats",
+        label: "Statistics",
+        icon: BarChart3,
+        when: isEditorial,
       },
       {
         to: "/admin/audit-log",
@@ -490,6 +497,7 @@ const BREADCRUMB_LABELS: Record<string, string> = {
   announcements: "Announcements",
   users: "Users",
   settings: "Settings",
+  stats: "Statistics",
   "audit-log": "Audit log",
   notifications: "Notifications",
   profile: "Profile",
