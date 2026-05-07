@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
 import { Avatar } from "@/components/Avatar";
-import { OrcidBadge } from "@/components/OrcidBadge";
+import { OrcidBadge } from "@ajs/ui";
 import {
   fetchJournalConfig,
   fetchMasthead,

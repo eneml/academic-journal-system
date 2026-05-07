@@ -1,8 +1,8 @@
-import { cn } from "@/lib/cn";
+import { cn } from "../lib/cn";
 
 export interface CoverArtProps {
-  width?: number;
-  height?: number;
+  width?: number | string;
+  height?: number | string;
   hue?: number;
   label?: string;
   year?: number | string | null;
@@ -11,9 +11,8 @@ export interface CoverArtProps {
 }
 
 /**
- * Issue cover. If a real image URL is provided we render it as the
- * background of an aspect-locked frame; otherwise we render the
- * cobalt gradient placeholder cover from the design prototype.
+ * Issue cover. With `src`, renders the supplied image inside an aspect-locked
+ * frame; without, falls back to the cobalt-gradient placeholder cover.
  */
 export function CoverArt({
   width = 220,
@@ -41,7 +40,7 @@ export function CoverArt({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-[2px] shadow-[0_1px_3px_rgba(0,0,0,0.15),inset_0_0_0_1px_rgba(255,255,255,0.06)] shrink-0",
+        "relative overflow-hidden rounded-[2px] shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.15),inset_0_0_0_1px_rgba(255,255,255,0.06)]",
         className,
       )}
       style={{

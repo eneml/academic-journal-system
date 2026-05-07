@@ -3,11 +3,9 @@ import type { ReactNode } from "react";
 import { ArrowRight, Download, Rss } from "lucide-react";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
-import { CoverArt } from "@/components/CoverArt";
 import { Avatar } from "@/components/Avatar";
 import { ArticleStats } from "@/components/ArticleStats";
-import { Badge } from "@ajs/ui";
-import { Button } from "@ajs/ui";
+import { Badge, Button, CoverArt } from "@ajs/ui";
 import {
   fetchActiveSections,
   fetchAnnouncements,

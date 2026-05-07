@@ -5,9 +5,8 @@ import type { ReactNode } from "react";
 import { ChevronRight, Download, Rss } from "lucide-react";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
-import { CoverArt } from "@/components/CoverArt";
 import { ArticleStats } from "@/components/ArticleStats";
-import { Badge, Button } from "@ajs/ui";
+import { Badge, Button, CoverArt } from "@ajs/ui";
 import {
   fetchActiveSections,
   fetchIssueById,
