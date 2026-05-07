@@ -32,7 +32,19 @@ interface Notification {
   createdAt: string;
 }
 
-type FilterMode = "all" | "unread";
+type FilterMode = "all" | "unread" | "decisions" | "reviews" | "discussions" | "submissions" | "system";
+
+function matchesFilter(n: Notification, mode: FilterMode): boolean {
+  if (mode === "all") return true;
+  if (mode === "unread") return !n.readAt;
+  const t = n.type?.toUpperCase() ?? "";
+  if (mode === "decisions") return t.includes("DECISION");
+  if (mode === "reviews") return t.includes("REVIEW");
+  if (mode === "discussions") return t.includes("DISCUSS") || t.includes("MESSAGE");
+  if (mode === "submissions") return t.includes("SUBMISS") || t.includes("UPLOAD") || t.includes("MANUSCRIPT");
+  if (mode === "system") return t.includes("SYSTEM") || t.includes("DEPOSIT") || t.includes("INDEX");
+  return true;
+}
 
 function NotificationsPage(): ReactNode {
   const { user, loading: authLoading } = useAuth();
@@ -69,8 +81,25 @@ function NotificationsPage(): ReactNode {
   if (!user) return <SignInPrompt />;
 
   const unread = items?.filter((n) => !n.readAt).length ?? 0;
-  const visible =
-    mode === "unread" ? items?.filter((n) => !n.readAt) ?? [] : items ?? [];
+  const visible = (items ?? []).filter((n) => matchesFilter(n, mode));
+  const counts: Record<FilterMode, number> = {
+    all: items?.length ?? 0,
+    unread,
+    decisions: (items ?? []).filter((n) => matchesFilter(n, "decisions")).length,
+    reviews: (items ?? []).filter((n) => matchesFilter(n, "reviews")).length,
+    discussions: (items ?? []).filter((n) => matchesFilter(n, "discussions")).length,
+    submissions: (items ?? []).filter((n) => matchesFilter(n, "submissions")).length,
+    system: (items ?? []).filter((n) => matchesFilter(n, "system")).length,
+  };
+  const FILTERS: { id: FilterMode; label: string }[] = [
+    { id: "all", label: "All" },
+    { id: "unread", label: "Unread" },
+    { id: "decisions", label: "Decisions" },
+    { id: "reviews", label: "Reviews" },
+    { id: "discussions", label: "Discussions" },
+    { id: "submissions", label: "Submissions" },
+    { id: "system", label: "System" },
+  ];
 
   return (
     <>
@@ -94,55 +123,60 @@ function NotificationsPage(): ReactNode {
         }
       />
 
-      <div className="flex gap-1.5 mb-4">
-        <Button
-          type="button"
-          variant={mode === "all" ? "default" : "secondary"}
-          size="sm"
-          onClick={() => setMode("all")}
-          className="rounded-full"
-        >
-          All
-          <Badge variant={mode === "all" ? "outline" : "default"} className="ml-1">
-            {items?.length ?? 0}
-          </Badge>
-        </Button>
-        <Button
-          type="button"
-          variant={mode === "unread" ? "default" : "secondary"}
-          size="sm"
-          onClick={() => setMode("unread")}
-          className="rounded-full"
-        >
-          Unread
-          <Badge variant={mode === "unread" ? "outline" : "amber"} className="ml-1">
-            {unread}
-          </Badge>
-        </Button>
+      <div className="grid gap-3.5 lg:grid-cols-[200px_1fr]">
+        <aside className="rounded-md border border-border bg-white p-2">
+          {FILTERS.map((f) => {
+            const active = mode === f.id;
+            return (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setMode(f.id)}
+                className={`flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left text-[13px] transition-colors ${
+                  active
+                    ? "bg-cobalt-soft font-semibold text-cobalt-deep"
+                    : "text-fg-2 hover:bg-bg-tint"
+                }`}
+              >
+                <span>{f.label}</span>
+                <span
+                  className={`font-mono text-[11px] ${
+                    active ? "text-cobalt-deep" : "text-muted"
+                  }`}
+                >
+                  {counts[f.id]}
+                </span>
+              </button>
+            );
+          })}
+        </aside>
+
+        <div>
+          {!fetching && items && visible.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border bg-bg-tint/40 px-8 py-14 text-center">
+              <Bell className="mx-auto mb-3 size-8 text-cobalt" />
+              <h3 className="font-serif-display text-[18px] font-semibold text-ink">
+                {mode === "unread" ? "Nothing unread" : "Nothing here yet"}
+              </h3>
+              <p className="mx-auto mt-1.5 max-w-md text-sm text-muted">
+                When something happens that needs your attention — a review
+                request, a decision, a discussion thread — it&rsquo;ll show up
+                here.
+              </p>
+            </div>
+          ) : null}
+
+          {visible.length > 0 ? (
+            <div className="overflow-hidden rounded-md border border-border bg-white">
+              <ul className="m-0 list-none divide-y divide-border p-0">
+                {visible.map((n) => (
+                  <NotificationRow key={n.id} item={n} onMarkedRead={reload} />
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
       </div>
-
-      {!fetching && items && visible.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-bg-tint/40 px-8 py-14 text-center">
-          <Bell className="size-8 text-cobalt mx-auto mb-3" />
-          <h3 className="font-serif-display text-[18px] font-semibold text-fg">
-            {mode === "unread" ? "Nothing unread" : "You're all caught up"}
-          </h3>
-          <p className="text-sm text-muted mt-1.5 max-w-md mx-auto">
-            When something happens that needs your attention — a review
-            request, a decision, a discussion thread — it&rsquo;ll show up here.
-          </p>
-        </div>
-      ) : null}
-
-      {visible.length > 0 ? (
-        <div className="rounded-lg border border-border bg-white overflow-hidden">
-          <ul className="divide-y divide-border">
-            {visible.map((n) => (
-              <NotificationRow key={n.id} item={n} onMarkedRead={reload} />
-            ))}
-          </ul>
-        </div>
-      ) : null}
 
       {!fetching && items === null ? (
         <EmptyState
