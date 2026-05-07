@@ -55,6 +55,11 @@ class ReviewLookupAdapter implements ReviewLookup {
         return inflate(assignmentRepository.findOverdue(cutoff));
     }
 
+    @Override
+    public long countActiveReviewersSince(Instant since) {
+        return assignmentRepository.countActiveReviewersSince(since);
+    }
+
     private List<ReviewAssignmentSummary> inflate(
             List<com.eneml.ajs.review.internal.domain.ReviewAssignment> assignments) {
         // Bulk-fetch parent rounds to avoid N+1.

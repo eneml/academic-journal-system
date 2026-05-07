@@ -14,8 +14,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Component
@@ -70,5 +73,21 @@ class SubmissionLookupAdapter implements SubmissionLookup {
     public List<SubmissionAuthorSummary> contributionsByOrcid(String orcidId) {
         if (orcidId == null || orcidId.isBlank()) return List.of();
         return authorMapper.toSummaries(authorRepository.findByOrcidId(orcidId.trim()));
+    }
+
+    @Override
+    public long countSubmittedSince(Instant since) {
+        return submissionRepository.countSubmittedSince(since);
+    }
+
+    @Override
+    public Map<Integer, Long> monthlySubmissionCounts(int year) {
+        Map<Integer, Long> out = new LinkedHashMap<>();
+        for (Object[] row : submissionRepository.monthlySubmissionCounts(year)) {
+            Integer month = ((Number) row[0]).intValue();
+            Long count = ((Number) row[1]).longValue();
+            out.put(month, count);
+        }
+        return out;
     }
 }

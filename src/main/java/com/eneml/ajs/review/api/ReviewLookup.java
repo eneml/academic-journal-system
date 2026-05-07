@@ -21,4 +21,7 @@ public interface ReviewLookup {
      * or {@code IN_PROGRESS}). Used by the reviewer-reminder sweep.
      */
     List<ReviewAssignmentSummary> overdueAssignments(Instant cutoff);
+
+    /** Distinct reviewers with any assignment activity since {@code since}. */
+    long countActiveReviewersSince(Instant since);
 }

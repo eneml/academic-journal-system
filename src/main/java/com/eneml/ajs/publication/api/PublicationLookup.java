@@ -1,5 +1,6 @@
 package com.eneml.ajs.publication.api;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,4 +19,7 @@ public interface PublicationLookup {
     List<PublicationSummary> publishedInIssue(Long issueId);
 
     List<PublicationSummary> latestPublished(int limit);
+
+    /** Publications whose status is PUBLISHED and date_published >= {@code since}. */
+    long countPublishedSince(Instant since);
 }

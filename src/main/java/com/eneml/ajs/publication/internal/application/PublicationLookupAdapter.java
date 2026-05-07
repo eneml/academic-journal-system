@@ -57,4 +57,9 @@ class PublicationLookupAdapter implements PublicationLookup {
         return mapper.toSummaries(repository.findRecentPublished(
                 PageRequest.of(0, Math.max(1, limit))));
     }
+
+    @Override
+    public long countPublishedSince(java.time.Instant since) {
+        return repository.countPublishedSince(since);
+    }
 }

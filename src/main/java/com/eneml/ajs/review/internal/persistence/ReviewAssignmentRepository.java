@@ -43,4 +43,8 @@ public interface ReviewAssignmentRepository extends JpaRepository<ReviewAssignme
             ORDER BY a.dateAssigned ASC
             """)
     List<ReviewAssignment> findOverdue(java.time.Instant cutoff);
+
+    @Query(value = "SELECT COUNT(DISTINCT reviewer_user_id) FROM review_assignment WHERE updated_at >= :since",
+            nativeQuery = true)
+    long countActiveReviewersSince(java.time.Instant since);
 }

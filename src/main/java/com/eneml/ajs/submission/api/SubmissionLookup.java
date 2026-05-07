@@ -1,6 +1,8 @@
 package com.eneml.ajs.submission.api;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface SubmissionLookup {
@@ -29,4 +31,13 @@ public interface SubmissionLookup {
      * submissions; deduplication is the caller's responsibility.
      */
     List<SubmissionAuthorSummary> contributionsByOrcid(String orcidId);
+
+    /** Submissions whose {@code dateSubmitted} is on or after {@code since}. */
+    long countSubmittedSince(Instant since);
+
+    /**
+     * Submissions per month for {@code year}, keyed by month-of-year (1..12).
+     * Months with no submissions are omitted; callers should fill in zeroes.
+     */
+    Map<Integer, Long> monthlySubmissionCounts(int year);
 }

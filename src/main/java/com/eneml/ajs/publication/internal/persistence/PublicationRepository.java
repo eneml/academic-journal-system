@@ -51,4 +51,11 @@ public interface PublicationRepository extends JpaRepository<Publication, Long> 
     List<Publication> findByStatusAndDatePublishedBefore(
             com.eneml.ajs.publication.api.PublicationStatus status,
             java.time.Instant cutoff);
+
+    @Query(value = """
+            SELECT COUNT(*) FROM publication
+            WHERE status = 'PUBLISHED' AND date_published >= :since
+            """,
+            nativeQuery = true)
+    long countPublishedSince(@org.springframework.data.repository.query.Param("since") java.time.Instant since);
 }
