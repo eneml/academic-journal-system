@@ -83,8 +83,3 @@
   to { height: 0; }
 }
 
-/* Focus ring used by every interactive primitive. */
-*:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--cobalt-soft);
-}

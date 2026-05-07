@@ -60,6 +60,12 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--cobalt);
+  border-radius: inherit;
+}
+
 /* Mono-numeric utility */
 .tnum { font-variant-numeric: tabular-nums; }
 
