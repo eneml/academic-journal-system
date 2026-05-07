@@ -189,6 +189,8 @@ function EditorialSubmissionDetailPage(): ReactNode {
         {/* Stage progress strip — five-segment progression so the editor
             sees workflow position at a glance without reading status text. */}
         <StageProgressStrip stage={submission.stage} />
+
+        <WorkflowTabStrip />
       </div>
 
       {/* Two-column layout: workflow lives in the main column, reference
@@ -198,24 +200,34 @@ function EditorialSubmissionDetailPage(): ReactNode {
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
         {/* MAIN — workflow */}
         <div className="flex flex-col gap-4 min-w-0">
-          <MetadataView submission={submission} />
-          <RoundsCard
-            submissionId={submissionId}
-            rounds={rounds}
-            onChanged={() => void reload()}
-          />
-          <DecisionCard
-            submissionId={submissionId}
-            latestRound={latestRound}
-            history={decisions}
-            onChanged={() => void reload()}
-          />
-          <PublicationsCard
-            submissionId={submissionId}
-            publications={publications}
-            onChanged={() => void reload()}
-          />
-          <AuditLogCard entries={auditLog} />
+          <div id="tab-submission" className="scroll-mt-44">
+            <MetadataView submission={submission} />
+          </div>
+          <div id="tab-review" className="scroll-mt-44">
+            <RoundsCard
+              submissionId={submissionId}
+              rounds={rounds}
+              onChanged={() => void reload()}
+            />
+          </div>
+          <div id="tab-workflow" className="scroll-mt-44">
+            <DecisionCard
+              submissionId={submissionId}
+              latestRound={latestRound}
+              history={decisions}
+              onChanged={() => void reload()}
+            />
+          </div>
+          <div id="tab-publication" className="scroll-mt-44">
+            <PublicationsCard
+              submissionId={submissionId}
+              publications={publications}
+              onChanged={() => void reload()}
+            />
+          </div>
+          <div id="tab-history" className="scroll-mt-44">
+            <AuditLogCard entries={auditLog} />
+          </div>
         </div>
 
         {/* RAIL — submission metadata + contributors + files */}
@@ -226,6 +238,43 @@ function EditorialSubmissionDetailPage(): ReactNode {
         </aside>
       </div>
     </>
+  );
+}
+
+/**
+ * In-page tab strip — anchor-jumps to the matching card sections so the
+ * editor can navigate the workflow detail without scrolling. Tabs that have
+ * no backing data today render in a muted state.
+ */
+function WorkflowTabStrip(): ReactNode {
+  const TABS = [
+    { id: "workflow", label: "Workflow", live: true },
+    { id: "submission", label: "Submission", live: true },
+    { id: "review", label: "Review", live: true },
+    { id: "editing", label: "Editing", live: false },
+    { id: "production", label: "Production", live: false },
+    { id: "publication", label: "Publication", live: true },
+    { id: "participants", label: "Participants", live: false },
+    { id: "discussions", label: "Discussions", live: false },
+    { id: "history", label: "History", live: true },
+  ];
+  return (
+    <div className="-mb-px mt-3 flex flex-wrap gap-0 border-b border-border">
+      {TABS.map((tab) => (
+        <a
+          key={tab.id}
+          href={tab.live ? `#tab-${tab.id}` : undefined}
+          aria-disabled={!tab.live}
+          className={`-mb-px border-b-2 px-3.5 py-2 text-[13px] font-medium tracking-tight transition-colors ${
+            tab.live
+              ? "border-transparent text-fg-2 hover:border-cobalt hover:text-fg"
+              : "cursor-not-allowed border-transparent text-muted-2"
+          }`}
+        >
+          {tab.label}
+        </a>
+      ))}
+    </div>
   );
 }
 
