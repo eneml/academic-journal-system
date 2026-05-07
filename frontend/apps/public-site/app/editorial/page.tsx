@@ -210,14 +210,7 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
             {ADVISORY_BOARD.length} members · 18 countries
           </span>
         </div>
-        <div
-          className="font-serif-body text-[14px] leading-loose text-fg-2"
-          style={{
-            columnCount: 3,
-            columnGap: 40,
-            columnRule: "1px solid var(--border)",
-          }}
-        >
+        <div className="font-serif-body text-[14px] leading-loose text-fg-2 columns-1 [column-gap:40px] [column-rule:1px_solid_var(--border)] sm:columns-2 lg:columns-3">
           {ADVISORY_BOARD.map((m) => (
             <div key={m}>{m}</div>
           ))}

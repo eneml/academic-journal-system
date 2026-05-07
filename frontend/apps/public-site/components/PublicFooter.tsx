@@ -39,16 +39,13 @@ export function PublicFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer
-      className="mt-20 px-6 pt-12 pb-7 text-[oklch(80%_0.01_270)] lg:px-14"
-      style={{ background: "oklch(18% 0.018 270)" }}
-    >
+    <footer className="mt-20 bg-footer-bg px-6 pt-12 pb-7 text-footer-fg lg:px-14">
       <div className="grid gap-10 pb-9 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
           <div className="mb-2 font-serif-display text-[22px] font-medium tracking-[-0.01em] text-white">
             {JOURNAL_NAME}
           </div>
-          <p className="m-0 max-w-md font-serif-body text-[13px] leading-relaxed text-[oklch(72%_0.01_270)]">
+          <p className="m-0 max-w-md font-serif-body text-[13px] leading-relaxed text-footer-fg-2">
             A quarterly peer-reviewed journal of computational research, methods,
             and theory. Open access since 1998, indexed in Scopus, Web of Science,
             and Google Scholar.
@@ -65,7 +62,7 @@ export function PublicFooter() {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-[13px] text-[oklch(75%_0.01_270)] hover:text-white no-underline"
+                    className="text-[13px] text-footer-fg hover:text-white no-underline"
                   >
                     {link.label}
                   </Link>
@@ -76,10 +73,7 @@ export function PublicFooter() {
         ))}
       </div>
 
-      <div
-        className="flex flex-col items-start justify-between gap-3 border-t pt-4 text-[11px] tracking-[0.04em] text-[oklch(58%_0.01_270)] sm:flex-row sm:items-center"
-        style={{ borderTopColor: "oklch(28% 0.02 270)" }}
-      >
+      <div className="flex flex-col items-start justify-between gap-3 border-t border-footer-border pt-4 text-[11px] tracking-[0.04em] text-footer-fg-muted sm:flex-row sm:items-center">
         <div className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em]">
           © {year} · CC BY 4.0 · ISSN {ISSN}
         </div>

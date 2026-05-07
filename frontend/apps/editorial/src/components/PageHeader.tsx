@@ -11,11 +11,10 @@ export interface PageHeaderProps {
 }
 
 /**
- * Page header used inside {@code AppShell}'s main column. Matches the design
- * handoff: 22px sans headline (not the marketing-site serif), tight tracking,
- * gray subtitle, and an optional actions slot pinned to the right. Dropping
- * down to sans here is intentional — the editorial app is utility, not
- * editorial display.
+ * Page header used inside the editorial app shell. 22px sans headline (not
+ * the marketing-site serif), tight tracking, gray subtitle, optional actions
+ * slot pinned to the right. Sans here is intentional — the editorial app is
+ * utility, not editorial display.
  */
 export function PageHeader({
   eyebrow,
@@ -24,57 +23,22 @@ export function PageHeader({
   actions,
 }: PageHeaderProps): ReactNode {
   return (
-    <div
-      style={{
-        marginBottom: 18,
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-end",
-        gap: 16,
-      }}
-    >
-      <div style={{ flex: 1, minWidth: 0 }}>
+    <div className="mb-[18px] flex items-end justify-between gap-4">
+      <div className="flex-1 min-w-0">
         {eyebrow ? (
-          <p
-            className="sc"
-            style={{
-              color: "var(--muted)",
-              marginBottom: 6,
-              fontSize: 9.5,
-            }}
-          >
-            {eyebrow}
-          </p>
+          <p className="sc text-muted mb-1.5 text-[9.5px]">{eyebrow}</p>
         ) : null}
-        <h1
-          style={{
-            margin: 0,
-            fontSize: 22,
-            fontWeight: 600,
-            letterSpacing: "-0.015em",
-            fontFamily: "var(--sans)",
-            color: "var(--fg)",
-          }}
-        >
+        <h1 className="m-0 font-sans text-[22px] font-semibold tracking-[-0.015em] text-fg">
           {title}
         </h1>
         {description ? (
-          <p
-            style={{
-              fontSize: 13,
-              color: "var(--muted)",
-              margin: "4px 0 0",
-              fontFamily: "var(--sans)",
-              maxWidth: 720,
-              lineHeight: 1.55,
-            }}
-          >
+          <p className="mt-1 mb-0 max-w-[720px] font-sans text-[13px] leading-[1.55] text-muted">
             {description}
           </p>
         ) : null}
       </div>
       {actions ? (
-        <div style={{ display: "flex", gap: 6, flex: "none" }}>{actions}</div>
+        <div className="flex flex-none items-center gap-1.5">{actions}</div>
       ) : null}
     </div>
   );
