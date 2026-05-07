@@ -1,6 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { Sparkles } from "lucide-react";
+import {
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { useAuth } from "../../auth/AuthContext";
 import { isEditorial } from "../../auth/roles";
 import { api } from "../../lib/api";
@@ -19,6 +31,15 @@ interface Overview {
   acceptanceRatePct: number;
   activeReviewers: number;
   totalDecisions: number;
+}
+interface MonthlyFlowPoint {
+  month: number;
+  submissions: number;
+  decisions: number;
+}
+interface DecisionBreakdown {
+  type: string;
+  count: number;
 }
 
 function StatsPage(): ReactNode {
@@ -42,13 +63,21 @@ function StatsPage(): ReactNode {
 
 function StatsAdmin(): ReactNode {
   const [overview, setOverview] = useState<Overview | null>(null);
+  const [flow, setFlow] = useState<MonthlyFlowPoint[]>([]);
+  const [decisions, setDecisions] = useState<DecisionBreakdown[]>([]);
   const [fetching, setFetching] = useState(true);
   const year = new Date().getFullYear();
 
   useEffect(() => {
     void (async () => {
-      const data = await api<Overview>("/api/v1/admin/stats/overview");
-      setOverview(data);
+      const [o, f, d] = await Promise.all([
+        api<Overview>("/api/v1/admin/stats/overview"),
+        api<MonthlyFlowPoint[]>("/api/v1/admin/stats/monthly-flow"),
+        api<DecisionBreakdown[]>("/api/v1/admin/stats/decisions"),
+      ]);
+      setOverview(o);
+      setFlow(f ?? []);
+      setDecisions(d ?? []);
       setFetching(false);
     })();
   }, []);
@@ -92,7 +121,7 @@ function StatsAdmin(): ReactNode {
         />
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      <div className="mt-6 grid gap-4 lg:grid-cols-[1.5fr_1fr]">
         <Card>
           <div className="mb-1 font-sans text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">
             Submission flow · {year}
@@ -100,29 +129,182 @@ function StatsAdmin(): ReactNode {
           <div className="font-serif-display text-[20px] font-medium">
             Submissions vs decisions, monthly
           </div>
-          <div className="mt-6 grid h-[180px] place-items-center rounded-md border border-dashed border-border-strong text-[13px] text-muted">
-            <div className="flex items-center gap-2">
-              <Sparkles className="size-3.5 text-cobalt" />
-              Chart wiring lands with the next backend aggregation.
-            </div>
-          </div>
+          <SubmissionFlowChart data={flow} />
         </Card>
 
         <Card>
           <div className="mb-1 font-sans text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">
-            Decisions · {year}
+            Decisions · cumulative
           </div>
           <div className="font-serif-display text-[20px] font-medium">
             Outcomes
           </div>
-          <div className="mt-6 grid h-[180px] place-items-center rounded-md border border-dashed border-border-strong text-[13px] text-muted">
-            Donut breakdown lands with the per-decision-type endpoint.
-          </div>
+          <DecisionsDonut data={decisions} />
         </Card>
       </div>
     </>
   );
 }
+
+// ----------------------------------------------------------------------
+// Charts
+// ----------------------------------------------------------------------
+
+const MONTH_SHORT = [
+  "",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+function SubmissionFlowChart({
+  data,
+}: {
+  data: MonthlyFlowPoint[];
+}): ReactNode {
+  if (!data.length) {
+    return (
+      <div className="mt-6 grid h-[220px] place-items-center text-[13px] text-muted">
+        No submission data yet.
+      </div>
+    );
+  }
+  const shaped = data.map((p) => ({ ...p, label: MONTH_SHORT[p.month] }));
+  return (
+    <div className="mt-4 h-[220px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          data={shaped}
+          margin={{ top: 12, right: 12, bottom: 0, left: -16 }}
+        >
+          <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
+          <XAxis
+            dataKey="label"
+            tick={{ fontSize: 11, fill: "var(--muted)" }}
+            stroke="var(--border-strong)"
+          />
+          <YAxis
+            tick={{ fontSize: 11, fill: "var(--muted)" }}
+            stroke="var(--border-strong)"
+            allowDecimals={false}
+          />
+          <Tooltip
+            contentStyle={{
+              background: "var(--bg)",
+              border: "1px solid var(--border)",
+              borderRadius: 6,
+              fontSize: 12,
+            }}
+          />
+          <Legend
+            wrapperStyle={{ fontSize: 11, paddingTop: 6 }}
+            iconType="plainline"
+          />
+          <Line
+            type="monotone"
+            dataKey="submissions"
+            stroke="var(--cobalt)"
+            strokeWidth={2}
+            dot={{ r: 2.5, strokeWidth: 0, fill: "var(--cobalt)" }}
+            activeDot={{ r: 4 }}
+            name="Submitted"
+          />
+          <Line
+            type="monotone"
+            dataKey="decisions"
+            stroke="var(--amber-deep)"
+            strokeWidth={2}
+            dot={{ r: 2.5, strokeWidth: 0, fill: "var(--amber-deep)" }}
+            activeDot={{ r: 4 }}
+            name="Decisions issued"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function colorFor(type: string): string {
+  if (type === "ACCEPT" || type === "SEND_TO_PRODUCTION") {
+    return "var(--success)";
+  }
+  if (
+    type === "DECLINE" ||
+    type === "INITIAL_DECLINE" ||
+    type === "CANCEL_REVIEW_ROUND"
+  ) {
+    return "var(--danger)";
+  }
+  if (type === "REQUEST_REVISIONS" || type === "NEW_REVIEW_ROUND") {
+    return "var(--amber-deep)";
+  }
+  return "var(--cobalt)";
+}
+
+function DecisionsDonut({ data }: { data: DecisionBreakdown[] }): ReactNode {
+  if (!data.length) {
+    return (
+      <div className="mt-6 grid h-[220px] place-items-center text-[13px] text-muted">
+        No decisions logged yet.
+      </div>
+    );
+  }
+  const shaped = data.map((d) => ({
+    ...d,
+    label: d.type.replace(/_/g, " ").toLowerCase(),
+    fill: colorFor(d.type),
+  }));
+  return (
+    <div className="mt-4 h-[220px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={shaped}
+            dataKey="count"
+            nameKey="label"
+            cx="36%"
+            cy="50%"
+            innerRadius={48}
+            outerRadius={80}
+            paddingAngle={2}
+            stroke="var(--bg)"
+          >
+            {shaped.map((entry) => (
+              <Cell key={entry.type} fill={entry.fill} />
+            ))}
+          </Pie>
+          <Tooltip
+            contentStyle={{
+              background: "var(--bg)",
+              border: "1px solid var(--border)",
+              borderRadius: 6,
+              fontSize: 12,
+            }}
+          />
+          <Legend
+            layout="vertical"
+            verticalAlign="middle"
+            align="right"
+            wrapperStyle={{ fontSize: 11, lineHeight: 1.6, paddingLeft: 12 }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------
+// KPI card
+// ----------------------------------------------------------------------
 
 function KpiCard({
   label,
@@ -143,7 +325,11 @@ function KpiCard({
         {label}
       </div>
       <div className="mt-2 tnum font-serif-display text-[28px] font-medium leading-none text-fg">
-        {loading ? "—" : value != null ? formatNumber(value) + (suffix ?? "") : "—"}
+        {loading
+          ? "—"
+          : value != null
+            ? formatNumber(value) + (suffix ?? "")
+            : "—"}
       </div>
       {hint ? (
         <div className="mt-1.5 text-[11px] text-muted">{hint}</div>
