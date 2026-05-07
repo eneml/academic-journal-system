@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown, Globe } from "lucide-react";
 import {
   defaultLocale,
   locales,
@@ -54,12 +53,10 @@ export function LanguageSwitcher({ current: initial }: LanguageSwitcherProps = {
         <Button
           variant="ghost"
           size="sm"
-          className="gap-1.5 text-[11.5px] uppercase tracking-wider"
+          className="text-[11.5px] uppercase tracking-wider"
           aria-label="Change language"
         >
-          <Globe className="size-3.5" />
           {current}
-          <ChevronDown className="size-3" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[160px]">
