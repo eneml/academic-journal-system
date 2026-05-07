@@ -14,7 +14,6 @@ import {
   ChevronRight,
   FileText,
   Flag,
-  Globe,
   Home,
   Inbox,
   Layers,
@@ -31,17 +30,16 @@ import { useAuth } from "../auth/AuthContext";
 import { hasRole, isEditorial, type RealmRole } from "../auth/roles";
 import { api } from "../lib/api";
 import { cn } from "../lib/cn";
-import { Badge } from "@ajs/ui";
-import { Button } from "@ajs/ui";
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  LanguageSwitcher,
 } from "@ajs/ui";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@ajs/ui";
 import { NotificationsBell } from "./NotificationsBell";
 
 /**
@@ -468,7 +466,7 @@ function Topbar(): ReactNode {
       ) : user ? (
         <div className="flex items-center gap-1">
           <NotificationsBell />
-          <LocaleSwitcher />
+          <LanguageSwitcher />
         </div>
       ) : (
         <Button asChild size="sm">
@@ -515,39 +513,6 @@ function BreadcrumbCrumb({
         <ChevronRight className="size-3 text-border-strong" />
       ) : null}
     </>
-  );
-}
-
-function LocaleSwitcher(): ReactNode {
-  const [locale, setLocale] = useState<"en" | "ro">("en");
-  return (
-    <DropdownMenu>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5 text-[11.5px] uppercase tracking-wider"
-            >
-              <Globe className="size-3.5" />
-              {locale}
-              <ChevronDown className="size-3" />
-            </Button>
-          </DropdownMenuTrigger>
-        </TooltipTrigger>
-        <TooltipContent>Interface language</TooltipContent>
-      </Tooltip>
-      <DropdownMenuContent align="end" className="min-w-[140px]">
-        <DropdownMenuLabel>Language</DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => setLocale("en")}>
-          🇬🇧 English {locale === "en" ? <Badge variant="cobalt" className="ml-auto">on</Badge> : null}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setLocale("ro")}>
-          🇷🇴 Română {locale === "ro" ? <Badge variant="cobalt" className="ml-auto">on</Badge> : null}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
   );
 }
 

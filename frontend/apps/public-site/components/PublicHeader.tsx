@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { headers } from "next/headers";
-import { ChevronDown, Globe, Rss, Search } from "lucide-react";
-import { Button } from "@ajs/ui";
+import { Rss, Search } from "lucide-react";
+import { Button, LanguageSwitcher } from "@ajs/ui";
 import { UserMenu } from "@/components/UserMenu";
+import { resolveLocale } from "@/lib/locale";
 import { cn } from "@/lib/cn";
 
 const NAV_ITEMS: { label: string; href: string }[] = [
@@ -38,6 +39,7 @@ export async function PublicHeader({ activePath: explicit }: PublicHeaderProps =
       activePath = "/";
     }
   }
+  const locale = await resolveLocale();
 
   return (
     <header className="border-b border-border bg-bg">
@@ -63,15 +65,7 @@ export async function PublicHeader({ activePath: explicit }: PublicHeaderProps =
           >
             <Rss className="h-3 w-3" /> RSS
           </a>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-[4px] border border-border bg-bg px-2 py-[3px] text-[11px] font-medium text-fg-2 hover:border-border-strong"
-          >
-            <Globe className="h-3 w-3 text-muted" />
-            <span className="font-semibold text-fg">EN</span>
-            <span className="text-[10px] text-muted-2">· English</span>
-            <ChevronDown className="h-3 w-3 text-muted" />
-          </button>
+          <LanguageSwitcher current={locale} />
           <UserMenu />
         </div>
       </div>

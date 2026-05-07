@@ -3,11 +3,11 @@ import {
   defaultLocale,
   getMessages,
   locales,
+  LOCALE_COOKIE_NAME,
+  resolveLocaleFromAcceptLanguage,
   type Locale,
   type Messages,
 } from "@ajs/i18n";
-
-const COOKIE_NAME = "NEXT_LOCALE";
 
 /**
  * Resolve the active locale for a request.
@@ -18,20 +18,13 @@ const COOKIE_NAME = "NEXT_LOCALE";
  */
 export async function resolveLocale(): Promise<Locale> {
   const c = await cookies();
-  const cookieValue = c.get(COOKIE_NAME)?.value;
+  const cookieValue = c.get(LOCALE_COOKIE_NAME)?.value;
   if (cookieValue && (locales as readonly string[]).includes(cookieValue)) {
     return cookieValue as Locale;
   }
   const h = await headers();
   const accept = h.get("accept-language") ?? "";
-  for (const part of accept.split(",")) {
-    const tag = part.split(";")[0]!.trim().toLowerCase();
-    const short = tag.slice(0, 2);
-    if ((locales as readonly string[]).includes(short)) {
-      return short as Locale;
-    }
-  }
-  return defaultLocale;
+  return resolveLocaleFromAcceptLanguage(accept) ?? defaultLocale;
 }
 
 /**
@@ -74,4 +67,4 @@ function readPath(obj: unknown, path: string): string | undefined {
   return typeof cursor === "string" ? cursor : undefined;
 }
 
-export const LOCALE_COOKIE_NAME = COOKIE_NAME;
+export { LOCALE_COOKIE_NAME };
