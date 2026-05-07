@@ -15,9 +15,14 @@ const badgeVariants = cva(
         outline: "bg-white text-fg-2 border border-border-strong",
         ghost: "bg-transparent text-muted",
         mono: "bg-bg-tint text-muted border border-border font-mono normal-case tracking-normal text-[10.5px]",
+        ink: "bg-ink text-[oklch(96%_0.005_90)] border border-ink",
+      },
+      withDot: {
+        true: "before:content-[''] before:size-1.5 before:rounded-full before:bg-current before:flex-none",
+        false: "",
       },
     },
-    defaultVariants: { variant: "default" },
+    defaultVariants: { variant: "default", withDot: false },
   },
 );
 
@@ -25,8 +30,10 @@ export interface BadgeProps
   extends HTMLAttributes<HTMLSpanElement>,
     VariantProps<typeof badgeVariants> {}
 
-export function Badge({ className, variant, ...props }: BadgeProps) {
-  return <span className={cn(badgeVariants({ variant }), className)} {...props} />;
+export function Badge({ className, variant, withDot, ...props }: BadgeProps) {
+  return (
+    <span className={cn(badgeVariants({ variant, withDot }), className)} {...props} />
+  );
 }
 
 export { badgeVariants };
