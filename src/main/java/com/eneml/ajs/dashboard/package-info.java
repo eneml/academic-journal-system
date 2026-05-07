@@ -5,7 +5,8 @@
  *
  * <p>Owns: nothing.
  * <br>Emits: nothing.
- * <br>Consumes: submission::api, editorial::api, review::api, publication::api, metrics::api.
+ * <br>Consumes: submission::api, editorial::api, review::api, publication::api,
+ * metrics::api, journal::api, issue::api.
  */
 @org.springframework.modulith.ApplicationModule(
     displayName = "Dashboard",
@@ -15,7 +16,9 @@
         "editorial::api",
         "review::api",
         "publication::api",
-        "metrics::api"
+        "metrics::api",
+        "journal::api",
+        "issue::api"
     }
 )
 package com.eneml.ajs.dashboard;

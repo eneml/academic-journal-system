@@ -38,4 +38,13 @@ public interface SubmissionRepository
             """,
             nativeQuery = true)
     List<Object[]> monthlySubmissionCounts(@Param("year") int year);
+
+    @Query(value = """
+            SELECT section_id, COUNT(*) AS c
+            FROM submission
+            WHERE date_submitted >= :since
+            GROUP BY section_id
+            """,
+            nativeQuery = true)
+    List<Object[]> countBySectionSince(@Param("since") Instant since);
 }

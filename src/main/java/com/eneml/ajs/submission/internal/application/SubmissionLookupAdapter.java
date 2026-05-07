@@ -90,4 +90,13 @@ class SubmissionLookupAdapter implements SubmissionLookup {
         }
         return out;
     }
+
+    @Override
+    public Map<Long, Long> countBySectionSince(Instant since) {
+        Map<Long, Long> out = new LinkedHashMap<>();
+        for (Object[] row : submissionRepository.countBySectionSince(since)) {
+            out.put(((Number) row[0]).longValue(), ((Number) row[1]).longValue());
+        }
+        return out;
+    }
 }

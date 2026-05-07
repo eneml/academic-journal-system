@@ -9,7 +9,7 @@ import { Button } from "@ajs/ui";
  */
 export function SignInPrompt(): ReactNode {
   const location = useLocation();
-  const dest = `${location.pathname}${location.search ?? ""}`;
+  const dest = location.pathname;
   return (
     <div className="max-w-[540px]">
       <p className="sc text-muted mb-1.5">Sign in required</p>

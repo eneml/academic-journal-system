@@ -52,4 +52,29 @@ class EditorialLookupAdapter implements EditorialLookup {
         }
         return out;
     }
+
+    @Override
+    public Map<Long, Map<DecisionType, Long>> decisionsBySectionType(Instant since) {
+        Map<Long, Map<DecisionType, Long>> out = new LinkedHashMap<>();
+        for (Object[] row : repository.decisionsBySectionType(since)) {
+            Long sectionId = ((Number) row[0]).longValue();
+            DecisionType type;
+            try {
+                type = DecisionType.valueOf((String) row[1]);
+            } catch (IllegalArgumentException ignored) {
+                continue;
+            }
+            long count = ((Number) row[2]).longValue();
+            out.computeIfAbsent(sectionId, k -> new EnumMap<>(DecisionType.class))
+                    .put(type, count);
+        }
+        return out;
+    }
+
+    @Override
+    public List<Integer> timeToDecisionDaysSample(Instant since) {
+        return repository.timeToDecisionDaysSample(since).stream()
+                .map(d -> (int) Math.round(d))
+                .toList();
+    }
 }

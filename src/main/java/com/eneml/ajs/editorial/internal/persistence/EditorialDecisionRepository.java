@@ -34,4 +34,26 @@ public interface EditorialDecisionRepository extends JpaRepository<EditorialDeci
     List<Object[]> monthlyDecisionCounts(
             @Param("year") int year,
             @Param("types") Collection<String> types);
+
+    @Query(value = """
+            SELECT s.section_id, ed.decision_type, COUNT(*)
+            FROM editorial_decision ed
+            JOIN submission s ON s.id = ed.submission_id
+            WHERE ed.date_decided >= :since
+            GROUP BY s.section_id, ed.decision_type
+            """,
+            nativeQuery = true)
+    List<Object[]> decisionsBySectionType(@Param("since") Instant since);
+
+    @Query(value = """
+            SELECT EXTRACT(EPOCH FROM (ed.date_decided - s.date_submitted)) / 86400
+            FROM editorial_decision ed
+            JOIN submission s ON s.id = ed.submission_id
+            WHERE ed.decision_type IN ('ACCEPT', 'DECLINE', 'INITIAL_DECLINE')
+              AND ed.date_decided >= :since
+              AND s.date_submitted IS NOT NULL
+              AND ed.date_decided > s.date_submitted
+            """,
+            nativeQuery = true)
+    List<Double> timeToDecisionDaysSample(@Param("since") Instant since);
 }

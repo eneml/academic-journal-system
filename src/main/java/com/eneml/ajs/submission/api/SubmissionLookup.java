@@ -40,4 +40,11 @@ public interface SubmissionLookup {
      * Months with no submissions are omitted; callers should fill in zeroes.
      */
     Map<Integer, Long> monthlySubmissionCounts(int year);
+
+    /**
+     * Submission counts grouped by {@code sectionId} for submissions whose
+     * {@code dateSubmitted} is on or after {@code since}. Sections with no
+     * submissions in the window are omitted.
+     */
+    Map<Long, Long> countBySectionSince(Instant since);
 }

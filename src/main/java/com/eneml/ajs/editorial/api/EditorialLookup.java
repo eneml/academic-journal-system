@@ -16,4 +16,17 @@ public interface EditorialLookup {
      * with no decisions are omitted.
      */
     Map<Integer, Long> monthlyDecisionCounts(int year, List<DecisionType> types);
+
+    /**
+     * Decisions logged on or after {@code since}, broken down by section and
+     * decision type. Outer key is sectionId; inner keyed by DecisionType.
+     */
+    Map<Long, Map<DecisionType, Long>> decisionsBySectionType(Instant since);
+
+    /**
+     * Sample of days-from-submission to first ACCEPT / DECLINE / INITIAL_DECLINE
+     * decision for submissions decided since {@code since}. Used by the admin
+     * Statistics page to compute P50 / P90 / mean / SLA percentages.
+     */
+    List<Integer> timeToDecisionDaysSample(Instant since);
 }
