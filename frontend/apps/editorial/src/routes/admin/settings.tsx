@@ -6,13 +6,13 @@ import { PageHeader } from "../../components/PageHeader";
 import { EmptyState } from "../../components/EmptyState";
 import { SignInPrompt } from "../../components/SignInPrompt";
 
-export const Route = createFileRoute("/admin/journal")({
+export const Route = createFileRoute("/admin/settings")({
   component: JournalSettingsPage,
 });
 
 function JournalSettingsPage(): ReactNode {
   const { user, roles, loading } = useAuth();
-  if (loading) return <p style={{ color: "var(--muted)" }}>Loading session&hellip;</p>;
+  if (loading) return <p className="text-muted">Loading session…</p>;
   if (!user) return <SignInPrompt />;
   if (!hasRole(roles, "ADMIN")) {
     return (

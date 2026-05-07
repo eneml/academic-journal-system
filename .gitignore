@@ -3,3 +3,6 @@
 .idea/
 target/
 *.tsbuildinfo
+.tanstack/
+.turbo/
+.next/
