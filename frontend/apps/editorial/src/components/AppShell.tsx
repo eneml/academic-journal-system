@@ -31,9 +31,9 @@ import { hasRole, isEditorial, type RealmRole } from "../auth/roles";
 import { api } from "../lib/api";
 import { cn } from "../lib/cn";
 import {
-  Button,
   LanguageSwitcher,
   UserMenu as SharedUserMenu,
+  UtilityBar,
 } from "@ajs/ui";
 import { NotificationsBell } from "./NotificationsBell";
 
@@ -228,15 +228,64 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
   }
 
   return (
-    <div className="grid grid-cols-[244px_1fr] min-h-screen bg-bg-tint font-sans text-fg">
-      <Sidebar />
-      <div className="flex flex-col min-w-0">
-        <Topbar />
-        <main className="flex-1 px-6 py-6 pb-12 min-w-0 bg-bg-tint">
-          {children}
-        </main>
+    <div className="flex min-h-screen flex-col bg-bg-tint font-sans text-fg">
+      <UtilityBar
+        openAccess={false}
+        rssHref={null}
+        leftExtras={
+          <span className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted">
+            Editorial workbench
+          </span>
+        }
+        rightSlot={<UtilityRightSlot />}
+      />
+      <div className="grid grid-cols-[244px_1fr] flex-1 min-h-0">
+        <Sidebar />
+        <div className="flex flex-col min-w-0">
+          <Topbar />
+          <main className="flex-1 min-w-0 px-6 py-6 pb-12 bg-bg-tint">
+            {children}
+          </main>
+        </div>
       </div>
     </div>
+  );
+}
+
+function UtilityRightSlot(): ReactNode {
+  const { user, signOut, roles } = useAuth();
+  const given = (user?.profile.given_name as string | undefined) ?? "";
+  const family = (user?.profile.family_name as string | undefined) ?? "";
+  const username =
+    (user?.profile.preferred_username as string | undefined) ?? "user";
+  const email = (user?.profile.email as string | undefined) ?? username;
+  const fullName = `${given} ${family}`.trim() || username;
+  const initials = computeInitials(given, family, username);
+
+  return (
+    <>
+      <LanguageSwitcher variant="inline" />
+      <span className="hidden h-3.5 w-px bg-border sm:inline-block" aria-hidden />
+      <SharedUserMenu
+        variant="inline"
+        user={
+          user
+            ? {
+                displayName: fullName,
+                email,
+                initials,
+                subtitle: formatPrimaryRole(roles),
+              }
+            : null
+        }
+        items={[
+          { type: "link", label: "Profile", href: "/profile", icon: UserCog },
+          { type: "link", label: "Notifications", href: "/notifications", icon: Bell },
+        ]}
+        onSignOut={() => void signOut()}
+        signInHref="/login"
+      />
+    </>
   );
 }
 
@@ -404,7 +453,6 @@ function UserBadge(): ReactNode {
 // --------------------------------------------------------------------------
 
 function Topbar(): ReactNode {
-  const { user, loading } = useAuth();
   const router = useRouter();
   const breadcrumb = useBreadcrumb();
 
@@ -423,18 +471,7 @@ function Topbar(): ReactNode {
         ))}
       </nav>
       <div className="flex-1" />
-      {loading ? (
-        <span className="text-muted text-[13px]">Loading…</span>
-      ) : user ? (
-        <div className="flex items-center gap-1">
-          <NotificationsBell />
-          <LanguageSwitcher />
-        </div>
-      ) : (
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/login" search={{ redirect: undefined }}>Sign in</Link>
-        </Button>
-      )}
+      <NotificationsBell />
       <span className="hidden" aria-hidden>
         {router.state.status}
       </span>
