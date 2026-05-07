@@ -244,7 +244,13 @@ class JournalModuleIntegrationTest {
                 Map.of("en", "© 2026 AJS"),
                 "https://creativecommons.org/licenses/by/4.0/",
                 Map.of("en", "About this journal..."),
-                false));
+                false,
+                "AJS",
+                Map.of("en", "An open-access journal"),
+                2014,
+                "Quarterly",
+                "University of Bucharest Press",
+                "RO"));
 
         var refreshed = journalLookup.getConfig();
         assertThat(refreshed.name()).containsEntry("en", "AJS Quarterly");

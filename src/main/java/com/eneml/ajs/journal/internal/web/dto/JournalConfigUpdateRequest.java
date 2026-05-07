@@ -1,6 +1,8 @@
 package com.eneml.ajs.journal.internal.web.dto;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -45,6 +47,25 @@ public record JournalConfigUpdateRequest(
         @NotNull
         Map<String, String> about,
 
-        boolean submissionsOpen
+        boolean submissionsOpen,
+
+        @Size(max = 32)
+        String acronym,
+
+        @NotNull
+        Map<String, String> subtitle,
+
+        @Min(1500) @Max(9999)
+        Integer foundingYear,
+
+        @Size(max = 64)
+        String frequency,
+
+        @Size(max = 256)
+        String publisher,
+
+        @Pattern(regexp = "^[A-Z]{2}$",
+                message = "Country must be a 2-letter ISO 3166-1 code (e.g. RO, GB, US)")
+        String countryOfPublication
 ) {
 }

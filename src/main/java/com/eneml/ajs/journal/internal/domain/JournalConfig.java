@@ -67,4 +67,23 @@ public class JournalConfig extends AuditableEntity {
 
     @Column(name = "submissions_open", nullable = false)
     private boolean submissionsOpen = true;
+
+    @Column(name = "acronym", length = 32)
+    private String acronym;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "subtitle", columnDefinition = "jsonb", nullable = false)
+    private Map<String, String> subtitle = new HashMap<>();
+
+    @Column(name = "founding_year")
+    private Integer foundingYear;
+
+    @Column(name = "frequency", length = 64)
+    private String frequency;
+
+    @Column(name = "publisher", length = 256)
+    private String publisher;
+
+    @Column(name = "country_of_publication", length = 2)
+    private String countryOfPublication;
 }

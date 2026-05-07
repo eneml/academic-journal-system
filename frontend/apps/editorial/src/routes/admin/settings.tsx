@@ -27,6 +27,12 @@ interface JournalConfig {
   licenseUrl: string | null;
   about: Record<string, string>;
   submissionsOpen: boolean;
+  acronym: string | null;
+  subtitle: Record<string, string>;
+  foundingYear: number | null;
+  frequency: string | null;
+  publisher: string | null;
+  countryOfPublication: string | null;
   version: number;
   updatedAt: string;
 }
@@ -107,6 +113,12 @@ function SettingsAdmin(): ReactNode {
       licenseUrl: draft.licenseUrl,
       about: draft.about,
       submissionsOpen: draft.submissionsOpen,
+      acronym: draft.acronym,
+      subtitle: draft.subtitle,
+      foundingYear: draft.foundingYear,
+      frequency: draft.frequency,
+      publisher: draft.publisher,
+      countryOfPublication: draft.countryOfPublication,
     };
     const updated = await api<JournalConfig>("/api/v1/journal/config", {
       method: "PUT",
@@ -208,6 +220,8 @@ function IdentityTab({
     onChange({ ...draft, [key]: value });
   const setName = (loc: string, value: string) =>
     onChange({ ...draft, name: { ...draft.name, [loc]: value } });
+  const setSubtitle = (loc: string, value: string) =>
+    onChange({ ...draft, subtitle: { ...draft.subtitle, [loc]: value } });
 
   return (
     <Card>
@@ -215,14 +229,31 @@ function IdentityTab({
         Identity
       </h2>
       <p className="mt-0 mb-5 text-[12.5px] text-muted">
-        Names, ISSN, default locale, contact email.
+        Public-facing identity, ISSN, branding, and contact.
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {draft.supportedLocales.map((loc) => (
-          <Field key={loc} label={`Journal name (${loc.toUpperCase()})`}>
+          <Field key={`name-${loc}`} label={`Journal name (${loc.toUpperCase()})`}>
             <Input
               value={draft.name[loc] ?? ""}
               onChange={(e) => setName(loc, e.target.value)}
+            />
+          </Field>
+        ))}
+        <Field label="Acronym">
+          <Input
+            value={draft.acronym ?? ""}
+            onChange={(e) => set("acronym", e.target.value || null)}
+            placeholder="AJCS"
+            maxLength={32}
+          />
+        </Field>
+        {draft.supportedLocales.map((loc) => (
+          <Field key={`sub-${loc}`} label={`Subtitle (${loc.toUpperCase()})`}>
+            <Input
+              value={draft.subtitle[loc] ?? ""}
+              onChange={(e) => setSubtitle(loc, e.target.value)}
+              placeholder="An open-access peer-reviewed journal"
             />
           </Field>
         ))}
@@ -231,7 +262,6 @@ function IdentityTab({
             value={draft.issnPrint ?? ""}
             onChange={(e) => set("issnPrint", e.target.value || null)}
             placeholder="XXXX-XXXX"
-            inputMode="text"
           />
         </Field>
         <Field label="Online ISSN">
@@ -239,7 +269,50 @@ function IdentityTab({
             value={draft.issnOnline ?? ""}
             onChange={(e) => set("issnOnline", e.target.value || null)}
             placeholder="XXXX-XXXX"
-            inputMode="text"
+          />
+        </Field>
+        <Field label="Founding year">
+          <Input
+            type="number"
+            min={1500}
+            max={9999}
+            value={draft.foundingYear ?? ""}
+            onChange={(e) =>
+              set(
+                "foundingYear",
+                e.target.value ? Number(e.target.value) : null,
+              )
+            }
+            placeholder="2014"
+          />
+        </Field>
+        <Field label="Frequency">
+          <Input
+            value={draft.frequency ?? ""}
+            onChange={(e) => set("frequency", e.target.value || null)}
+            placeholder="Quarterly · 4 issues/year"
+            maxLength={64}
+          />
+        </Field>
+        <Field label="Publisher">
+          <Input
+            value={draft.publisher ?? ""}
+            onChange={(e) => set("publisher", e.target.value || null)}
+            placeholder="University of Bucharest Press"
+            maxLength={256}
+          />
+        </Field>
+        <Field label="Country of publication">
+          <Input
+            value={draft.countryOfPublication ?? ""}
+            onChange={(e) =>
+              set(
+                "countryOfPublication",
+                e.target.value ? e.target.value.toUpperCase() : null,
+              )
+            }
+            placeholder="RO"
+            maxLength={2}
           />
         </Field>
         <Field label="Default locale">

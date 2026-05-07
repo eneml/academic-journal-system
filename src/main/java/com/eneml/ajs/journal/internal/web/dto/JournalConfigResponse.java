@@ -16,6 +16,12 @@ public record JournalConfigResponse(
         String licenseUrl,
         Map<String, String> about,
         boolean submissionsOpen,
+        String acronym,
+        Map<String, String> subtitle,
+        Integer foundingYear,
+        String frequency,
+        String publisher,
+        String countryOfPublication,
         long version,
         Instant updatedAt
 ) {
