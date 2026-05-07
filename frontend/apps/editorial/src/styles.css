@@ -24,8 +24,14 @@
   --color-amber-soft: var(--amber-soft);
 
   --color-success: var(--success);
+  --color-success-deep: var(--success-deep);
+  --color-success-soft: var(--success-soft);
+  --color-success-border: var(--success-border);
   --color-warn: var(--warn);
   --color-danger: var(--danger);
+  --color-danger-deep: var(--danger-deep);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-border: var(--danger-border);
   --color-info: var(--info);
 
   /* shadcn-style aliases — components from upstream shadcn use these

@@ -20,6 +20,14 @@
    * content pinning to the left edge.
    */
   --page-gutter: clamp(40px, 4vw, 96px);
+
+  /* Footer is single-app (public-site only); kept here rather than in
+     shared tokens.css. Three foreground stops + border + bg. */
+  --footer-bg: oklch(18% 0.018 270);
+  --footer-fg: oklch(80% 0.01 270);
+  --footer-fg-2: oklch(72% 0.01 270);
+  --footer-fg-muted: oklch(58% 0.01 270);
+  --footer-border: oklch(28% 0.02 270);
 }
 
 @theme {
@@ -43,9 +51,21 @@
   --color-amber-soft: var(--amber-soft);
 
   --color-success: var(--success);
+  --color-success-deep: var(--success-deep);
+  --color-success-soft: var(--success-soft);
+  --color-success-border: var(--success-border);
   --color-warn: var(--warn);
   --color-danger: var(--danger);
+  --color-danger-deep: var(--danger-deep);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-border: var(--danger-border);
   --color-info: var(--info);
+
+  --color-footer-bg: var(--footer-bg);
+  --color-footer-fg: var(--footer-fg);
+  --color-footer-fg-2: var(--footer-fg-2);
+  --color-footer-fg-muted: var(--footer-fg-muted);
+  --color-footer-border: var(--footer-border);
 
   /* Type stacks. */
   --font-serif-display: var(--serif-display);
