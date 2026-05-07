@@ -131,80 +131,97 @@ function AnnouncementsAdminPage(): ReactNode {
           description="Post a call for papers or share journal news with readers."
         />
       ) : (
-        <Card padded={false}>
-          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-            {items.map((a, idx) => (
-              <li
+        <div className="grid gap-3 md:grid-cols-2">
+          {items.map((a) => {
+            const titleStr =
+              (a.title?.en ?? (a.title ? Object.values(a.title)[0] : null)) ??
+              `#${a.id}`;
+            const bodyStr = a.body?.en ?? (a.body ? Object.values(a.body)[0] : "") ?? "";
+            const accent =
+              a.type === "CALL_FOR_PAPERS"
+                ? "var(--amber-deep)"
+                : a.type === "SPECIAL_ISSUE"
+                  ? "var(--cobalt)"
+                  : a.type === "POLICY"
+                    ? "var(--success-deep)"
+                    : null;
+            return (
+              <div
                 key={a.id}
-                style={{
-                  padding: "14px 22px",
-                  borderBottom: idx < items.length - 1 ? "1px solid var(--border)" : "none",
-                }}
+                className="relative rounded-md border border-border bg-white p-4"
               >
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p
-                      style={{
-                        fontFamily: "var(--serif-display)",
-                        fontWeight: 600,
-                        fontSize: 16,
-                        margin: 0,
-                      }}
-                    >
-                      {(a.title?.en ?? (a.title ? Object.values(a.title)[0] : null)) ?? `#${a.id}`}
-                    </p>
-                    <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
-                      <StatusChip status={a.type} />
-                      {a.pinned ? <span className="chip chip-cobalt">pinned</span> : null}
-                      {!a.visible ? <span className="chip">hidden</span> : null}
-                      <span
-                        className="tnum"
-                        style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}
-                      >
-                        posted {a.datePosted ? new Date(a.datePosted).toLocaleDateString() : "—"}
-                      </span>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: 6, flex: "none" }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditing(a);
-                        setShowForm(true);
-                      }}
-                      style={btnSecondary}
-                    >
-                      Edit
-                    </button>
-                    {a.visible ? (
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          await api(`/api/v1/announcements/${a.id}/withdraw`, { method: "POST" });
-                          await reload();
-                        }}
-                        style={btnSecondary}
-                      >
-                        Withdraw
-                      </button>
-                    ) : null}
+                {accent ? (
+                  <span
+                    className="absolute left-0 top-0 h-[3px] w-[40%] rounded-tl-md"
+                    style={{ background: accent }}
+                    aria-hidden
+                  />
+                ) : null}
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  {a.visible ? (
+                    <span className="chip chip-green chip-dot">Published</span>
+                  ) : (
+                    <span className="chip chip-amber chip-dot">Draft</span>
+                  )}
+                  {a.type ? <StatusChip status={a.type} /> : null}
+                  {a.pinned ? <span className="chip chip-cobalt">pinned</span> : null}
+                  <span className="font-mono text-[10.5px] text-muted">
+                    posted{" "}
+                    {a.datePosted ? new Date(a.datePosted).toLocaleDateString() : "—"}
+                  </span>
+                </div>
+                <h4 className="m-0 mb-1.5 font-serif-display text-[17px] font-medium leading-[1.25] text-ink">
+                  {titleStr}
+                </h4>
+                {bodyStr ? (
+                  <p className="m-0 mb-3 line-clamp-3 font-serif-body text-[13px] leading-[1.55] text-fg-2">
+                    {bodyStr}
+                  </p>
+                ) : null}
+                <div className="flex flex-wrap gap-1.5 border-t border-border pt-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditing(a);
+                      setShowForm(true);
+                    }}
+                    style={btnSecondary}
+                  >
+                    Edit
+                  </button>
+                  {a.visible ? (
                     <button
                       type="button"
                       onClick={async () => {
-                        if (!confirm(`Delete announcement #${a.id}? This is permanent.`)) return;
-                        await api(`/api/v1/announcements/${a.id}`, { method: "DELETE" });
+                        await api(`/api/v1/announcements/${a.id}/withdraw`, {
+                          method: "POST",
+                        });
                         await reload();
                       }}
-                      style={{ ...btnSecondary, color: "#b91c1c", borderColor: "#fca5a5" }}
+                      style={btnSecondary}
                     >
-                      Delete
+                      Withdraw
                     </button>
-                  </div>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!confirm(`Delete announcement #${a.id}? This is permanent.`))
+                        return;
+                      await api(`/api/v1/announcements/${a.id}`, {
+                        method: "DELETE",
+                      });
+                      await reload();
+                    }}
+                    style={{ ...btnSecondary, color: "#b91c1c", borderColor: "#fca5a5" }}
+                  >
+                    Delete
+                  </button>
                 </div>
-              </li>
-            ))}
-          </ul>
-        </Card>
+              </div>
+            );
+          })}
+        </div>
       )}
     </>
   );
