@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Newsreader, Source_Serif_4, Inter_Tight, JetBrains_Mono } from "next/font/google";
+import { resolveLocale } from "@/lib/locale";
 import "./globals.css";
+
+const SITE_URL = process.env.NEXT_PUBLIC_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 const newsreader = Newsreader({
   subsets: ["latin"],
@@ -31,12 +34,21 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "The Academic Journal",
   description: "A scholarly journal of original peer-reviewed research.",
+  metadataBase: new URL(SITE_URL),
+  alternates: {
+    languages: {
+      en: "/",
+      ro: "/?lang=ro",
+      "x-default": "/",
+    },
+  },
 };
 
-export default function RootLayout({ children }: { children: ReactNode }): ReactNode {
+export default async function RootLayout({ children }: { children: ReactNode }): Promise<ReactNode> {
   const fontClasses = `${newsreader.variable} ${sourceSerif.variable} ${interTight.variable} ${jetbrainsMono.variable}`;
+  const locale = await resolveLocale();
   return (
-    <html lang="en" className={fontClasses}>
+    <html lang={locale} className={fontClasses}>
       <body>{children}</body>
     </html>
   );
