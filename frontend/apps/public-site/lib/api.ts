@@ -248,12 +248,18 @@ export type SearchHit = {
 export const search = (q: string, opts?: {
   section?: number;
   year?: number;
+  /** Article type filter — values must match the search index `article_type` column. */
+  types?: string[];
+  /** Open Access only when true; restricted-only when false; both when undefined. */
+  openAccess?: boolean;
   page?: number;
   size?: number;
 }) => {
   const params = new URLSearchParams({ q });
   if (opts?.section != null) params.set("section", String(opts.section));
   if (opts?.year != null) params.set("year", String(opts.year));
+  (opts?.types ?? []).forEach((t) => params.append("type", t));
+  if (opts?.openAccess != null) params.set("oa", String(opts.openAccess));
   if (opts?.page != null) params.set("page", String(opts.page));
   if (opts?.size != null) params.set("size", String(opts.size));
   return getJson<SearchHit[]>(`/api/v1/search?${params.toString()}`);

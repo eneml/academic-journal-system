@@ -41,6 +41,11 @@ function firstNumeric(value: string | string[] | undefined): number | undefined 
   return Number.isNaN(n) ? undefined : n;
 }
 
+function collectStrings(value: string | string[] | undefined): string[] {
+  if (value == null) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
 export default async function SearchPage({
   searchParams,
 }: SearchPageProps): Promise<ReactNode> {
@@ -48,6 +53,8 @@ export default async function SearchPage({
   const q = (params.q ?? "").trim();
   const sectionId = firstNumeric(params.section);
   const year = firstNumeric(params.year);
+  const types = collectStrings(params.type);
+  const oa = params.oa === "true" ? true : params.oa === "false" ? false : undefined;
   const page = Number.parseInt(
     Array.isArray(params.page) ? params.page[0] : params.page ?? "0",
     10,
@@ -59,6 +66,8 @@ export default async function SearchPage({
       ? runSearch(q, {
           section: sectionId,
           year,
+          types,
+          openAccess: oa,
           page,
           size: PAGE_SIZE,
         })
