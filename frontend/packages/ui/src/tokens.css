@@ -183,8 +183,149 @@ body {
 .rule-strong {
   border-top: 1px solid var(--border-strong);
 }
+.rule-ink {
+  border-top: 1px solid var(--border-ink);
+}
 .double-rule {
   border-top: 3px double var(--border-strong);
+}
+.triple-rule {
+  border-top: 1px solid var(--border-ink);
+  box-shadow: 0 3px 0 -1px var(--border-ink);
+  height: 4px;
+}
+
+/* Centered ornament divider */
+.fleuron {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--muted-2);
+  font-family: var(--serif-display);
+}
+.fleuron::before,
+.fleuron::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--border-strong);
+}
+
+/* Paper / ink surfaces — used by hero, masthead, footer */
+.paper {
+  background:
+    radial-gradient(ellipse at top, oklch(99.5% 0.003 92) 0%, var(--bg) 70%),
+    var(--bg);
+  position: relative;
+}
+.paper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain);
+  opacity: 0.5;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+.paper > * { position: relative; }
+
+.cover-paper {
+  background-color: var(--paper);
+  background-image:
+    repeating-linear-gradient(0deg, oklch(20% 0.02 270 / 0.012) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 30% 20%, oklch(99.5% 0.003 92) 0%, var(--paper) 70%);
+}
+
+.ink-bg {
+  background:
+    radial-gradient(ellipse 80% 80% at 30% 0%, oklch(28% 0.10 258) 0%, var(--cobalt-darker) 60%, oklch(12% 0.06 260) 100%);
+  color: oklch(95% 0.005 90);
+  position: relative;
+  overflow: hidden;
+}
+.ink-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain);
+  opacity: 0.3;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* Card lift on hover */
+.lift {
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.lift:hover {
+  transform: translateY(-2px);
+}
+
+/* TOC row — amber rail on hover */
+.toc-row {
+  transition: background 140ms ease, transform 140ms ease;
+  position: relative;
+}
+.toc-row::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: transparent;
+  transition: background 140ms ease;
+}
+.toc-row:hover {
+  background: var(--bg-tint);
+}
+.toc-row:hover::before {
+  background: var(--amber);
+}
+
+/* Reveal-on-load + sparkle ornament */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rise { animation: rise 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+
+/* CSS-only sparkline bars (alternative to inline SVG) */
+.spark-bar {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 18px;
+}
+.spark-bar > span {
+  width: 3px;
+  background: var(--cobalt);
+  border-radius: 1px 1px 0 0;
+}
+
+/* Open Access badge */
+.oa-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--success-deep);
+  background: var(--success-soft);
+  border: 1px solid var(--success-border);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.oa-badge::before {
+  content: "";
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: inset 0 0 0 1.5px white, inset 0 0 0 2.5px var(--success);
 }
 
 /* Button base */
