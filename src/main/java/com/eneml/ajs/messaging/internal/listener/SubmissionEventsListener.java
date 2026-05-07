@@ -63,7 +63,8 @@ class SubmissionEventsListener {
                     body,
                     "submission",
                     submissionId,
-                    "/editor/submissions/" + submissionId));
+                    "/editor/submissions/" + submissionId,
+                    CanonicalEmailTemplateKey.SUBMISSION_NEEDS_EDITOR.key()));
         }
     }
 
@@ -88,6 +89,7 @@ class SubmissionEventsListener {
                 body,
                 "submission",
                 submissionId,
-                "/author/submissions/" + submissionId));
+                "/author/submissions/" + submissionId,
+                CanonicalEmailTemplateKey.SUBMISSION_ACKNOWLEDGEMENT.key()));
     }
 }

@@ -49,6 +49,7 @@ class ReviewEventsListener {
                 body,
                 "review-assignment",
                 event.assignmentId(),
-                "/reviewer/assignments/" + event.assignmentId()));
+                "/reviewer/assignments/" + event.assignmentId(),
+                CanonicalEmailTemplateKey.REVIEW_REQUEST.key()));
     }
 }

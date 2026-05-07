@@ -60,7 +60,8 @@ class EditorialEventsListener {
                 body,
                 "submission",
                 event.submissionId(),
-                "/author/submissions/" + event.submissionId()));
+                "/author/submissions/" + event.submissionId(),
+                category.templateKey().key()));
     }
 
     /**
