@@ -16,7 +16,7 @@ export const revalidate = 600;
 export const metadata: Metadata = {
   title: "Editorial Board",
   description:
-    "Editor-in-Chief, senior editors, associate editors, and editorial advisory board for The Academic Journal.",
+    "Editor-in-Chief, senior editors, associate editors, and editorial advisory board.",
 };
 
 const SENIOR_KEYWORDS = [
@@ -28,9 +28,13 @@ const SENIOR_KEYWORDS = [
   "deputy editor",
 ];
 
-function isSenior(role: string): boolean {
+const ADVISORY_KEYWORDS = ["advisor", "advisory"];
+
+function classify(role: string): "senior" | "advisory" | "associate" {
   const r = role.toLowerCase();
-  return SENIOR_KEYWORDS.some((k) => r.includes(k));
+  if (ADVISORY_KEYWORDS.some((k) => r.includes(k))) return "advisory";
+  if (SENIOR_KEYWORDS.some((k) => r.includes(k))) return "senior";
+  return "associate";
 }
 
 function fullName(entry: MastheadEntry): string {
@@ -39,39 +43,6 @@ function fullName(entry: MastheadEntry): string {
 
 const HUE_BY_INDEX = [270, 240, 200, 60, 320, 100];
 
-const ADVISORY_BOARD = [
-  "Andrei Ionescu, Bucharest",
-  "Bao Nguyen, Hanoi",
-  "Catherine Ashworth, Cambridge",
-  "Dimitri Voronov, Moscow",
-  "Emma Sørensen, Copenhagen",
-  "Faisal Al-Khouri, Dubai",
-  "Greta Müller, Berlin",
-  "Hannelore van Dijk, Utrecht",
-  "Ibrahim Toure, Dakar",
-  "Jenna Brooks, Vancouver",
-  "Klaus Schmidt, Vienna",
-  "Lucia Romano, Bologna",
-  "Martina Costa, Lisbon",
-  "Niamh Doyle, Cork",
-  "Oluwaseun Adesanya, Lagos",
-  "Petra Novák, Prague",
-  "Quentin Lambert, Lyon",
-  "Ravi Subramanian, Chennai",
-  "Soraya Bensalem, Algiers",
-  "Tatiana Petrova, Saint Petersburg",
-  "Umberto Greco, Rome",
-  "Verónica Salinas, Buenos Aires",
-  "Wojciech Nowak, Kraków",
-  "Xiu-Mei Liu, Beijing",
-  "Yael Cohen, Tel Aviv",
-  "Zoltán Kovács, Budapest",
-  "Anaya Bhatt, Mumbai",
-  "Brendan Walsh, Dublin",
-  "Camila Reyes, Santiago",
-  "Demetrios Papadakis, Athens",
-];
-
 export default async function EditorialBoardPage(): Promise<ReactNode> {
   const [masthead, config] = await Promise.all([
     fetchMasthead(),
@@ -79,48 +50,44 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
   ]);
   const locale = config?.defaultLocale ?? "en";
   const visible = (masthead ?? []).filter((m) => m.visible);
-  const senior = visible.filter((e) => isSenior(pickLocale(e.roleLabel, locale)));
-  const associates = visible.filter(
-    (e) => !isSenior(pickLocale(e.roleLabel, locale)),
-  );
+  const grouped = {
+    senior: [] as MastheadEntry[],
+    advisory: [] as MastheadEntry[],
+    associate: [] as MastheadEntry[],
+  };
+  visible.forEach((e) => {
+    grouped[classify(pickLocale(e.roleLabel, locale))].push(e);
+  });
 
   return (
     <div className="min-h-screen bg-bg">
       <PublicHeader activePath="/editorial" />
 
-      <section className="mx-auto max-w-[760px] px-6 pt-10 pb-6 text-center lg:px-14">
-        <div className="mb-3 font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-amber-deep">
-          About · Editorial Board
-        </div>
-        <h1 className="m-0 mb-3 font-serif-display text-[clamp(36px,5vw,48px)] font-medium leading-[1.05] tracking-[-0.02em]">
+      <section className="mx-auto max-w-[760px] px-6 pt-12 pb-7 text-center lg:px-14">
+        <div className="sc mb-3 text-amber-deep">About · Editorial Board</div>
+        <h1 className="m-0 mb-3.5 font-serif-display text-[clamp(36px,5vw,48px)] font-medium leading-[1.05] tracking-[-0.02em] text-ink">
           The editors who steward this journal
         </h1>
         <p className="m-0 font-serif-body text-[18px] italic leading-[1.55] text-fg-2">
-          {senior.length} senior {senior.length === 1 ? "editor" : "editors"},{" "}
-          {associates.length} associate{" "}
-          {associates.length === 1 ? "editor" : "editors"}, and{" "}
-          {ADVISORY_BOARD.length} members of the editorial advisory board
-          oversee peer review across all sections of the journal.
+          {grouped.senior.length} senior {pluralize(grouped.senior.length, "editor", "editors")},{" "}
+          {grouped.associate.length} associate{" "}
+          {pluralize(grouped.associate.length, "editor", "editors")}
+          {grouped.advisory.length
+            ? `, and ${grouped.advisory.length} ${pluralize(grouped.advisory.length, "member", "members")} of the editorial advisory board`
+            : ""}
+          {" "}oversee peer review across all sections of the journal.
         </p>
       </section>
 
-      <section className="px-6 pt-8 lg:px-14">
-        <div className="mb-5 flex items-baseline gap-3.5">
-          <h2 className="m-0 font-serif-display text-[26px] font-medium tracking-[-0.01em]">
-            Senior editors
-          </h2>
-          <div className="h-px flex-1 bg-border" />
-          <span className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted">
-            {senior.length} {senior.length === 1 ? "editor" : "editors"}
-          </span>
-        </div>
-        {senior.length === 0 ? (
+      <section className="px-6 pt-9 lg:px-14">
+        <SectionHeader title="Senior editors" count={grouped.senior.length} />
+        {grouped.senior.length === 0 ? (
           <p className="font-serif-body italic text-muted">
             Senior editor listing coming soon.
           </p>
         ) : (
-          <ul className="grid gap-6 lg:grid-cols-2 m-0 p-0 list-none">
-            {senior.map((e, i) => {
+          <ul className="m-0 grid gap-6 p-0 list-none lg:grid-cols-2">
+            {grouped.senior.map((e, i) => {
               const name = fullName(e) || `Member #${e.userId}`;
               const role = pickLocale(e.roleLabel, locale);
               const bio = pickLocale(e.bioOverride, locale);
@@ -135,10 +102,8 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
                     hue={HUE_BY_INDEX[i % HUE_BY_INDEX.length]}
                   />
                   <div>
-                    <div className="mb-1.5 font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-cobalt">
-                      {role}
-                    </div>
-                    <h3 className="m-0 mb-1 font-serif-display text-[22px] font-medium tracking-[-0.005em]">
+                    <div className="sc mb-1.5 text-cobalt">{role}</div>
+                    <h3 className="m-0 mb-1 font-serif-display text-[22px] font-medium tracking-[-0.005em] text-ink">
                       {name}
                     </h3>
                     <div className="mb-2.5 font-serif-body text-[13px] italic text-muted">
@@ -158,23 +123,18 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
         )}
       </section>
 
-      <section className="px-6 pt-11 lg:px-14">
-        <div className="mb-5 flex items-baseline gap-3.5">
-          <h2 className="m-0 font-serif-display text-[26px] font-medium tracking-[-0.01em]">
-            Associate editors
-          </h2>
-          <div className="h-px flex-1 bg-border" />
-          <span className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted">
-            {associates.length} editors
-          </span>
-        </div>
-        {associates.length === 0 ? (
+      <section className="px-6 pt-12 lg:px-14">
+        <SectionHeader
+          title="Associate editors"
+          count={grouped.associate.length}
+        />
+        {grouped.associate.length === 0 ? (
           <p className="font-serif-body italic text-muted">
             Associate editor listing coming soon.
           </p>
         ) : (
           <div className="grid gap-x-10 sm:grid-cols-2">
-            {associates.map((p) => {
+            {grouped.associate.map((p) => {
               const name = fullName(p) || `Member #${p.userId}`;
               const roleStr = pickLocale(p.roleLabel, locale);
               const [role, area] = roleStr.split("·").map((s) => s.trim());
@@ -185,7 +145,9 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
                 >
                   <Avatar name={name} size={36} />
                   <div>
-                    <div className="text-[14px] font-semibold">{name}</div>
+                    <div className="text-[14px] font-semibold text-ink">
+                      {name}
+                    </div>
                     <div className="font-serif-body text-[12px] italic text-muted">
                       {role ?? roleStr}
                     </div>
@@ -200,26 +162,59 @@ export default async function EditorialBoardPage(): Promise<ReactNode> {
         )}
       </section>
 
-      <section className="px-6 pt-11 lg:px-14">
-        <div className="mb-4 flex items-baseline gap-3.5">
-          <h2 className="m-0 font-serif-display text-[22px] font-medium tracking-[-0.01em]">
-            Editorial advisory board
-          </h2>
-          <div className="h-px flex-1 bg-border" />
-          <span className="font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted">
-            {ADVISORY_BOARD.length} members · 18 countries
-          </span>
-        </div>
-        <div className="font-serif-body text-[14px] leading-loose text-fg-2 columns-1 [column-gap:40px] [column-rule:1px_solid_var(--border)] sm:columns-2 lg:columns-3">
-          {ADVISORY_BOARD.map((m) => (
-            <div key={m}>{m}</div>
-          ))}
-        </div>
-      </section>
+      {grouped.advisory.length > 0 ? (
+        <section className="px-6 pt-12 lg:px-14">
+          <SectionHeader
+            title="Editorial advisory board"
+            count={grouped.advisory.length}
+            unit="member"
+          />
+          <div className="font-serif-body text-[14px] leading-loose text-fg-2 columns-1 [column-gap:40px] [column-rule:1px_solid_var(--border)] sm:columns-2 lg:columns-3">
+            {grouped.advisory.map((p) => {
+              const name = fullName(p) || `Member #${p.userId}`;
+              const role = pickLocale(p.roleLabel, locale);
+              return (
+                <div key={p.id}>
+                  {name}
+                  {role ? (
+                    <span className="text-muted-2">, {role}</span>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
 
       <PublicFooter />
     </div>
   );
+}
+
+function SectionHeader({
+  title,
+  count,
+  unit = "editor",
+}: {
+  title: string;
+  count: number;
+  unit?: string;
+}) {
+  return (
+    <div className="mb-5 flex items-baseline gap-3.5">
+      <h2 className="m-0 font-serif-display text-[26px] font-medium tracking-[-0.01em] text-ink">
+        {title}
+      </h2>
+      <div className="h-px flex-1 bg-border" />
+      <span className="sc text-muted">
+        {count} {pluralize(count, unit, `${unit}s`)}
+      </span>
+    </div>
+  );
+}
+
+function pluralize(n: number, singular: string, plural: string): string {
+  return n === 1 ? singular : plural;
 }
 
 function extractAffiliation(bio: string): string {
