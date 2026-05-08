@@ -61,13 +61,13 @@ public class GalleyService {
     }
 
     @Transactional
-    public Galley approve(Long publicationId, Long galleyId) {
+    public Galley approve(Long publicationId, Long galleyId, Long publisherUserId) {
         Galley g = get(galleyId);
         if (!g.getPublicationId().equals(publicationId)) {
             throw NotFoundException.of("Galley on publication " + publicationId, galleyId);
         }
         if (g.isApproved()) return g;
-        g.approve();
+        g.approve(publisherUserId);
         events.publishEvent(GalleyApproved.of(galleyId, publicationId));
         return g;
     }

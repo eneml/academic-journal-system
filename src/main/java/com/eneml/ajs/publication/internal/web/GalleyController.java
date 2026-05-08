@@ -1,5 +1,6 @@
 package com.eneml.ajs.publication.internal.web;
 
+import com.eneml.ajs.identity.api.UserDirectoryService;
 import com.eneml.ajs.publication.internal.application.DoiService;
 import com.eneml.ajs.publication.internal.application.GalleyService;
 import com.eneml.ajs.publication.internal.web.dto.AssignDoiRequest;
@@ -12,6 +13,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,6 +37,7 @@ class GalleyController {
     private final GalleyService galleyService;
     private final DoiService doiService;
     private final GalleyMapper mapper;
+    private final UserDirectoryService userDirectory;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
@@ -65,8 +69,13 @@ class GalleyController {
     @PostMapping("/{galleyId}/approve")
     @PreAuthorize("hasAnyRole('EDITOR','ADMIN')")
     @Operation(summary = "Approve a galley for public display")
-    GalleyResponse approve(@PathVariable Long publicationId, @PathVariable Long galleyId) {
-        return mapper.toResponse(galleyService.approve(publicationId, galleyId));
+    GalleyResponse approve(@AuthenticationPrincipal Jwt jwt,
+                            @PathVariable Long publicationId,
+                            @PathVariable Long galleyId) {
+        Long publisherId = userDirectory.findByKeycloakSub(jwt.getSubject())
+                .map(u -> u.id())
+                .orElse(null);
+        return mapper.toResponse(galleyService.approve(publicationId, galleyId, publisherId));
     }
 
     @PostMapping("/{galleyId}/unapprove")

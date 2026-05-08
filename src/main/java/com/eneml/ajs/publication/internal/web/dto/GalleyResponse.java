@@ -14,6 +14,7 @@ public record GalleyResponse(
         boolean approved,
         String urlPath,
         Long doiId,
+        Long publisherId,
         long version,
         Instant updatedAt
 ) {

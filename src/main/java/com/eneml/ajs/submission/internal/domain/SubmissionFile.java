@@ -44,6 +44,14 @@ public class SubmissionFile extends AuditableEntity {
     @Column(name = "source_submission_file_id")
     private Long sourceSubmissionFileId;
 
+    /**
+     * Self-reference for HTML-galley dependents (CSS, images). When set,
+     * the file is rendered as part of its parent's served bundle rather
+     * than appearing standalone in the files panel.
+     */
+    @Column(name = "parent_submission_file_id")
+    private Long parentSubmissionFileId;
+
     @Column(name = "uploader_user_id", nullable = false)
     private Long uploaderUserId;
 

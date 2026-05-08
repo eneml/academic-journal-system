@@ -54,6 +54,19 @@ public class Galley extends AuditableEntity {
     @Column(name = "doi_id")
     private Long doiId;
 
+    /**
+     * User who flipped {@link #approved} to true. Captured at approve-time
+     * so the audit trail / public RSS feeds can attribute the publication
+     * step to a specific editor without joining against {@code event_log}.
+     */
+    @Column(name = "publisher_id")
+    private Long publisherId;
+
     public void approve() { this.approved = true; }
     public void unapprove() { this.approved = false; }
+
+    public void approve(Long publisherUserId) {
+        this.approved = true;
+        this.publisherId = publisherUserId;
+    }
 }

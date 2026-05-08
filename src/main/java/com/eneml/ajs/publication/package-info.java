@@ -16,6 +16,6 @@
  */
 @org.springframework.modulith.ApplicationModule(
     displayName = "Publication",
-    allowedDependencies = { "shared", "submission::api", "journal::api", "storage::api", "metrics::api" }
+    allowedDependencies = { "shared", "submission::api", "journal::api", "storage::api", "metrics::api", "identity::api" }
 )
 package com.eneml.ajs.publication;
