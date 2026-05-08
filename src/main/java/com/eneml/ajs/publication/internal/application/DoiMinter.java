@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -33,7 +32,6 @@ class DoiMinter {
     private final DoiService doiService;
 
     @ApplicationModuleListener
-    @Transactional
     public void on(GalleyApproved event) {
         JournalConfigSummary cfg = journalLookup.getConfig();
         if (cfg == null || !cfg.doiAutoMint() || cfg.doiPrefix() == null

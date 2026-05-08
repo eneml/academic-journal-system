@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.InputStream;
 import java.util.Optional;
@@ -39,7 +38,6 @@ class GalleyFullTextListener {
     private final SearchIndexRepository repository;
 
     @ApplicationModuleListener
-    @Transactional
     public void on(GalleyApproved event) {
         Optional<GalleySummary> galley = galleyLookup.findById(event.galleyId());
         if (galley.isEmpty()) return;
