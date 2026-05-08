@@ -10,6 +10,7 @@
  */
 @org.springframework.modulith.ApplicationModule(
     displayName = "Search",
-    allowedDependencies = { "shared", "publication::api", "issue::api", "journal::api" }
+    allowedDependencies = { "shared", "publication::api", "issue::api", "journal::api",
+                            "submission::api", "storage::api" }
 )
 package com.eneml.ajs.search;

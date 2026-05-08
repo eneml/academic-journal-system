@@ -50,4 +50,25 @@ public interface SearchIndexRepository extends JpaRepository<PublishedSearchInde
                @Param("abstractText") String abstractText,
                @Param("keywordsText") String keywordsText,
                @Param("datePublished") Instant datePublished);
+
+    /**
+     * Updates the {@code fulltext_text} on an existing index row and
+     * re-derives {@code searchable} so phrase hits in the body surface
+     * the article. Title/abstract/keywords keep their A/B/C weights;
+     * the body lands at D.
+     */
+    @Modifying
+    @Query(value = """
+            UPDATE published_search_index
+               SET fulltext_text = :fulltextText,
+                   searchable =
+                       setweight(to_tsvector('simple', coalesce(title_text, '')), 'A')
+                       || setweight(to_tsvector('simple', coalesce(keywords_text, '')), 'B')
+                       || setweight(to_tsvector('simple', coalesce(abstract_text, '')), 'C')
+                       || setweight(to_tsvector('simple', coalesce(:fulltextText, '')), 'D'),
+                   indexed_at = NOW()
+             WHERE publication_id = :publicationId
+            """, nativeQuery = true)
+    int updateFulltext(@Param("publicationId") Long publicationId,
+                       @Param("fulltextText") String fulltextText);
 }

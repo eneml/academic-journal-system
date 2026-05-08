@@ -48,6 +48,15 @@ public class PublishedSearchIndex {
     @Column(name = "keywords_text", columnDefinition = "text")
     private String keywordsText;
 
+    /**
+     * Plain text extracted from the approved galley (PDFBox for PDFs).
+     * Joined into the searchable tsvector with a lower weight than the
+     * title/abstract so phrase hits in the body still surface the
+     * article without dominating relevance.
+     */
+    @Column(name = "fulltext_text", columnDefinition = "text")
+    private String fulltextText;
+
     @Column(name = "date_published")
     private Instant datePublished;
 
