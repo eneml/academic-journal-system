@@ -50,6 +50,8 @@ type UserSummary = components["schemas"]["UserResponse"];
 type Publication = components["schemas"]["PublicationResponse"];
 type AuditEntry = components["schemas"]["EventLogEntrySummary"];
 type Participant = components["schemas"]["StageParticipantSummary"];
+type Discussion = components["schemas"]["DiscussionSummary"];
+type DiscussionMessage = components["schemas"]["DiscussionMessageSummary"];
 type StageRole = NonNullable<Participant["role"]>;
 type Stage = NonNullable<Participant["stage"]>;
 
@@ -283,6 +285,13 @@ function EditorialSubmissionDetailPage(): ReactNode {
               onChanged={() => void reload()}
             />
           </div>
+          <div id="tab-discussions" className="scroll-mt-44">
+            <DiscussionsCard
+              submissionId={submissionId}
+              currentStage={(submission.stage as Stage | undefined) ?? "SUBMISSION"}
+              participants={participants}
+            />
+          </div>
           <div id="tab-history" className="scroll-mt-44">
             <AuditLogCard entries={auditLog} />
           </div>
@@ -313,7 +322,7 @@ function WorkflowTabStrip(): ReactNode {
     { id: "production", label: "Production", live: false },
     { id: "publication", label: "Publication", live: true },
     { id: "participants", label: "Participants", live: true },
-    { id: "discussions", label: "Discussions", live: false },
+    { id: "discussions", label: "Discussions", live: true },
     { id: "history", label: "History", live: true },
   ];
   return (
@@ -2141,5 +2150,504 @@ function ParticipantsCard({
         </div>
       )}
     </Card>
+  );
+}
+
+interface DiscussionsCardProps {
+  submissionId: number;
+  currentStage: Stage;
+  participants: Participant[];
+}
+
+function DiscussionsCard({
+  submissionId,
+  currentStage,
+  participants,
+}: DiscussionsCardProps): ReactNode {
+  const [discussions, setDiscussions] = useState<Discussion[] | null>(null);
+  const [showOpen, setShowOpen] = useState(false);
+  const [activeId, setActiveId] = useState<number | null>(null);
+
+  const reload = async (): Promise<void> => {
+    setDiscussions(null);
+    const data = await api<Discussion[]>(
+      `/api/v1/submissions/${submissionId}/discussions`,
+    );
+    setDiscussions(data ?? []);
+  };
+
+  useEffect(() => {
+    void reload();
+  }, [submissionId]);
+
+  const grouped = STAGE_ORDER.map((stage) => ({
+    stage,
+    threads: (discussions ?? []).filter((d) => d.stage === stage),
+  })).filter((g) => g.threads.length > 0);
+
+  return (
+    <Card>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 12,
+        }}
+      >
+        <h3
+          style={{
+            margin: 0,
+            fontSize: 14,
+            textTransform: "uppercase",
+            letterSpacing: 1,
+          }}
+        >
+          Discussions
+        </h3>
+        <button
+          type="button"
+          onClick={() => setShowOpen(true)}
+          style={{ ...btnSecondary, fontSize: 12 }}
+        >
+          + New thread
+        </button>
+      </div>
+
+      {discussions === null ? (
+        <p style={{ color: "var(--muted)", fontSize: 13 }}>Loading…</p>
+      ) : grouped.length === 0 ? (
+        <p style={{ color: "var(--muted)", fontSize: 13 }}>
+          No discussions yet. Open a thread to coordinate with the editorial
+          team or the author.
+        </p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {grouped.map(({ stage, threads }) => (
+            <section key={stage}>
+              <h4
+                style={{
+                  margin: "0 0 6px 0",
+                  fontSize: 11,
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                  color: "var(--muted)",
+                }}
+              >
+                {stage}
+              </h4>
+              <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                {threads.map((d) => (
+                  <li
+                    key={d.id}
+                    style={{
+                      padding: "8px 0",
+                      borderTop: "1px solid var(--border)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => d.id != null && setActiveId(d.id)}
+                      style={{
+                        flex: 1,
+                        textAlign: "left",
+                        background: "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: 0,
+                      }}
+                    >
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>
+                        {d.subject}
+                        {d.closed && (
+                          <span
+                            style={{
+                              marginLeft: 8,
+                              fontSize: 11,
+                              color: "var(--muted)",
+                              fontWeight: 400,
+                            }}
+                          >
+                            closed
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--muted)" }}>
+                        {d.messageCount} message{d.messageCount === 1 ? "" : "s"}
+                        {" · "}
+                        last activity{" "}
+                        {d.dateModified
+                          ? new Date(d.dateModified).toLocaleString()
+                          : "—"}
+                      </div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      )}
+
+      {showOpen && (
+        <OpenDiscussionDrawer
+          submissionId={submissionId}
+          defaultStage={currentStage}
+          participants={participants}
+          onClose={() => setShowOpen(false)}
+          onCreated={async (id) => {
+            setShowOpen(false);
+            await reload();
+            setActiveId(id);
+          }}
+        />
+      )}
+
+      {activeId !== null && (
+        <DiscussionDetailDrawer
+          discussionId={activeId}
+          onClose={async () => {
+            setActiveId(null);
+            await reload();
+          }}
+        />
+      )}
+    </Card>
+  );
+}
+
+function OpenDiscussionDrawer({
+  submissionId,
+  defaultStage,
+  participants,
+  onClose,
+  onCreated,
+}: {
+  submissionId: number;
+  defaultStage: Stage;
+  participants: Participant[];
+  onClose: () => void;
+  onCreated: (id: number) => Promise<void>;
+}): ReactNode {
+  const [stage, setStage] = useState<Stage>(defaultStage);
+  const [subject, setSubject] = useState("");
+  const [firstMessage, setFirstMessage] = useState("");
+  const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const candidates = participants
+    .filter((p) => p.stage === stage)
+    .filter(
+      (p, idx, all) =>
+        p.userId != null &&
+        all.findIndex((x) => x.userId === p.userId) === idx,
+    );
+
+  const toggleUser = (userId: number): void => {
+    setSelectedUsers((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  };
+
+  const submit = async (e: FormEvent): Promise<void> => {
+    e.preventDefault();
+    setErr(null);
+    if (!subject.trim()) {
+      setErr("Subject is required.");
+      return;
+    }
+    setBusy(true);
+    const result = await api<Discussion>(
+      `/api/v1/submissions/${submissionId}/discussions`,
+      {
+        method: "POST",
+        body: {
+          stage,
+          subject: subject.trim(),
+          firstMessage: firstMessage.trim() || null,
+          participantUserIds: Array.from(selectedUsers),
+        },
+      },
+    );
+    setBusy(false);
+    if (result == null || result.id == null) {
+      setErr("Could not open the discussion.");
+      return;
+    }
+    await onCreated(result.id);
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.45)",
+        zIndex: 50,
+        display: "flex",
+        justifyContent: "flex-end",
+      }}
+      onClick={onClose}
+    >
+      <form
+        onSubmit={submit}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "min(560px, 100%)",
+          background: "var(--bg)",
+          borderLeft: "1px solid var(--border)",
+          padding: 24,
+          overflowY: "auto",
+        }}
+      >
+        <h2 style={{ marginTop: 0 }}>Open a discussion</h2>
+
+        <label style={{ display: "block", marginBottom: 12, fontSize: 12 }}>
+          <span style={{ fontWeight: 600 }}>Stage</span>
+          <select
+            value={stage}
+            onChange={(e) => setStage(e.target.value as Stage)}
+            style={{ display: "block", padding: 8, marginTop: 4, border: "1px solid var(--border)", borderRadius: 4 }}
+          >
+            {STAGE_ORDER.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label style={{ display: "block", marginBottom: 12 }}>
+          <span style={{ fontSize: 12, fontWeight: 600 }}>Subject</span>
+          <input
+            type="text"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            maxLength={512}
+            style={{ display: "block", width: "100%", padding: 8, marginTop: 4, border: "1px solid var(--border)", borderRadius: 4 }}
+          />
+        </label>
+
+        <label style={{ display: "block", marginBottom: 12 }}>
+          <span style={{ fontSize: 12, fontWeight: 600 }}>First message</span>
+          <textarea
+            value={firstMessage}
+            onChange={(e) => setFirstMessage(e.target.value)}
+            rows={5}
+            style={{ display: "block", width: "100%", padding: 8, marginTop: 4, border: "1px solid var(--border)", borderRadius: 4, resize: "vertical" }}
+          />
+        </label>
+
+        <div style={{ marginBottom: 12 }}>
+          <p style={{ margin: "0 0 4px", fontSize: 12, fontWeight: 600 }}>
+            Participants on {stage}
+          </p>
+          {candidates.length === 0 ? (
+            <p style={{ color: "var(--muted)", fontSize: 12, margin: 0 }}>
+              No stage participants — assign them in the Participants tab first.
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {candidates.map((p) => (
+                <label
+                  key={p.userId}
+                  style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={p.userId != null && selectedUsers.has(p.userId)}
+                    onChange={() => p.userId != null && toggleUser(p.userId)}
+                  />
+                  user #{p.userId} ({p.role})
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {err && (
+          <p style={{ color: "var(--danger)", fontSize: 13 }}>{err}</p>
+        )}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={busy}
+            style={{ padding: "6px 14px", border: "1px solid var(--border)", borderRadius: 4, background: "transparent", cursor: "pointer" }}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={busy}
+            style={{ padding: "6px 14px", border: "1px solid var(--cobalt)", borderRadius: 4, background: "var(--cobalt)", color: "white", cursor: "pointer" }}
+          >
+            {busy ? "Opening…" : "Open"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function DiscussionDetailDrawer({
+  discussionId,
+  onClose,
+}: {
+  discussionId: number;
+  onClose: () => void;
+}): ReactNode {
+  const [messages, setMessages] = useState<DiscussionMessage[] | null>(null);
+  const [body, setBody] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const reload = async (): Promise<void> => {
+    setMessages(null);
+    const data = await api<DiscussionMessage[]>(
+      `/api/v1/discussions/${discussionId}/messages`,
+    );
+    setMessages(data ?? []);
+  };
+
+  useEffect(() => {
+    void reload();
+  }, [discussionId]);
+
+  const post = async (e: FormEvent): Promise<void> => {
+    e.preventDefault();
+    if (!body.trim()) return;
+    setBusy(true);
+    const result = await api<DiscussionMessage>(
+      `/api/v1/discussions/${discussionId}/messages`,
+      { method: "POST", body: { body: body.trim() } },
+    );
+    setBusy(false);
+    if (result == null) {
+      toast.error("Could not post.");
+      return;
+    }
+    setBody("");
+    await reload();
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.45)",
+        zIndex: 50,
+        display: "flex",
+        justifyContent: "flex-end",
+      }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "min(640px, 100%)",
+          background: "var(--bg)",
+          borderLeft: "1px solid var(--border)",
+          padding: 24,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <h2 style={{ margin: 0 }}>Discussion</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ padding: "4px 12px", border: "1px solid var(--border)", borderRadius: 4, background: "transparent", cursor: "pointer", fontSize: 12 }}
+          >
+            Close
+          </button>
+        </header>
+
+        <div style={{ flex: 1, overflowY: "auto", marginBottom: 12 }}>
+          {messages === null ? (
+            <p style={{ color: "var(--muted)", fontSize: 13 }}>Loading…</p>
+          ) : messages.length === 0 ? (
+            <p style={{ color: "var(--muted)", fontSize: 13 }}>No messages yet.</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {messages.map((m) => (
+                <div
+                  key={m.id}
+                  style={{
+                    border: "1px solid var(--border)",
+                    borderRadius: 4,
+                    padding: 10,
+                    background: "var(--surface)",
+                  }}
+                >
+                  <p
+                    style={{
+                      margin: "0 0 4px",
+                      fontSize: 12,
+                      color: "var(--muted)",
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
+                    user #{m.authorUserId}
+                    {" · "}
+                    {m.postedAt ? new Date(m.postedAt).toLocaleString() : "—"}
+                  </p>
+                  <p style={{ margin: 0, fontSize: 14, whiteSpace: "pre-wrap" }}>
+                    {m.body}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <form onSubmit={post}>
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={3}
+            placeholder="Write a reply…"
+            style={{
+              display: "block",
+              width: "100%",
+              padding: 8,
+              border: "1px solid var(--border)",
+              borderRadius: 4,
+              resize: "vertical",
+            }}
+          />
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+            <button
+              type="submit"
+              disabled={busy || !body.trim()}
+              style={{
+                padding: "6px 14px",
+                border: "1px solid var(--cobalt)",
+                borderRadius: 4,
+                background: "var(--cobalt)",
+                color: "white",
+                cursor: busy || !body.trim() ? "default" : "pointer",
+                opacity: !body.trim() ? 0.6 : 1,
+              }}
+            >
+              {busy ? "Posting…" : "Post"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

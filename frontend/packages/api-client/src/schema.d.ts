@@ -496,6 +496,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/submissions/{submissionId}/discussions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listForSubmission"];
+        put?: never;
+        post: operations["open"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/submissions/{submissionId}/decisions": {
         parameters: {
             query?: never;
@@ -1156,6 +1172,54 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["render"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/discussions/{id}/participants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["addParticipant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/discussions/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["messages"];
+        put?: never;
+        post: operations["postMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/discussions/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["close"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2076,6 +2140,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/discussions/{id}/participants/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["removeParticipant"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2873,6 +2953,34 @@ export interface components {
             sizeBytes?: number;
             originalFilename?: string;
         };
+        DiscussionOpenRequest: {
+            /** @enum {string} */
+            stage: "SUBMISSION" | "EXTERNAL_REVIEW" | "EDITING" | "PRODUCTION" | "PUBLISHED";
+            subject: string;
+            firstMessage?: string;
+            participantUserIds?: number[];
+        };
+        DiscussionSummary: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            submissionId?: number;
+            /** @enum {string} */
+            stage?: "SUBMISSION" | "EXTERNAL_REVIEW" | "EDITING" | "PRODUCTION" | "PUBLISHED";
+            subject?: string;
+            /** Format: int64 */
+            startedByUserId?: number;
+            closed?: boolean;
+            /** Format: date-time */
+            closedAt?: string;
+            /** Format: date-time */
+            dateStarted?: string;
+            /** Format: date-time */
+            dateModified?: string;
+            /** Format: int32 */
+            messageCount?: number;
+            participantUserIds?: number[];
+        };
         DecisionEmailOverride: {
             stepId: string;
             templateKey: string;
@@ -3086,6 +3194,26 @@ export interface components {
             subject?: string;
             body?: string;
         };
+        AddParticipantRequest: {
+            /** Format: int64 */
+            userId: number;
+        };
+        DiscussionMessageRequest: {
+            body: string;
+        };
+        DiscussionMessageSummary: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            discussionId?: number;
+            /** Format: int64 */
+            authorUserId?: number;
+            body?: string;
+            /** Format: date-time */
+            postedAt?: string;
+            /** Format: date-time */
+            editedAt?: string;
+        };
         RegisterRequest: {
             email: string;
             password: string;
@@ -3116,10 +3244,10 @@ export interface components {
             totalPages?: number;
             sort?: components["schemas"]["SortObject"];
             pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["UserResponse"][];
@@ -3128,12 +3256,12 @@ export interface components {
             empty?: boolean;
         };
         PageableObject: {
-            sort?: components["schemas"]["SortObject"];
             paged?: boolean;
             /** Format: int32 */
             pageNumber?: number;
             /** Format: int32 */
             pageSize?: number;
+            sort?: components["schemas"]["SortObject"];
             unpaged?: boolean;
             /** Format: int64 */
             offset?: number;
@@ -3150,10 +3278,10 @@ export interface components {
             totalPages?: number;
             sort?: components["schemas"]["SortObject"];
             pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["SubmissionResponse"][];
@@ -4807,6 +4935,56 @@ export interface operations {
             };
         };
     };
+    listForSubmission: {
+        parameters: {
+            query?: {
+                stage?: "SUBMISSION" | "EXTERNAL_REVIEW" | "EDITING" | "PRODUCTION" | "PUBLISHED";
+            };
+            header?: never;
+            path: {
+                submissionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DiscussionSummary"][];
+                };
+            };
+        };
+    };
+    open: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submissionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscussionOpenRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DiscussionSummary"];
+                };
+            };
+        };
+    };
     history: {
         parameters: {
             query?: never;
@@ -5995,6 +6173,98 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["EmailTemplateRenderResponse"];
                 };
+            };
+        };
+    };
+    addParticipant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddParticipantRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    messages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DiscussionMessageSummary"][];
+                };
+            };
+        };
+    };
+    postMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscussionMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DiscussionMessageSummary"];
+                };
+            };
+        };
+    };
+    close: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -7257,6 +7527,27 @@ export interface operations {
             header?: never;
             path: {
                 publicationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    removeParticipant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                userId: number;
             };
             cookie?: never;
         };
