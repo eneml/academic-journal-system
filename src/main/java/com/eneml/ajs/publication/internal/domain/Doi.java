@@ -52,4 +52,8 @@ public class Doi extends AuditableEntity {
         this.status = DoiStatus.ERROR;
         this.errorMessage = message;
     }
+
+    public void markStale() {
+        this.status = DoiStatus.STALE;
+    }
 }

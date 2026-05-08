@@ -124,4 +124,22 @@ public class JournalConfig extends AuditableEntity {
     private List<ChecklistItem> submissionChecklist = new ArrayList<>();
 
     public record ChecklistItem(String id, Map<String, String> label) {}
+
+    /**
+     * Optional CrossRef prefix (e.g. {@code 10.1234}). When set together
+     * with {@link #doiAutoMint}, every approved publication gets a DOI
+     * minted automatically.
+     */
+    @Column(name = "doi_prefix", length = 64)
+    private String doiPrefix;
+
+    /**
+     * Pattern fed to the auto-minter when forming the suffix. Supports
+     * {@code {publicationId}} and {@code {year}} tokens.
+     */
+    @Column(name = "doi_suffix_pattern", length = 255, nullable = false)
+    private String doiSuffixPattern = "aj.{publicationId}";
+
+    @Column(name = "doi_auto_mint", nullable = false)
+    private boolean doiAutoMint = false;
 }

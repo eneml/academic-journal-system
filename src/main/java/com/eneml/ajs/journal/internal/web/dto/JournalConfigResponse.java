@@ -30,6 +30,9 @@ public record JournalConfigResponse(
         Map<String, String> privacyStatement,
         Map<String, String> competingInterestsPolicy,
         List<ChecklistItem> submissionChecklist,
+        String doiPrefix,
+        String doiSuffixPattern,
+        boolean doiAutoMint,
         long version,
         Instant updatedAt
 ) {

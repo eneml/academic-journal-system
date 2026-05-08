@@ -24,6 +24,9 @@ public record JournalConfigSummary(
         String issnPrint,
         String issnOnline,
         boolean submissionsOpen,
-        boolean reviewerSuggestionsEnabled
+        boolean reviewerSuggestionsEnabled,
+        String doiPrefix,
+        String doiSuffixPattern,
+        boolean doiAutoMint
 ) {
 }

@@ -85,6 +85,14 @@ public record JournalConfigUpdateRequest(
         Map<String, String> competingInterestsPolicy,
 
         @NotNull
-        List<ChecklistItem> submissionChecklist
+        List<ChecklistItem> submissionChecklist,
+
+        @Size(max = 64)
+        String doiPrefix,
+
+        @NotBlank @Size(max = 255)
+        String doiSuffixPattern,
+
+        boolean doiAutoMint
 ) {
 }
