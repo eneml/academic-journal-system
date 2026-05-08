@@ -10,8 +10,10 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -95,4 +97,31 @@ public class JournalConfig extends AuditableEntity {
 
     @Column(name = "tagline_ornament", length = 8)
     private String taglineOrnament;
+
+    /**
+     * Per-locale privacy statement shown on the public site and linked
+     * from the author wizard. Empty map means "no statement configured".
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "privacy_statement", columnDefinition = "jsonb", nullable = false)
+    private Map<String, String> privacyStatement = new HashMap<>();
+
+    /**
+     * Per-locale competing-interests policy. Authors are pointed at this
+     * when filling in the disclosure step of the wizard.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "competing_interests_policy", columnDefinition = "jsonb", nullable = false)
+    private Map<String, String> competingInterestsPolicy = new HashMap<>();
+
+    /**
+     * Ordered checklist the author must agree to before submitting. Each
+     * item carries a stable id (so reordering doesn't break references)
+     * and a per-locale label.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "submission_checklist", columnDefinition = "jsonb", nullable = false)
+    private List<ChecklistItem> submissionChecklist = new ArrayList<>();
+
+    public record ChecklistItem(String id, Map<String, String> label) {}
 }

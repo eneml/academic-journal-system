@@ -1,5 +1,6 @@
 package com.eneml.ajs.journal.internal.web.dto;
 
+import com.eneml.ajs.journal.internal.domain.JournalConfig.ChecklistItem;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -10,6 +11,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.hibernate.validator.constraints.URL;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -74,6 +76,15 @@ public record JournalConfigUpdateRequest(
         @Size(max = 8)
         String taglineOrnament,
 
-        boolean reviewerSuggestionsEnabled
+        boolean reviewerSuggestionsEnabled,
+
+        @NotNull
+        Map<String, String> privacyStatement,
+
+        @NotNull
+        Map<String, String> competingInterestsPolicy,
+
+        @NotNull
+        List<ChecklistItem> submissionChecklist
 ) {
 }

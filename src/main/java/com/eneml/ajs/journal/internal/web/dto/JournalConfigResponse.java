@@ -1,6 +1,9 @@
 package com.eneml.ajs.journal.internal.web.dto;
 
+import com.eneml.ajs.journal.internal.domain.JournalConfig.ChecklistItem;
+
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,6 +27,9 @@ public record JournalConfigResponse(
         String countryOfPublication,
         String tagline,
         String taglineOrnament,
+        Map<String, String> privacyStatement,
+        Map<String, String> competingInterestsPolicy,
+        List<ChecklistItem> submissionChecklist,
         long version,
         Instant updatedAt
 ) {
