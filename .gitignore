@@ -6,3 +6,4 @@ target/
 .tanstack/
 .turbo/
 .next/
+.local-notes/
