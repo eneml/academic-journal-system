@@ -16,10 +16,11 @@ import {
   fetchArticleVersions,
   fetchIssueById,
   fetchJournalConfig,
+  fetchRecommendationsByAuthor,
   pickLocale,
   type ArticleAuthor,
 } from "@/lib/api";
-import { formatDate, issuePath } from "@/lib/format";
+import { articlePath, formatDate, issuePath, truncate } from "@/lib/format";
 
 const SITE_URL = process.env.NEXT_PUBLIC_PUBLIC_SITE_URL ?? "http://localhost:3000";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
@@ -33,15 +34,69 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { slug } = await params;
-  const article = await fetchArticle(slug);
+  const [article, config, galleys] = await Promise.all([
+    fetchArticle(slug),
+    fetchJournalConfig(),
+    fetchArticleGalleys(slug),
+  ]);
   if (!article) return { title: "Article not found" };
-  const title = pickLocale(article.title, article.locale) || "Untitled";
+  const locale = article.locale ?? config?.defaultLocale ?? "en";
+  const title = pickLocale(article.title, locale) || "Untitled";
   const abstract =
-    pickLocale(article.abstractText, article.locale).slice(0, 200) || undefined;
+    pickLocale(article.abstractText, locale).slice(0, 200) || undefined;
+  const journalName = pickLocale(config?.name, locale) || "";
+  const articleUrl = `${SITE_URL}/articles/${encodeURIComponent(slug)}`;
+  const pdfGalley = (galleys ?? []).find(
+    (g) => g.approved && (pickLocale(g.label, locale) || "").toLowerCase().includes("pdf"),
+  );
+  const pdfUrl = pdfGalley
+    ? `${API_BASE_URL}/api/v1/articles/${encodeURIComponent(slug)}/galleys/${pdfGalley.id}/download-url`
+    : undefined;
+  const dateString = article.datePublished
+    ? new Date(article.datePublished).toISOString().slice(0, 10)
+    : undefined;
+  const issn = config?.issnOnline || config?.issnPrint || undefined;
+
+  // Highwire / Google Scholar tags + Dublin Core. Multiple
+  // citation_author tags is the canonical pattern; Next renders an
+  // array under one name as repeated <meta>.
+  const others: Record<string, string | string[]> = {
+    "citation_title": title,
+    "citation_journal_title": journalName,
+  };
+  const authorNames = (article.authors ?? [])
+    .map((a) => [a.familyName, a.givenName].filter(Boolean).join(", "))
+    .filter((s) => s.length > 0);
+  if (authorNames.length > 0) others["citation_author"] = authorNames;
+  if (dateString) others["citation_publication_date"] = dateString;
+  if (issn) others["citation_issn"] = issn;
+  if (article.doi) others["citation_doi"] = article.doi;
+  if (pdfUrl) others["citation_pdf_url"] = pdfUrl;
+  if (locale) others["citation_language"] = locale;
+
+  others["DC.title"] = title;
+  if (authorNames.length > 0) others["DC.creator"] = authorNames;
+  if (journalName) others["DC.publisher"] = journalName;
+  if (dateString) others["DC.date"] = dateString;
+  if (article.doi) others["DC.identifier"] = article.doi;
+  others["DC.type"] = "Text";
+  others["DC.format"] = "text/html";
+  if (locale) others["DC.language"] = locale;
+  if (abstract) others["DC.description"] = abstract;
+
   return {
     title,
     description: abstract,
-    openGraph: { title, description: abstract, type: "article" },
+    openGraph: {
+      title,
+      description: abstract,
+      type: "article",
+      url: articleUrl,
+      siteName: journalName,
+    },
+    twitter: { card: "summary_large_image", title, description: abstract },
+    alternates: { canonical: articleUrl },
+    other: others,
   };
 }
 
@@ -51,12 +106,13 @@ function fullName(a: ArticleAuthor): string {
 
 export default async function ArticlePage({ params }: Props): Promise<ReactNode> {
   const { slug } = await params;
-  const [article, sections, versions, galleys, config] = await Promise.all([
+  const [article, sections, versions, galleys, config, byAuthor] = await Promise.all([
     fetchArticle(slug),
     fetchActiveSections(),
     fetchArticleVersions(slug),
     fetchArticleGalleys(slug),
     fetchJournalConfig(),
+    fetchRecommendationsByAuthor(slug, 5),
   ]);
   if (!article) notFound();
 
@@ -408,6 +464,46 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
           </div>
         </aside>
       </article>
+
+      {(byAuthor ?? []).length > 0 && (
+        <section className="mx-auto max-w-[1100px] px-6 mt-12">
+          <header className="mb-4 flex items-baseline justify-between">
+            <p className="text-[10px] uppercase tracking-[0.12em] font-mono text-muted-2 m-0">
+              Read next
+            </p>
+            <h2 className="font-serif-display text-[20px] font-semibold m-0">
+              More from these authors
+            </h2>
+          </header>
+          <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 list-none p-0 m-0">
+            {(byAuthor ?? []).map((p) => {
+              const recTitle = pickLocale(p.title, locale) || `Article #${p.id}`;
+              const recAbstract = truncate(pickLocale(p.abstractText, locale), 180);
+              return (
+                <li
+                  key={p.id}
+                  className="rounded-md border border-border bg-bg p-4 hover:border-cobalt"
+                >
+                  <Link
+                    href={articlePath(p)}
+                    className="group block no-underline text-fg"
+                  >
+                    <h3 className="font-serif-display text-[16px] font-semibold m-0 group-hover:text-cobalt">
+                      {recTitle}
+                    </h3>
+                    {recAbstract && (
+                      <p className="text-fg-2 text-[13px] mt-2 mb-0">{recAbstract}</p>
+                    )}
+                    <p className="text-[11px] text-muted mt-2 mb-0 font-mono">
+                      {p.datePublished ? formatDate(p.datePublished) : "—"}
+                    </p>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <PublicFooter />
     </div>

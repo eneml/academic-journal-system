@@ -180,6 +180,11 @@ export const fetchPublicationsInCategory = (categoryId: number) =>
     `/api/v1/categories/${categoryId}/publications`,
   );
 
+export const fetchRecommendationsByAuthor = (slugOrId: string, limit = 5) =>
+  getJson<PublicationSummary[]>(
+    `/api/v1/articles/${encodeURIComponent(slugOrId)}/recommendations/by-author?limit=${limit}`,
+  );
+
 export type MastheadEntry = {
   id: number;
   userId: number;
