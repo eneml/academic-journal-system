@@ -75,12 +75,36 @@ class ReviewController {
     }
 
     @PostMapping("/{roundId}/assignments/{assignmentId}/cancel")
-    @Operation(summary = "Cancel a reviewer assignment")
+    @Operation(summary = "Cancel a reviewer assignment (silent)")
     ResponseEntity<Void> cancel(@PathVariable Long submissionId,
                                  @PathVariable Long roundId,
                                  @PathVariable Long assignmentId) {
         service.cancel(assignmentId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{roundId}/assignments/{assignmentId}/resend")
+    @Operation(summary = "Re-fire the original review-request email")
+    ReviewAssignmentResponse resend(@PathVariable Long submissionId,
+                                     @PathVariable Long roundId,
+                                     @PathVariable Long assignmentId) {
+        return mapper.toResponse(service.resendInvitation(assignmentId));
+    }
+
+    @PostMapping("/{roundId}/assignments/{assignmentId}/reinstate")
+    @Operation(summary = "Reinstate a previously declined assignment")
+    ReviewAssignmentResponse reinstate(@PathVariable Long submissionId,
+                                        @PathVariable Long roundId,
+                                        @PathVariable Long assignmentId) {
+        return mapper.toResponse(service.reinstate(assignmentId));
+    }
+
+    @PostMapping("/{roundId}/assignments/{assignmentId}/unassign")
+    @Operation(summary = "Unassign a reviewer + email them")
+    ReviewAssignmentResponse unassign(@PathVariable Long submissionId,
+                                       @PathVariable Long roundId,
+                                       @PathVariable Long assignmentId) {
+        return mapper.toResponse(service.unassign(assignmentId));
     }
 
     private Long currentUserId(Jwt jwt) {

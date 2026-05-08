@@ -5,7 +5,8 @@
  * <p>Owns: ReviewRound, ReviewAssignment, ReviewForm, ReviewFormElement,
  * ReviewFormResponse.
  * <br>Emits: ReviewRoundCreated, ReviewerInvited, ReviewerAccepted,
- * ReviewerDeclined, ReviewSubmitted, ReviewRoundCompleted.
+ * ReviewerDeclined, ReviewSubmitted, ReviewRoundCompleted, ReviewConfirmed,
+ * ReviewerReinstated, ReviewerUnassigned.
  * <br>Consumes: section bindings via journal::api so the reviewer
  * questionnaire follows the section their assignment belongs to.
  */
