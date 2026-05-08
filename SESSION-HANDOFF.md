@@ -75,11 +75,22 @@ V170 editorial_decision.decision_type CHECK extended (RECOMMEND_*, REVERT_*)
 V172 seed revert email templates EN+RO
 V174 seed discussion email templates EN+RO
 V175 reviewer_suggestion + journal_config.reviewer_suggestions_enabled
+V176 seed review action email templates (acknowledgement/unassign/reinstate)
+V177 seed reviewer-attachment genre
+V178 journal_config policies + submission metadata (Phase 11)
+V179 seed editorial digest email templates
+V180 submission_file.parent_submission_file_id + publication_galley.publisher_id
+V185 journal_config.doi_prefix/suffix_pattern/auto_mint + DoiStatus.STALE
+V200 issue_galley
+V205 highlight
+V210 user_invitation
+V211 seed invitation email template
+V215 email_log
+V220 published_search_index.fulltext_text
 ```
 
 Free for ad-hoc fixes between phases: V146, V161-V164, V166-V169, V171, V173,
-V176-V199. Reserved per GAP.md plan: V200 (issue galleys), V205 (highlights),
-V210 (invitations).
+V181-V184, V186-V199, V201-V204, V206-V209, V212-V214, V216-V219, V221-V299.
 
 ## Active modules (post-session)
 
@@ -107,27 +118,39 @@ announcement  — calls for papers, special-issue invitations
 scheduling    — cron sweeps (reviewer reminders, etc.)
 discussion    — NEW Phase 7. Threaded conversations per submission stage
 category      — NEW Phase 10. Hierarchical taxonomy + public browse
+highlight     — NEW Phase 17. Curated featured cards on the homepage
+invitation    — NEW Phase 20. Invite users (typically reviewers) not yet on
+                the system. Token-based accept link, daily expiry sweep.
 ```
 
-## What's left (per GAP.md plan, post-cuts)
+## What's done since the last handoff
 
-In recommended sequence:
+| # | Phase | Migrations | Backend | Frontend |
+|---|---|---|---|---|
+| 9  | Reviewer file uploads + review actions    | V176, V177 | `POST/GET/DELETE /api/v1/reviewer/assignments/{id}/files`; `/resend`, `/reinstate`, `/unassign` on editor side; 3 mailables seeded; `SubmissionFiles` cross-module write port | Reviewer attachments card; editor Resend/Reinstate/Unassign buttons; FilesRail badge for REVIEW_ATTACHMENT |
+| 11 | Submission wizard polish                  | V178       | `journal_config.submission_checklist/privacy_statement/competing_interests_policy`; `submission.subjects/languages/data_availability` | Admin Privacy/CI policy editors + checklist builder; author wizard ChecklistCard + 3 metadata fields |
+| 13 | Editorial reminders + stats report        | V179       | `EditorialDigestJob` (1st of every month at 09:00) emits `EditorialReminderDue` to editors and `EditorialStatsReportDue` to admins; messaging listener renders + dispatches | — |
+| 14 | Galley enhancements                       | V180       | `submission_file.parent_submission_file_id` FK + `publication_galley.publisher_id`; `Galley.approve(userId)` captures the publisher | — (frontend pdf.js viewer deferred) |
+| 15 | DOI minter + STALE sweep                  | V185       | `JournalConfig.doi_prefix/doi_suffix_pattern/doi_auto_mint`; `DoiMinter` auto-mints on `GalleyApproved`; `DoiStaleSweep` weekly cron; `DoiStatus.STALE` enum value | — |
+| 16 | Issue galleys                             | V200       | `issue_galley` table + service + REST API (`/api/v1/issues/{id}/galleys`) | — (admin upload UI deferred) |
+| 17 | Highlights / featured cards               | V205       | New `highlight` module; admin CRUD + public read at `/api/v1/highlights` | — (homepage rendering deferred) |
+| 18 | Native XML export                         | —          | `NativeXmlExporter` streams a ZIP archive; admin endpoint `GET /api/v1/integrations/native-xml-export` | — |
+| 19 | DOAJ deposit                              | —          | `DOAJ` added to `DepositTarget`; `DoajPayloadGenerator` + `DoajClient`; `PublicationDoiListener` enqueues DOAJ deposits when `ajs.integration.doaj.enabled=true` | — |
+| 20 | Invitations module                        | V210, V211 | New `invitation` module: `user_invitation` table, REST API, mailable, daily expiry sweep, by-key lookup for accept page | — (UI to invite + accept deferred) |
+| 21 | Email log                                 | V215       | `email_log` table; `MailService.sendForNotification/sendDirect` records SENT/FAILED/SKIPPED rows with template_key + recipient + notification linkage; admin endpoint `/api/v1/email-log` | — |
+| 22 | Search galley full-text indexing          | V220       | `published_search_index.fulltext_text` + new tsvector at weight D; PDFBox extractor invoked on `GalleyApproved` for PDF galleys | — (no UI surface) |
+| 23 | COUNTER R5 / SUSHI                        | —          | Deferred — only if a library asks. | — |
 
-| # | Phase | Size | One-line |
-|---|---|---|---|
-| **9** | **Reviewer file uploads + missing review actions** | M | `POST /api/v1/reviewer/assignments/{id}/files` (REVIEW_ATTACHMENT stage) + `/resend` + `/reinstate` endpoints + 3 mailables (`review.acknowledgement`, `review.unassign`, `review.reinstate`). |
-| **11** | **Submission wizard polish** | M | `journal_config.submission_checklist` JSONB + Start step UI; privacy/copyright/disclosure policy slots; expand metadata step with `subjects`, `languages`, `dataAvailability`. |
-| **13** | **Editorial reminders + statistics report** | M | Monthly cron emits `editorial.reminder` to editors with stale tasks; monthly `editorial.statisticsReport` to admin from `dashboard::api`. |
-| **14** | **Galley enhancements** | M | `submission_file.parent_submission_file_id` FK for dependents + HTML galley template with rewriting + pdf.js viewer + `publication_galley.publisher_id`. |
-| **15** | **DOI minter + stale sweep** | M | DOI suffix patterns on `journal_config`. `DoiMinter` auto-generates DOI on publication approve. `STALE` status + weekly sweep. Bulk re-deposit / mark-stale UI. |
-| **16** | **Issue galleys** | M | `issue_galley` table (label, file/url, locale, doi). Admin upload UI on issue editor. Reserves V200. |
-| **17** | **Highlights / featured cards** | M | `highlight` table (sort_order, title, description, url, image, target_publication_id). Admin CRUD. Homepage replaces hardcoded "most recent" with curated cards. Reserves V205. |
-| **18** | **Native XML export** | L | New `nativexml` package or `journal/internal/exporter/`. CLI + admin button: full archive zip with manifest.xml + content/ tree. |
-| **19** | **DOAJ deposit** | M | Add `DOAJ` to `DepositTarget` enum. POST per published article to DOAJ on publication. |
-| **20** | **Invitations module** | L | `user_invitation(id, type, email, payload, status, key_hash, expires_at)`. API + mailable. Use case: invite a reviewer who isn't yet a user. Reserves V210. |
-| **21** | **Email log promotion** | S | Decision: typed `email_log` table or generic `event_log` rows with structured payload. **Decision needed**. |
-| **22** | **Search galley full-text indexing** | L | PDFBox text extraction on galley approve. `published_search_index.fulltext_text` column + tsvector update. Searching a phrase in a PDF surfaces the article. |
-| **23** | **COUNTER R5 / SUSHI** | XL | Deferred — only if a library asks. |
+## Frontend follow-ups (deferred, code path is clear)
+
+- Phase 14: pdf.js viewer on the public article page; HTML galley dependent-asset rewriting on serve.
+- Phase 15: admin DOI manager listing STALE rows + bulk re-deposit.
+- Phase 16: issue editor file upload UI.
+- Phase 17: replace homepage "most recent" hardcoded section with `/api/v1/highlights` cards.
+- Phase 20: editor invite-non-user UI + `/invitations/accept?key=…` accept page.
+- Phase 21: admin /admin/email-log table.
+
+These all follow patterns already in the editorial app (admin CRUD pages, public-site fetchers); no architectural surprises.
 
 ## Won't port (scope cut, do not rebuild)
 
