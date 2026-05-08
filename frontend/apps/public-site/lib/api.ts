@@ -144,6 +144,42 @@ export const fetchPublicationsInSection = (sectionId: number, limit = 30) =>
     `/api/v1/sections/${sectionId}/publications?limit=${limit}`,
   );
 
+export type CategorySortOption =
+  | "DATE_PUBLISHED_DESC"
+  | "DATE_PUBLISHED_ASC"
+  | "TITLE_ASC"
+  | "MANUAL";
+
+export type CategorySummary = {
+  id: number;
+  parentId: number | null;
+  code: string;
+  path: string;
+  sequence: number;
+  title: Record<string, string>;
+  description: Record<string, string>;
+  sortOption: CategorySortOption;
+  imageFileId: number | null;
+};
+
+export const fetchAllCategories = () =>
+  getJson<CategorySummary[]>("/api/v1/categories");
+
+export const fetchCategoryByPath = (path: string) =>
+  getJson<CategorySummary>(
+    `/api/v1/categories/by-path/${encodeURIComponent(path)}`,
+  );
+
+export const fetchPublicationCategories = (publicationId: number) =>
+  getJson<CategorySummary[]>(
+    `/api/v1/publications/${publicationId}/categories`,
+  );
+
+export const fetchPublicationsInCategory = (categoryId: number) =>
+  getJson<PublicationSummary[]>(
+    `/api/v1/categories/${categoryId}/publications`,
+  );
+
 export type MastheadEntry = {
   id: number;
   userId: number;
