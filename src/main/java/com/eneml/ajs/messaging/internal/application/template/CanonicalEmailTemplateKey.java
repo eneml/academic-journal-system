@@ -66,6 +66,15 @@ public enum CanonicalEmailTemplateKey {
     REVIEW_REQUEST(
             "review.request",
             "Sent to a reviewer with the initial assignment invitation."),
+    REVIEW_ACKNOWLEDGEMENT(
+            "review.acknowledgement",
+            "Sent to the reviewer when an editor confirms a completed review."),
+    REVIEW_UNASSIGN(
+            "review.unassign",
+            "Sent to the reviewer when their assignment is unassigned by an editor."),
+    REVIEW_REINSTATE(
+            "review.reinstate",
+            "Sent to the reviewer when a previously declined assignment is reinstated."),
 
     DISCUSSION_OPENED(
             "discussion.opened",
