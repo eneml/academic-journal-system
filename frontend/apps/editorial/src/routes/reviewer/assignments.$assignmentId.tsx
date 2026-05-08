@@ -9,7 +9,7 @@ import {
 import { toast } from "sonner";
 import type { components } from "@ajs/api-client/schema";
 import { useAuth } from "../../auth/AuthContext";
-import { api } from "../../lib/api";
+import { api, apiMultipart } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { Card } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
@@ -23,6 +23,7 @@ export const Route = createFileRoute("/reviewer/assignments/$assignmentId")({
 type Assignment = components["schemas"]["ReviewAssignmentResponse"];
 type ReviewerFormResponse = components["schemas"]["ReviewerFormResponse"];
 type ReviewFormElement = components["schemas"]["ReviewFormElementResponse"];
+type ReviewerAttachment = components["schemas"]["ReviewerAttachmentResponse"];
 
 /**
  * Recommendations match the backend {@code ReviewRecommendation} enum exactly.
@@ -587,6 +588,8 @@ function SubmitReviewLayout({
           />
         )}
 
+        <ReviewerAttachmentsCard assignmentId={assignmentId} />
+
         <CommentsCard
           title="Comments to author"
           chipLabel="Visible to author"
@@ -638,36 +641,6 @@ function SubmitReviewLayout({
             placeholder="e.g. co-authored a paper with the submitter in 2023"
           />
         </Card>
-
-        {/* Attachments placeholder — the backend doesn't yet accept review
-            attachments through this endpoint, so we render the design but
-            disable interaction. Reviewers can still add attachments through
-            the editor on request. */}
-        <div
-          style={{
-            background: "var(--bg)",
-            border: "2px dashed var(--border-strong)",
-            borderRadius: "var(--r-2)",
-            padding: 24,
-            textAlign: "center",
-            opacity: 0.65,
-          }}
-        >
-          <div style={{ fontSize: 18, marginBottom: 6 }}>↑</div>
-          <div style={{ fontSize: 13, color: "var(--fg-2)" }}>
-            Drag review attachments here, or browse
-          </div>
-          <div
-            style={{
-              fontSize: 11,
-              color: "var(--muted)",
-              marginTop: 4,
-              fontFamily: "var(--mono)",
-            }}
-          >
-            (coming soon — attach files separately for now)
-          </div>
-        </div>
 
         {error ? (
           <p
@@ -1083,6 +1056,201 @@ function SubmissionSummaryCard({
           </ul>
         )}
       </div>
+    </Card>
+  );
+}
+
+/**
+ * Lets the reviewer upload supplementary files alongside their written
+ * comments. Files land in {@code submission_file} with stage
+ * REVIEW_ATTACHMENT, scoped to the reviewer's own assignment — only the
+ * uploader sees them in this card; the editor sees the same rows in the
+ * editor-side files panel.
+ */
+function ReviewerAttachmentsCard({
+  assignmentId,
+}: {
+  assignmentId: number;
+}): ReactNode {
+  const [files, setFiles] = useState<ReviewerAttachment[] | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const reload = useCallback(async (): Promise<void> => {
+    const data = await api<ReviewerAttachment[]>(
+      `/api/v1/reviewer/assignments/${assignmentId}/files`,
+    );
+    setFiles(data ?? []);
+  }, [assignmentId]);
+
+  useEffect(() => {
+    void reload();
+  }, [reload]);
+
+  const onSelectFile = async (file: File): Promise<void> => {
+    setBusy(true);
+    const form = new FormData();
+    form.append("file", file);
+    const response = await apiMultipart<ReviewerAttachment>(
+      `/api/v1/reviewer/assignments/${assignmentId}/files`,
+      form,
+    );
+    setBusy(false);
+    if (response == null) {
+      toast.error("Couldn't upload the file.");
+    } else {
+      toast.success(`Uploaded ${file.name}.`);
+      void reload();
+    }
+  };
+
+  const onDelete = async (fileId: number): Promise<void> => {
+    if (!confirm("Remove this attachment?")) return;
+    const result = await api(
+      `/api/v1/reviewer/assignments/${assignmentId}/files/${fileId}`,
+      { method: "DELETE" },
+    );
+    if (result === null) {
+      toast.error("Couldn't remove the attachment.");
+    } else {
+      toast.success("Attachment removed.");
+      void reload();
+    }
+  };
+
+  return (
+    <Card>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 10,
+          gap: 10,
+        }}
+      >
+        <h3 style={h3Style}>Attachments</h3>
+        <span className="chip">Visible to editor</span>
+      </div>
+      <p style={{ margin: "0 0 12px", fontSize: 12.5, color: "var(--muted)" }}>
+        Optional. Annotated PDFs, supplementary analyses, anything you want the
+        editor to see alongside your written comments.
+      </p>
+      {files == null ? (
+        <p style={{ margin: 0, fontSize: 12, color: "var(--muted)" }}>
+          Loading attachments…
+        </p>
+      ) : files.length === 0 ? (
+        <p style={{ margin: "0 0 10px", fontSize: 12.5, color: "var(--muted)" }}>
+          No attachments yet.
+        </p>
+      ) : (
+        <ul
+          style={{
+            listStyle: "none",
+            margin: "0 0 12px",
+            padding: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
+          }}
+        >
+          {files.map((f) => (
+            <li
+              key={f.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "8px 12px",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--r-2)",
+                background: "var(--bg-tint)",
+              }}
+            >
+              <span aria-hidden style={{ color: "var(--muted)" }}>📎</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontFamily: "var(--mono)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {f.originalFilename}
+                </div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "var(--muted)",
+                    fontFamily: "var(--mono)",
+                  }}
+                >
+                  {formatBytes(f.sizeBytes)} · {f.contentType ?? "?"}
+                </div>
+              </div>
+              {f.downloadUrl ? (
+                <a
+                  href={f.downloadUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    fontSize: 12.5,
+                    color: "var(--cobalt)",
+                    textDecoration: "none",
+                    fontWeight: 500,
+                  }}
+                >
+                  Download
+                </a>
+              ) : null}
+              {f.id != null ? (
+                <button
+                  type="button"
+                  onClick={() => f.id != null && void onDelete(f.id)}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "var(--danger)",
+                    fontSize: 12,
+                    cursor: "pointer",
+                  }}
+                >
+                  Remove
+                </button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+      <label
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "8px 14px",
+          background: "var(--bg)",
+          border: "1px dashed var(--border-strong)",
+          borderRadius: "var(--r-2)",
+          fontSize: 13,
+          color: busy ? "var(--muted)" : "var(--fg-2)",
+          cursor: busy ? "wait" : "pointer",
+        }}
+      >
+        <span aria-hidden>↑</span>
+        {busy ? "Uploading…" : "Add attachment"}
+        <input
+          type="file"
+          disabled={busy}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void onSelectFile(f);
+            e.currentTarget.value = "";
+          }}
+          style={{ display: "none" }}
+        />
+      </label>
     </Card>
   );
 }
