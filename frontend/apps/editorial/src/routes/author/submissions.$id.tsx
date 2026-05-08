@@ -40,6 +40,8 @@ type Submission = components["schemas"]["SubmissionResponse"];
 type AuthorRow = components["schemas"]["SubmissionAuthorResponse"];
 type FileRow = components["schemas"]["SubmissionFileResponse"];
 type GenreResponse = components["schemas"]["GenreResponse"];
+type JournalConfigResponse = components["schemas"]["JournalConfigResponse"];
+type ChecklistItem = components["schemas"]["ChecklistItem"];
 
 // Mirrors backend enum com.eneml.ajs.submission.api.FileStage. Keep in sync —
 // the upload endpoint binds the form-data value via Spring's enum converter,
@@ -70,14 +72,17 @@ function SubmissionDetailPage(): ReactNode {
   const [authors, setAuthors] = useState<AuthorRow[] | null>(null);
   const [files, setFiles] = useState<FileRow[] | null>(null);
   const [genres, setGenres] = useState<GenreResponse[] | null>(null);
+  const [journalConfig, setJournalConfig] = useState<JournalConfigResponse | null>(null);
+  const [checklistAgreed, setChecklistAgreed] = useState<Set<string>>(new Set());
   const [errored, setErrored] = useState(false);
 
   const reload = useCallback(async (): Promise<void> => {
-    const [s, a, f, g] = await Promise.all([
+    const [s, a, f, g, jc] = await Promise.all([
       api<Submission>(`/api/v1/submissions/${submissionId}`),
       api<AuthorRow[]>(`/api/v1/submissions/${submissionId}/authors`),
       api<FileRow[]>(`/api/v1/submissions/${submissionId}/files`),
       api<GenreResponse[]>("/api/v1/journal/genres"),
+      api<JournalConfigResponse>("/api/v1/journal/config"),
     ]);
     if (s == null) {
       setErrored(true);
@@ -88,6 +93,7 @@ function SubmissionDetailPage(): ReactNode {
     setAuthors(a ?? []);
     setFiles(f ?? []);
     setGenres((g ?? []).filter((x) => x.enabled !== false));
+    setJournalConfig(jc);
   }, [submissionId]);
 
   useEffect(() => {
@@ -148,6 +154,14 @@ function SubmissionDetailPage(): ReactNode {
         </span>
       </div>
 
+      <ChecklistCard
+        items={journalConfig?.submissionChecklist ?? []}
+        locale={submission.locale ?? "en"}
+        agreed={checklistAgreed}
+        onAgreedChange={setChecklistAgreed}
+        editable={editable}
+      />
+
       <MetadataCard
         submission={submission}
         editable={editable}
@@ -174,6 +188,8 @@ function SubmissionDetailPage(): ReactNode {
           submissionId={submissionId}
           authors={authors ?? []}
           files={files ?? []}
+          checklistItems={journalConfig?.submissionChecklist ?? []}
+          checklistAgreed={checklistAgreed}
           onSubmitted={() => void reload()}
         />
       ) : (
@@ -214,6 +230,15 @@ function MetadataCard({
   const [keywords, setKeywords] = useState(
     (submission.keywords ?? []).join(", "),
   );
+  const [subjects, setSubjects] = useState(
+    submission.subjects?.[locale] ?? "",
+  );
+  const [languages, setLanguages] = useState(
+    (submission.languages ?? []).join(", "),
+  );
+  const [dataAvailability, setDataAvailability] = useState(
+    submission.dataAvailability?.[locale] ?? "",
+  );
   const [comments, setComments] = useState(submission.commentsToEditor ?? "");
   const [busy, setBusy] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
@@ -223,6 +248,9 @@ function MetadataCard({
     setTitle(submission.title?.[locale] ?? "");
     setAbstractText(submission.abstractText?.[locale] ?? "");
     setKeywords((submission.keywords ?? []).join(", "));
+    setSubjects(submission.subjects?.[locale] ?? "");
+    setLanguages((submission.languages ?? []).join(", "));
+    setDataAvailability(submission.dataAvailability?.[locale] ?? "");
     setComments(submission.commentsToEditor ?? "");
   }, [submission, locale]);
 
@@ -233,11 +261,23 @@ function MetadataCard({
       .split(",")
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
+    const langs = languages
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
     // Merge with existing translations so other locales aren't wiped.
     const mergedTitle = { ...(submission.title ?? {}), [locale]: title };
     const mergedAbstract = {
       ...(submission.abstractText ?? {}),
       [locale]: abstractText,
+    };
+    const mergedSubjects = {
+      ...(submission.subjects ?? {}),
+      [locale]: subjects,
+    };
+    const mergedDataAvail = {
+      ...(submission.dataAvailability ?? {}),
+      [locale]: dataAvailability,
     };
     const result = await api<Submission>(
       `/api/v1/submissions/${submission.id}/details`,
@@ -248,6 +288,9 @@ function MetadataCard({
           abstractText: mergedAbstract,
           keywords: kw,
           disciplines: submission.disciplines ?? [],
+          subjects: mergedSubjects,
+          languages: langs,
+          dataAvailability: mergedDataAvail,
           referencesRaw: submission.referencesRaw ?? "",
           commentsToEditor: comments,
           progress: progressFor(title, abstractText, kw),
@@ -271,6 +314,13 @@ function MetadataCard({
             <span style={{ whiteSpace: "pre-wrap" }}>{abstractText || "—"}</span>
           </Field>
           <Field label="Keywords">{keywords || "—"}</Field>
+          <Field label="Subjects">{subjects || "—"}</Field>
+          <Field label="Languages">{languages || "—"}</Field>
+          {dataAvailability ? (
+            <Field label="Data availability">
+              <span style={{ whiteSpace: "pre-wrap" }}>{dataAvailability}</span>
+            </Field>
+          ) : null}
           {comments ? <Field label="Comments to editor">{comments}</Field> : null}
         </div>
       ) : (
@@ -307,6 +357,41 @@ function MetadataCard({
               onChange={(e) => setKeywords(e.target.value)}
               style={inputStyle}
               placeholder="phenomenology, perception, kant"
+            />
+          </label>
+          <label style={lblStyle}>
+            Subjects (comma-separated)
+            <input
+              type="text"
+              value={subjects}
+              onChange={(e) => setSubjects(e.target.value)}
+              style={inputStyle}
+              placeholder="philosophy of mind, epistemology"
+            />
+          </label>
+          <label style={lblStyle}>
+            Languages of the manuscript (BCP-47, comma-separated)
+            <input
+              type="text"
+              value={languages}
+              onChange={(e) => setLanguages(e.target.value)}
+              style={inputStyle}
+              placeholder="en, ro"
+            />
+          </label>
+          <label style={lblStyle}>
+            Data availability statement (optional)
+            <textarea
+              value={dataAvailability}
+              onChange={(e) => setDataAvailability(e.target.value)}
+              rows={3}
+              style={{
+                ...inputStyle,
+                resize: "vertical",
+                fontFamily: "var(--serif-body)",
+                fontSize: 14,
+              }}
+              placeholder="e.g. Datasets available at https://… ; analysis code at https://… ; or 'Not applicable'."
             />
           </label>
           <label style={lblStyle}>
@@ -900,16 +985,23 @@ function SubmitCard({
   submissionId,
   authors,
   files,
+  checklistItems,
+  checklistAgreed,
   onSubmitted,
 }: {
   submissionId: number;
   authors: AuthorRow[];
   files: FileRow[];
+  checklistItems: ChecklistItem[];
+  checklistAgreed: Set<string>;
   onSubmitted: () => void;
 }): ReactNode {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const ready = authors.length > 0 && files.length > 0;
+  const checklistComplete = checklistItems.every((it) =>
+    it.id ? checklistAgreed.has(it.id) : true,
+  );
+  const ready = authors.length > 0 && files.length > 0 && checklistComplete;
 
   const submit = async (): Promise<void> => {
     setBusy(true);
@@ -947,6 +1039,11 @@ function SubmitCard({
       >
         <li>{authors.length > 0 ? "✓" : "·"} At least one contributor ({authors.length})</li>
         <li>{files.length > 0 ? "✓" : "·"} At least one uploaded file ({files.length})</li>
+        {checklistItems.length > 0 ? (
+          <li>
+            {checklistComplete ? "✓" : "·"} Checklist agreed ({checklistAgreed.size}/{checklistItems.length})
+          </li>
+        ) : null}
       </ul>
       <Button
         type="button"
@@ -973,6 +1070,86 @@ function SubmitCard({
       ) : null}
     </Card>
   );
+}
+
+// ---------- Checklist ----------
+
+/**
+ * Renders the journal-wide submission checklist as a set of required
+ * checkboxes. The author has to tick every item before SubmitCard's
+ * "Submit to editors" button enables. Stable item ids let us track
+ * agreement in a Set even if the admin reorders items between visits.
+ */
+function ChecklistCard({
+  items,
+  locale,
+  agreed,
+  onAgreedChange,
+  editable,
+}: {
+  items: ChecklistItem[];
+  locale: string;
+  agreed: Set<string>;
+  onAgreedChange: (next: Set<string>) => void;
+  editable: boolean;
+}): ReactNode {
+  if (items.length === 0) return null;
+  const toggle = (id: string): void => {
+    const next = new Set(agreed);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onAgreedChange(next);
+  };
+  return (
+    <Card>
+      <SectionTitle>Submission checklist</SectionTitle>
+      <p style={{ margin: "0 0 14px", color: "var(--fg-2)", fontSize: 13 }}>
+        Confirm each statement before submitting. The editors expect every
+        manuscript to meet these requirements.
+      </p>
+      <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 8 }}>
+        {items.map((it) => {
+          if (!it.id) return null;
+          const id = it.id;
+          const label = pickChecklistLabel(it.label ?? {}, locale);
+          const checked = agreed.has(id);
+          return (
+            <li key={id}>
+              <label
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "flex-start",
+                  fontSize: 13.5,
+                  lineHeight: 1.55,
+                  color: "var(--fg)",
+                  cursor: editable ? "pointer" : "default",
+                  opacity: editable ? 1 : 0.7,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  disabled={!editable}
+                  checked={checked}
+                  onChange={() => toggle(id)}
+                  style={{ marginTop: 3, accentColor: "var(--cobalt)" }}
+                />
+                <span>{label}</span>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+    </Card>
+  );
+}
+
+function pickChecklistLabel(label: Record<string, string>, locale: string): string {
+  if (label[locale]?.trim()) return label[locale];
+  for (const v of Object.values(label)) {
+    if (typeof v === "string" && v.trim().length > 0) return v;
+  }
+  return "(no label)";
 }
 
 // ---------- Tiny helpers ----------
