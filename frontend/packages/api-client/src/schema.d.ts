@@ -2542,6 +2542,13 @@ export interface components {
             };
             keywords: string[];
             disciplines: string[];
+            subjects: {
+                [key: string]: string;
+            };
+            languages: string[];
+            dataAvailability: {
+                [key: string]: string;
+            };
             referencesRaw?: string;
             commentsToEditor?: string;
             /** @enum {string} */
@@ -2570,6 +2577,13 @@ export interface components {
             };
             keywords?: string[];
             disciplines?: string[];
+            subjects?: {
+                [key: string]: string;
+            };
+            languages?: string[];
+            dataAvailability?: {
+                [key: string]: string;
+            };
             referencesRaw?: string;
             /** Format: date-time */
             dateSubmitted?: string;
@@ -2907,6 +2921,12 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        ChecklistItem: {
+            id?: string;
+            label?: {
+                [key: string]: string;
+            };
+        };
         JournalConfigUpdateRequest: {
             name: {
                 [key: string]: string;
@@ -2939,6 +2959,13 @@ export interface components {
             tagline?: string;
             taglineOrnament?: string;
             reviewerSuggestionsEnabled?: boolean;
+            privacyStatement: {
+                [key: string]: string;
+            };
+            competingInterestsPolicy: {
+                [key: string]: string;
+            };
+            submissionChecklist: components["schemas"]["ChecklistItem"][];
         };
         JournalConfigResponse: {
             name?: {
@@ -2971,6 +2998,13 @@ export interface components {
             countryOfPublication?: string;
             tagline?: string;
             taglineOrnament?: string;
+            privacyStatement?: {
+                [key: string]: string;
+            };
+            competingInterestsPolicy?: {
+                [key: string]: string;
+            };
+            submissionChecklist?: components["schemas"]["ChecklistItem"][];
             /** Format: int64 */
             version?: number;
             /** Format: date-time */
@@ -3575,12 +3609,12 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            sort?: components["schemas"]["SortObject"];
+            first?: boolean;
+            last?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            sort?: components["schemas"]["SortObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["UserResponse"][];
@@ -3589,13 +3623,13 @@ export interface components {
             empty?: boolean;
         };
         PageableObject: {
-            sort?: components["schemas"]["SortObject"];
-            unpaged?: boolean;
             paged?: boolean;
             /** Format: int32 */
             pageNumber?: number;
             /** Format: int32 */
             pageSize?: number;
+            sort?: components["schemas"]["SortObject"];
+            unpaged?: boolean;
             /** Format: int64 */
             offset?: number;
         };
@@ -3609,12 +3643,12 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            sort?: components["schemas"]["SortObject"];
+            first?: boolean;
+            last?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            sort?: components["schemas"]["SortObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["SubmissionResponse"][];
