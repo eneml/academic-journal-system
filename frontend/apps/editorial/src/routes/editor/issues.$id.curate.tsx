@@ -23,9 +23,10 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { toast } from "sonner";
 import { useAuth } from "../../auth/AuthContext";
 import { isEditorial } from "../../auth/roles";
-import { api } from "../../lib/api";
+import { api, apiMultipart } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { SignInPrompt } from "../../components/SignInPrompt";
 import { Badge, Button } from "@ajs/ui";
@@ -163,6 +164,8 @@ function IssueCuratePage(): ReactNode {
           </Button>
         }
       />
+
+      <IssueGalleysCard issueId={issueId} />
 
       {grouped.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border bg-bg-tint/50 px-8 py-12 text-center">
@@ -305,6 +308,217 @@ function SortableRow({
           <ChevronDown className="size-4" />
         </Button>
       </div>
+    </div>
+  );
+}
+
+interface IssueGalleyRow {
+  id: number;
+  storedFileId: number | null;
+  remoteUrl: string | null;
+  locale: string | null;
+  label: Record<string, string>;
+  seq: number;
+  approved: boolean;
+}
+
+function IssueGalleysCard({ issueId }: { issueId: number }): ReactNode {
+  const [galleys, setGalleys] = useState<IssueGalleyRow[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [showRemoteForm, setShowRemoteForm] = useState(false);
+  const [remoteUrl, setRemoteUrl] = useState("");
+  const [remoteLabel, setRemoteLabel] = useState("");
+
+  const reload = async (): Promise<void> => {
+    const data = await api<IssueGalleyRow[]>(`/api/v1/issues/${issueId}/galleys`);
+    setGalleys(data ?? []);
+  };
+
+  useEffect(() => {
+    void reload();
+  }, [issueId]);
+
+  const onUploadFile = async (file: File): Promise<void> => {
+    setBusy(true);
+    const form = new FormData();
+    form.append("file", file);
+    form.append("label", file.name);
+    const result = await apiMultipart<IssueGalleyRow>(
+      `/api/v1/issues/${issueId}/galleys/upload`,
+      form,
+    );
+    setBusy(false);
+    if (result) {
+      toast.success(`Uploaded ${file.name}.`);
+      void reload();
+    } else {
+      toast.error("Upload failed.");
+    }
+  };
+
+  const onAddRemote = async (): Promise<void> => {
+    if (!remoteUrl.trim()) return;
+    setBusy(true);
+    const result = await api<IssueGalleyRow>(`/api/v1/issues/${issueId}/galleys`, {
+      method: "POST",
+      body: {
+        storedFileId: null,
+        remoteUrl: remoteUrl.trim(),
+        locale: null,
+        label: { en: remoteLabel.trim() || remoteUrl.trim() },
+        seq: galleys?.length ?? 0,
+        approved: false,
+      },
+    });
+    setBusy(false);
+    if (result) {
+      toast.success("External galley added.");
+      setRemoteUrl("");
+      setRemoteLabel("");
+      setShowRemoteForm(false);
+      void reload();
+    } else {
+      toast.error("Couldn't add the external galley.");
+    }
+  };
+
+  const onApprove = async (g: IssueGalleyRow): Promise<void> => {
+    const result = await api(
+      `/api/v1/issues/${issueId}/galleys/${g.id}`,
+      {
+        method: "PUT",
+        body: {
+          storedFileId: g.storedFileId,
+          remoteUrl: g.remoteUrl,
+          locale: g.locale,
+          label: g.label,
+          seq: g.seq,
+          approved: !g.approved,
+        },
+      },
+    );
+    if (result) {
+      void reload();
+    } else {
+      toast.error("Couldn't update.");
+    }
+  };
+
+  const onDelete = async (id: number): Promise<void> => {
+    if (!confirm("Remove this galley?")) return;
+    const result = await api(`/api/v1/issues/${issueId}/galleys/${id}`, { method: "DELETE" });
+    if (result === null) {
+      toast.success("Removed.");
+      void reload();
+    } else {
+      toast.error("Couldn't remove.");
+    }
+  };
+
+  return (
+    <div className="mb-6 rounded-md border border-border bg-white">
+      <div className="flex items-center gap-2.5 border-b border-border bg-bg-tint px-3.5 py-2.5">
+        <h3 className="m-0 font-serif-display text-[16px] font-semibold text-ink">
+          Issue galleys
+        </h3>
+        <Badge variant="mono">{galleys?.length ?? 0}</Badge>
+        <span className="flex-1" />
+        <label
+          className={`inline-flex items-center gap-2 rounded-md border px-3 py-1 text-[12px] font-medium ${
+            busy
+              ? "cursor-wait border-border bg-bg-tint text-muted"
+              : "cursor-pointer border-cobalt bg-cobalt-soft text-cobalt-deep hover:bg-cobalt/10"
+          }`}
+        >
+          {busy ? "Uploading…" : "Upload file"}
+          <input
+            type="file"
+            disabled={busy}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void onUploadFile(f);
+              e.currentTarget.value = "";
+            }}
+            style={{ display: "none" }}
+          />
+        </label>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={() => setShowRemoteForm((v) => !v)}
+        >
+          {showRemoteForm ? "Cancel" : "Add URL"}
+        </Button>
+      </div>
+
+      {showRemoteForm ? (
+        <div className="grid gap-2 border-b border-border px-3.5 py-3 md:grid-cols-[1fr_220px_auto]">
+          <input
+            type="url"
+            value={remoteUrl}
+            onChange={(e) => setRemoteUrl(e.target.value)}
+            placeholder="https://cdn.example.org/issue-7-combined.pdf"
+            className="rounded-md border border-border bg-white px-3 py-2 text-sm"
+          />
+          <input
+            type="text"
+            value={remoteLabel}
+            onChange={(e) => setRemoteLabel(e.target.value)}
+            placeholder="Label (optional)"
+            className="rounded-md border border-border bg-white px-3 py-2 text-sm"
+          />
+          <Button type="button" onClick={() => void onAddRemote()} disabled={busy}>
+            Add
+          </Button>
+        </div>
+      ) : null}
+
+      {galleys == null ? (
+        <p className="px-3.5 py-3 text-[12px] text-muted">Loading galleys…</p>
+      ) : galleys.length === 0 ? (
+        <p className="px-3.5 py-3 text-[12px] text-muted">
+          No galleys yet — upload a combined PDF or paste a CDN URL above.
+        </p>
+      ) : (
+        <ul className="m-0 list-none divide-y divide-border p-0">
+          {galleys.map((g) => {
+            const label = pickEn(g.label) || (g.remoteUrl ?? `Galley #${g.id}`);
+            return (
+              <li key={g.id} className="flex items-center gap-3 px-3.5 py-2.5">
+                <span className="font-mono text-[10.5px] uppercase tracking-wider text-muted w-12">
+                  {g.storedFileId ? "FILE" : "URL"}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="m-0 truncate text-[13px] font-medium text-fg">
+                    {label}
+                  </p>
+                  {g.remoteUrl ? (
+                    <p className="m-0 truncate text-[10.5px] font-mono text-muted">
+                      {g.remoteUrl}
+                    </p>
+                  ) : null}
+                </div>
+                <Button
+                  type="button"
+                  variant={g.approved ? "primary" : "secondary"}
+                  size="sm"
+                  onClick={() => void onApprove(g)}
+                >
+                  {g.approved ? "Approved" : "Approve"}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => void onDelete(g.id)}
+                  className="text-danger hover:underline text-[12px]"
+                >
+                  Remove
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

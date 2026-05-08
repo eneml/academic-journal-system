@@ -227,6 +227,21 @@ export const fetchAnnouncements = (limit = 20) =>
 export const fetchRecentPublications = (limit = 6) =>
   getJson<PublicationSummary[]>(`/api/v1/publications/recent?limit=${limit}`);
 
+export type Highlight = {
+  id: number;
+  sortOrder: number;
+  title: Record<string, string>;
+  description: Record<string, string>;
+  url: string | null;
+  imageStoredFileId: number | null;
+  imageUrl: string | null;
+  targetPublicationId: number | null;
+  targetPublicationUrlPath: string | null;
+  enabled: boolean;
+};
+
+export const fetchHighlights = () => getJson<Highlight[]>("/api/v1/highlights");
+
 export const fetchIssues = () => getJson<IssueSummary[]>("/api/v1/issues");
 
 export const fetchIssueBySlug = (slug: string) =>

@@ -8,6 +8,7 @@ import { PublicFooter } from "@/components/PublicFooter";
 import { Badge, DoiChip, OrcidBadge } from "@ajs/ui";
 import { ArticleToolbar } from "@/components/ArticleToolbar";
 import { ArticleToc, type TocItem } from "@/components/ArticleToc";
+import { PdfViewerClient } from "@/components/PdfViewerClient";
 import { ReadingProgress } from "@/components/ReadingProgress";
 import {
   fetchActiveSections,
@@ -344,38 +345,21 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
             ) : null}
           </section>
 
-          <div className="reading dropcap" id="article-body">
-            <h2 id="intro">1. Introduction</h2>
-            <p>{abstract}</p>
-            <p>
-              The full text of this article is distributed as the canonical PDF
-              galley. The structured HTML rendering of figures, equations, and
-              footnotes will appear here when the production team finalises the
-              galley — until then the PDF link above carries the authoritative
-              version of record.
-            </p>
-
-            <h2 id="related">2. Related work</h2>
-            <p>
-              See the references section below for a full bibliography of works
-              cited.
-            </p>
-
-            <h2 id="method">3. Method</h2>
-            <p>Refer to Sections 3.1 — 3.4 of the PDF galley.</p>
-
-            <h2 id="results">4. Results</h2>
-            <p>Refer to Sections 4.1 — 4.3 of the PDF galley.</p>
-
-            <h2 id="discussion">5. Discussion</h2>
-            <p>Refer to Section 5 of the PDF galley.</p>
-
-            <h2 id="refs">References</h2>
-            <p>
-              The full reference list is included in the PDF galley. Citations
-              from this article are tracked through Crossref.
-            </p>
-          </div>
+          {pdfHref ? (
+            <PdfInlineViewer pdfHref={pdfHref} />
+          ) : (
+            <div className="reading dropcap" id="article-body">
+              <h2 id="intro">1. Introduction</h2>
+              <p>{abstract}</p>
+              <p>
+                The full text of this article is distributed as the canonical
+                PDF galley. The structured HTML rendering of figures, equations,
+                and footnotes will appear here when the production team finalises
+                the galley — until then the PDF link above carries the
+                authoritative version of record.
+              </p>
+            </div>
+          )}
         </div>
 
         <aside className="sticky top-8 hidden self-start lg:block">
@@ -508,6 +492,17 @@ export default async function ArticlePage({ params }: Props): Promise<ReactNode>
       <PublicFooter />
     </div>
   );
+}
+
+/**
+ * Inline PDF reader. Server resolves a presigned download URL via the
+ * existing `/galleys/{id}/download-url` endpoint, then we hand the URL
+ * to a client component that fetches it and renders pdf.js inside an
+ * `<object>` (native browser viewer) with a fallback link if the
+ * browser refuses to embed PDFs.
+ */
+function PdfInlineViewer({ pdfHref }: { pdfHref: string }) {
+  return <PdfViewerClient pdfHref={pdfHref} />;
 }
 
 function Metric({ value, label }: { value: string; label: string }) {

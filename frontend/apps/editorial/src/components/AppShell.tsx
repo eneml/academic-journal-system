@@ -152,16 +152,40 @@ const NAV_GROUPS: NavGroup[] = [
         when: isEditorial,
       },
       {
+        to: "/admin/highlights",
+        label: "Highlights",
+        icon: Sparkles,
+        when: (r) => hasRole(r, "ADMIN"),
+      },
+      {
+        to: "/admin/invitations",
+        label: "Invitations",
+        icon: UserCog,
+        when: isEditorial,
+      },
+      {
         to: "/admin/users",
         label: "Users",
         icon: Users,
         when: (r) => hasRole(r, "ADMIN"),
       },
       {
+        to: "/admin/dois",
+        label: "DOIs",
+        icon: ArrowUpRight,
+        when: isEditorial,
+      },
+      {
         to: "/admin/stats",
         label: "Statistics",
         icon: BarChart3,
         when: isEditorial,
+      },
+      {
+        to: "/admin/email-log",
+        label: "Email log",
+        icon: ScrollText,
+        when: (r) => hasRole(r, "ADMIN"),
       },
       {
         to: "/admin/audit-log",

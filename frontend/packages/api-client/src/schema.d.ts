@@ -1278,6 +1278,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/issues/{issueId}/galleys/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload a file and attach it as a new issue galley */
+        post: operations["upload_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/issues/{id}/unpublish": {
         parameters: {
             query?: never;
@@ -1577,6 +1594,40 @@ export interface paths {
         put?: never;
         /** Hide an announcement without deleting it */
         post: operations["withdraw"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dois/{id}/redeposit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark a DOI for re-deposit on the next dispatch tick */
+        post: operations["redeposit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dois/{id}/mark-stale": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Manually flag a DOI as STALE */
+        post: operations["markStale"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2470,6 +2521,23 @@ export interface paths {
         };
         /** Paged per-article totals for the inspected range */
         get: operations["details"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dois": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List DOIs, optionally filtered by status */
+        get: operations["list_23"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3892,6 +3960,18 @@ export interface components {
             password: string;
             givenName: string;
             familyName: string;
+        };
+        DoiAdminRow: {
+            /** Format: int64 */
+            id?: number;
+            doi?: string;
+            /** @enum {string} */
+            status?: "NOT_REGISTERED" | "SUBMITTED" | "REGISTERED" | "ERROR" | "STALE";
+            /** Format: date-time */
+            registeredAt?: string;
+            errorMessage?: string;
+            /** Format: date-time */
+            updatedAt?: string;
         };
         UserPreferencesPatch: {
             locale?: string;
@@ -7195,6 +7275,39 @@ export interface operations {
             };
         };
     };
+    upload_1: {
+        parameters: {
+            query?: {
+                locale?: string;
+                label?: string;
+                seq?: number;
+            };
+            header?: never;
+            path: {
+                issueId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IssueGalleyResponse"];
+                };
+            };
+        };
+    };
     unpublish_1: {
         parameters: {
             query?: never;
@@ -7762,6 +7875,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AnnouncementResponse"];
+                };
+            };
+        };
+    };
+    redeposit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DoiAdminRow"];
+                };
+            };
+        };
+    };
+    markStale: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DoiAdminRow"];
                 };
             };
         };
@@ -8992,6 +9149,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ArticleStatsPage"];
+                };
+            };
+        };
+    };
+    list_23: {
+        parameters: {
+            query?: {
+                status?: "NOT_REGISTERED" | "SUBMITTED" | "REGISTERED" | "ERROR" | "STALE";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DoiAdminRow"][];
                 };
             };
         };

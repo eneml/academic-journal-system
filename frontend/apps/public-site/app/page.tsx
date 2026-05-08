@@ -8,6 +8,7 @@ import { Button, CoverArt, Fleuron, Sparkline } from "@ajs/ui";
 import {
   fetchActiveSections,
   fetchAnnouncements,
+  fetchHighlights,
   fetchIndexingMemberships,
   fetchIssueTableOfContents,
   fetchIssues,
@@ -17,6 +18,7 @@ import {
   fetchPublicationTimeseriesBatch,
   pickLocale,
   type DailyMetricsBucket,
+  type Highlight,
   type IndexingMembership,
   type PublicationMetrics,
   type PublicationSummary,
@@ -30,7 +32,7 @@ const NUMBER = new Intl.NumberFormat("en-US");
 const ISSN = process.env.NEXT_PUBLIC_JOURNAL_ISSN ?? null;
 
 export default async function HomePage(): Promise<ReactNode> {
-  const [config, issues, sections, masthead, announcements, indexing] =
+  const [config, issues, sections, masthead, announcements, indexing, highlights] =
     await Promise.all([
       fetchJournalConfig(),
       fetchIssues(),
@@ -38,6 +40,7 @@ export default async function HomePage(): Promise<ReactNode> {
       fetchMasthead(),
       fetchAnnouncements(1),
       fetchIndexingMemberships(),
+      fetchHighlights(),
     ]);
 
   const locale = config?.defaultLocale ?? "en";
@@ -100,6 +103,8 @@ export default async function HomePage(): Promise<ReactNode> {
       <div className="px-6 lg:px-14">
         <div className="triple-rule" />
       </div>
+
+      <HighlightStrip highlights={highlights ?? []} locale={locale} />
 
       {issue ? (
         <FeaturedSection
@@ -314,6 +319,69 @@ function Hero({
           </div>
         </div>
       </div>
+    </section>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Highlight strip — curated tiles from the admin Highlights page
+// ----------------------------------------------------------------------------
+
+function HighlightStrip({
+  highlights,
+  locale,
+}: {
+  highlights: Highlight[];
+  locale: string;
+}) {
+  const tiles = highlights.filter((h) => h.enabled).slice(0, 6);
+  if (tiles.length === 0) return null;
+  return (
+    <section className="mt-12 px-6 lg:px-14">
+      <div className="mb-4 flex items-baseline justify-between">
+        <h3 className="m-0 font-serif-display text-[22px] font-medium tracking-[-0.014em] text-ink">
+          Editor's picks
+        </h3>
+        <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-muted">
+          {tiles.length} curated
+        </span>
+      </div>
+      <ul className="m-0 grid gap-4 p-0 list-none sm:grid-cols-2 lg:grid-cols-3">
+        {tiles.map((h) => {
+          const title = pickLocale(h.title, locale) || "(untitled)";
+          const description = pickLocale(h.description, locale);
+          const href = h.targetPublicationUrlPath
+            ? `/articles/${h.targetPublicationUrlPath}`
+            : h.url ?? "#";
+          return (
+            <li key={h.id}>
+              <Link
+                href={href}
+                className="group block h-full rounded-md border border-border bg-paper p-5 no-underline shadow-1 transition-shadow hover:shadow-2"
+              >
+                {h.imageUrl ? (
+                  <div
+                    className="-mx-5 -mt-5 mb-4 h-36 rounded-t-md bg-cover bg-center"
+                    style={{ backgroundImage: `url('${h.imageUrl}')` }}
+                    aria-hidden
+                  />
+                ) : null}
+                <div className="font-serif-display text-[16px] font-medium leading-[1.25] tracking-[-0.012em] text-ink group-hover:text-cobalt-deep">
+                  {title}
+                </div>
+                {description ? (
+                  <p className="m-0 mt-2 font-serif-body text-[13px] leading-[1.55] text-fg-2">
+                    {truncate(description, 160)}
+                  </p>
+                ) : null}
+                <div className="mt-3 inline-flex items-center gap-1 font-mono text-[10.5px] uppercase tracking-[0.1em] text-cobalt">
+                  Read <ArrowRight className="h-3 w-3" />
+                </div>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }
