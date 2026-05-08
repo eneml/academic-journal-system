@@ -565,8 +565,13 @@ function FilesRail({
                 <p className="text-[12px] font-mono text-fg-2 truncate m-0">
                   {f.originalFilename ?? `File #${f.id}`}
                 </p>
-                <p className="text-[10px] text-muted font-mono uppercase tracking-wider mt-0.5 m-0">
+                <p className="text-[10px] text-muted font-mono uppercase tracking-wider mt-0.5 m-0 flex items-center gap-1.5">
                   {f.fileStage}
+                  {f.fileStage === "REVIEW_ATTACHMENT" ? (
+                    <Badge variant="cobalt" className="font-sans">
+                      from reviewer
+                    </Badge>
+                  ) : null}
                 </p>
               </div>
               <button
@@ -1027,25 +1032,75 @@ function ReviewRoundView({
                   Confirm
                 </Button>
               ) : null}
-              {a.status === "AWAITING_RESPONSE" || a.status === "ACCEPTED" ? (
+              {a.status === "AWAITING_RESPONSE" ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={async () => {
+                    const result = await api(
+                      `/api/v1/submissions/${submissionId}/review-rounds/${round.id}/assignments/${a.id}/resend`,
+                      { method: "POST" },
+                    );
+                    if (result == null) {
+                      toast.error("Couldn't resend invitation.");
+                    } else {
+                      toast.success(`Re-sent invitation to reviewer #${a.reviewerUserId}.`);
+                    }
+                    void loadAssignments();
+                  }}
+                >
+                  <Send />
+                  Resend
+                </Button>
+              ) : null}
+              {a.status === "DECLINED" ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={async () => {
+                    const result = await api(
+                      `/api/v1/submissions/${submissionId}/review-rounds/${round.id}/assignments/${a.id}/reinstate`,
+                      { method: "POST" },
+                    );
+                    if (result == null) {
+                      toast.error("Couldn't reinstate the assignment.");
+                    } else {
+                      toast.success(`Reinstated reviewer #${a.reviewerUserId}.`);
+                    }
+                    void loadAssignments();
+                    onChanged();
+                  }}
+                >
+                  <UserPlus />
+                  Reinstate
+                </Button>
+              ) : null}
+              {a.status === "AWAITING_RESPONSE"
+                || a.status === "ACCEPTED"
+                || a.status === "IN_PROGRESS" ? (
                 <Button
                   type="button"
                   variant="destructive"
                   size="sm"
                   onClick={async () => {
-                    if (!confirm(`Cancel reviewer #${a.reviewerUserId}?`)) return;
+                    if (!confirm(`Unassign reviewer #${a.reviewerUserId}?`)) return;
                     const result = await api(
-                      `/api/v1/submissions/${submissionId}/review-rounds/${round.id}/assignments/${a.id}`,
-                      { method: "DELETE" },
+                      `/api/v1/submissions/${submissionId}/review-rounds/${round.id}/assignments/${a.id}/unassign`,
+                      { method: "POST" },
                     );
                     if (result == null) {
-                      toast.success(`Cancelled reviewer #${a.reviewerUserId}.`);
+                      toast.error("Couldn't unassign the reviewer.");
+                    } else {
+                      toast.success(`Unassigned reviewer #${a.reviewerUserId}.`);
                     }
                     void loadAssignments();
+                    onChanged();
                   }}
                 >
                   <X />
-                  Cancel
+                  Unassign
                 </Button>
               ) : null}
             </li>
