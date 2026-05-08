@@ -9,8 +9,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 
@@ -33,8 +31,7 @@ public class ReviewerSuggestion extends AuditableEntity {
     @Column(name = "family_name", length = 255)
     private String familyName;
 
-    @JdbcTypeCode(SqlTypes.VARCHAR)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "citext")
     private String email;
 
     @Column(name = "orcid_id", length = 19)
