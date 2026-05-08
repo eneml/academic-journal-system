@@ -88,7 +88,11 @@ public enum CanonicalEmailTemplateKey {
             "Monthly nudge to editors with open editorial work."),
     EDITORIAL_STATISTICS_REPORT(
             "editorial.statisticsReport",
-            "Monthly KPI digest sent to admins.");
+            "Monthly KPI digest sent to admins."),
+
+    INVITATION_CREATED(
+            "invitation.created",
+            "Sent when an editor invites a non-user to join the journal.");
 
     private final String key;
     private final String description;

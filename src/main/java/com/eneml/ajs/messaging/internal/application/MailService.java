@@ -123,6 +123,42 @@ public class MailService {
         return base + path;
     }
 
+    /**
+     * Direct send for cases where there's no Notification row — e.g.
+     * invitations to a non-user email address. The template is the same
+     * Thymeleaf wrapper used for in-app notifications, fed with explicit
+     * subject/title/body/actionUrl variables.
+     */
+    public void sendDirect(String toEmail, String subject, String body, String actionUrl) {
+        if (toEmail == null || toEmail.isBlank()) return;
+        JournalConfigSummary config = journalLookup.getConfig();
+        String journalName = pickName(config);
+
+        Context ctx = new Context();
+        ctx.setVariable("journalName", journalName);
+        ctx.setVariable("subject", subject);
+        ctx.setVariable("title", subject);
+        ctx.setVariable("body", body);
+        ctx.setVariable("actionUrl", actionUrl);
+        String html = templateEngine.process("email/notification", ctx);
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
+            helper.setFrom(fromAddress, fromName + " — " + journalName);
+            helper.setTo(toEmail);
+            helper.setSubject("[" + journalName + "] " + subject);
+            StringBuilder plain = new StringBuilder();
+            plain.append(subject).append("\n\n");
+            if (body != null && !body.isBlank()) plain.append(body).append("\n\n");
+            if (actionUrl != null && !actionUrl.isBlank()) plain.append("Open: ").append(actionUrl).append("\n");
+            helper.setText(plain.toString(), html);
+            mailSender.send(message);
+        } catch (MessagingException | MailException | java.io.UnsupportedEncodingException e) {
+            log.warn("failed to deliver direct mail to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
     private static String plainTextFor(Notification n) {
         StringBuilder sb = new StringBuilder();
         sb.append(n.getTitle()).append("\n\n");

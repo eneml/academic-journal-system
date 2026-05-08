@@ -55,6 +55,7 @@ class SecurityConfig {
                         // Public self-registration — anonymous users POST credentials
                         // here to create their Keycloak account before signing in.
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/invitations/decline").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/v1/journal/config",
                                 "/api/v1/journal/sections",
@@ -85,6 +86,7 @@ class SecurityConfig {
                                 "/api/v1/publications/*/categories",
                                 "/api/v1/articles/*/recommendations/by-author",
                                 "/api/v1/highlights",
+                                "/api/v1/invitations/by-key",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",

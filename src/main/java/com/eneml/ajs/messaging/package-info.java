@@ -14,6 +14,6 @@
     allowedDependencies = { "shared", "identity::api", "submission::api",
                             "review::api", "editorial::api", "publication::api",
                             "issue::api", "journal::api", "discussion::api",
-                            "scheduling::api" }
+                            "scheduling::api", "invitation::api" }
 )
 package com.eneml.ajs.messaging;

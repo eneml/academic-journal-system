@@ -23,6 +23,7 @@ public final class NotificationType {
     public static final String DISCUSSION_MESSAGE    = "discussion.message";
     public static final String EDITORIAL_REMINDER    = "editorial.reminder";
     public static final String EDITORIAL_STATS       = "editorial.statisticsReport";
+    public static final String INVITATION_CREATED    = "invitation.created";
 
     private NotificationType() {}
 }
