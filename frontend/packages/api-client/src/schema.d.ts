@@ -176,6 +176,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/publications/{publicationId}/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list"];
+        put: operations["set"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/notification-preferences/{key}": {
         parameters: {
             query?: never;
@@ -317,6 +333,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["one_1"];
+        put: operations["update_12"];
+        post?: never;
+        delete: operations["delete_4"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/announcements/{id}": {
         parameters: {
             query?: never;
@@ -327,10 +359,10 @@ export interface paths {
         /** Get a single announcement by id (public) */
         get: operations["get_7"];
         /** Update an announcement */
-        put: operations["update_12"];
+        put: operations["update_13"];
         post?: never;
         /** Permanently delete an announcement */
-        delete: operations["delete_4"];
+        delete: operations["delete_5"];
         options?: never;
         head?: never;
         patch?: never;
@@ -344,7 +376,7 @@ export interface paths {
             cookie?: never;
         };
         /** List users (admin) */
-        get: operations["list"];
+        get: operations["list_1"];
         put?: never;
         /** Create a user (admin) — keycloakSub must already exist in Keycloak */
         post: operations["create"];
@@ -362,7 +394,7 @@ export interface paths {
             cookie?: never;
         };
         /** List active role grants for a user */
-        get: operations["list_1"];
+        get: operations["list_2"];
         put?: never;
         /** Grant a role to a user */
         post: operations["assign"];
@@ -397,7 +429,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_2"];
+        get: operations["list_3"];
         put?: never;
         post: operations["add"];
         delete?: never;
@@ -517,7 +549,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
         post: operations["assign_1"];
         delete?: never;
@@ -534,7 +566,7 @@ export interface paths {
             cookie?: never;
         };
         /** List files on a submission */
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
         /** Upload a file (multipart) and attach to the submission */
         post: operations["upload"];
@@ -603,7 +635,7 @@ export interface paths {
             cookie?: never;
         };
         /** List authors on a submission */
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
         /** Add an author to the submission */
         post: operations["add_1"];
@@ -705,7 +737,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
         post: operations["create_1"];
         delete?: never;
@@ -822,7 +854,7 @@ export interface paths {
             cookie?: never;
         };
         /** List galleys for a publication */
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
         /** Add a galley (PDF/HTML/JATS) to the publication */
         post: operations["add_2"];
@@ -924,7 +956,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_9"];
         put?: never;
         post: operations["save"];
         delete?: never;
@@ -941,7 +973,7 @@ export interface paths {
             cookie?: never;
         };
         /** List sections (public) */
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
         /** Create a section */
         post: operations["create_2"];
@@ -993,7 +1025,7 @@ export interface paths {
             cookie?: never;
         };
         /** List masthead entries (public, enriched with author info) */
-        get: operations["list_10"];
+        get: operations["list_11"];
         put?: never;
         /** Add an entry to the masthead */
         post: operations["add_3"];
@@ -1027,7 +1059,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_11"];
+        get: operations["list_12"];
         put?: never;
         post: operations["create_3"];
         delete?: never;
@@ -1044,7 +1076,7 @@ export interface paths {
             cookie?: never;
         };
         /** List genres (public) */
-        get: operations["list_12"];
+        get: operations["list_13"];
         put?: never;
         /** Create a genre */
         post: operations["create_4"];
@@ -1113,7 +1145,7 @@ export interface paths {
             cookie?: never;
         };
         /** List all issues */
-        get: operations["list_13"];
+        get: operations["list_14"];
         put?: never;
         /** Create an issue */
         post: operations["create_5"];
@@ -1274,6 +1306,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_15"];
+        put?: never;
+        post: operations["create_6"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/categories/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reorder_5"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/register": {
         parameters: {
             query?: never;
@@ -1299,10 +1363,10 @@ export interface paths {
             cookie?: never;
         };
         /** List currently visible announcements (public) */
-        get: operations["list_14"];
+        get: operations["list_16"];
         put?: never;
         /** Post an announcement */
-        post: operations["create_6"];
+        post: operations["create_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1356,7 +1420,7 @@ export interface paths {
         delete: operations["unassign"];
         options?: never;
         head?: never;
-        patch: operations["update_13"];
+        patch: operations["update_14"];
         trace?: never;
     };
     "/api/v1/issues/{id}/articles": {
@@ -1824,7 +1888,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_15"];
+        get: operations["list_17"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1840,7 +1904,23 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["one_1"];
+        get: operations["one_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/categories/by-path/{path}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["byPath"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2539,6 +2619,29 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        SetRequest: {
+            categoryIds: number[];
+        };
+        CategorySummary: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            parentId?: number;
+            code?: string;
+            path?: string;
+            /** Format: double */
+            sequence?: number;
+            title?: {
+                [key: string]: string;
+            };
+            description?: {
+                [key: string]: string;
+            };
+            /** @enum {string} */
+            sortOption?: "DATE_PUBLISHED_DESC" | "DATE_PUBLISHED_ASC" | "TITLE_ASC" | "MANUAL";
+            /** Format: int64 */
+            imageFileId?: number;
+        };
         NotificationPreferenceUpdateRequest: {
             blocked?: boolean;
         };
@@ -2825,6 +2928,22 @@ export interface components {
             enabled?: boolean;
             custom?: boolean;
             locales?: components["schemas"]["EmailTemplateLocaleResponse"][];
+        };
+        CategoryUpsertRequest: {
+            code: string;
+            path: string;
+            /** Format: int64 */
+            parentId?: number;
+            title: {
+                [key: string]: string;
+            };
+            description?: {
+                [key: string]: string;
+            };
+            /** @enum {string} */
+            sortOption?: "DATE_PUBLISHED_DESC" | "DATE_PUBLISHED_ASC" | "TITLE_ASC" | "MANUAL";
+            /** Format: int64 */
+            imageFileId?: number;
         };
         AnnouncementUpsertRequest: {
             /** @enum {string} */
@@ -3291,6 +3410,11 @@ export interface components {
             /** Format: date-time */
             editedAt?: string;
         };
+        CategoryReorderRequest: {
+            /** Format: int64 */
+            parentId?: number;
+            orderedIds: number[];
+        };
         RegisterRequest: {
             email: string;
             password: string;
@@ -3319,10 +3443,10 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            sort?: components["schemas"]["SortObject"];
             pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
+            sort?: components["schemas"]["SortObject"];
             /** Format: int32 */
             numberOfElements?: number;
             /** Format: int32 */
@@ -3333,13 +3457,13 @@ export interface components {
             empty?: boolean;
         };
         PageableObject: {
-            sort?: components["schemas"]["SortObject"];
             paged?: boolean;
             /** Format: int32 */
             pageNumber?: number;
             /** Format: int32 */
             pageSize?: number;
             unpaged?: boolean;
+            sort?: components["schemas"]["SortObject"];
             /** Format: int64 */
             offset?: number;
         };
@@ -3353,10 +3477,10 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            sort?: components["schemas"]["SortObject"];
             pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
+            sort?: components["schemas"]["SortObject"];
             /** Format: int32 */
             numberOfElements?: number;
             /** Format: int32 */
@@ -4135,6 +4259,54 @@ export interface operations {
             };
         };
     };
+    list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CategorySummary"][];
+                };
+            };
+        };
+    };
+    set: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CategorySummary"][];
+                };
+            };
+        };
+    };
     setMine: {
         parameters: {
             query?: never;
@@ -4553,6 +4725,74 @@ export interface operations {
             };
         };
     };
+    one_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CategorySummary"];
+                };
+            };
+        };
+    };
+    update_12: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CategorySummary"];
+                };
+            };
+        };
+    };
+    delete_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     get_7: {
         parameters: {
             query?: never;
@@ -4575,7 +4815,7 @@ export interface operations {
             };
         };
     };
-    update_12: {
+    update_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -4601,7 +4841,7 @@ export interface operations {
             };
         };
     };
-    delete_4: {
+    delete_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -4621,7 +4861,7 @@ export interface operations {
             };
         };
     };
-    list: {
+    list_1: {
         parameters: {
             query: {
                 status?: "ACTIVE" | "DISABLED" | "PENDING";
@@ -4668,7 +4908,7 @@ export interface operations {
             };
         };
     };
-    list_1: {
+    list_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -4769,7 +5009,7 @@ export interface operations {
             };
         };
     };
-    list_2: {
+    list_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -5026,7 +5266,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_4: {
         parameters: {
             query?: {
                 stage?: "SUBMISSION" | "EXTERNAL_REVIEW" | "EDITING" | "PRODUCTION" | "PUBLISHED";
@@ -5076,7 +5316,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -5255,7 +5495,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -5425,7 +5665,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -5611,7 +5851,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -5776,7 +6016,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_9: {
         parameters: {
             query?: {
                 page?: number;
@@ -5823,7 +6063,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_10: {
         parameters: {
             query?: {
                 includeInactive?: boolean;
@@ -5913,7 +6153,7 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_11: {
         parameters: {
             query?: {
                 visibleOnly?: boolean;
@@ -5981,7 +6221,7 @@ export interface operations {
             };
         };
     };
-    list_11: {
+    list_12: {
         parameters: {
             query?: {
                 includeInactive?: boolean;
@@ -6027,7 +6267,7 @@ export interface operations {
             };
         };
     };
-    list_12: {
+    list_13: {
         parameters: {
             query?: {
                 enabledOnly?: boolean;
@@ -6139,7 +6379,7 @@ export interface operations {
             };
         };
     };
-    list_13: {
+    list_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -6464,6 +6704,72 @@ export interface operations {
             };
         };
     };
+    list_15: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CategorySummary"][];
+                };
+            };
+        };
+    };
+    create_6: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CategorySummary"];
+                };
+            };
+        };
+    };
+    reorder_5: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryReorderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     register: {
         parameters: {
             query?: never;
@@ -6486,7 +6792,7 @@ export interface operations {
             };
         };
     };
-    list_14: {
+    list_16: {
         parameters: {
             query?: {
                 limit?: number;
@@ -6508,7 +6814,7 @@ export interface operations {
             };
         };
     };
-    create_6: {
+    create_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -6599,7 +6905,7 @@ export interface operations {
             };
         };
     };
-    update_13: {
+    update_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -7248,7 +7554,7 @@ export interface operations {
             };
         };
     };
-    list_15: {
+    list_17: {
         parameters: {
             query?: never;
             header?: never;
@@ -7268,7 +7574,7 @@ export interface operations {
             };
         };
     };
-    one_1: {
+    one_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -7286,6 +7592,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["EmailTemplateResponse"];
+                };
+            };
+        };
+    };
+    byPath: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CategorySummary"];
                 };
             };
         };
