@@ -15,6 +15,9 @@ public final class NotificationType {
     public static final String DECISION_GENERIC      = "decision.generic";
     public static final String REVIEWER_INVITED      = "reviewer.invited";
     public static final String REVIEW_SUBMITTED      = "review.submitted";
+    public static final String REVIEW_ACKNOWLEDGEMENT = "review.acknowledgement";
+    public static final String REVIEW_UNASSIGN       = "review.unassign";
+    public static final String REVIEW_REINSTATE      = "review.reinstate";
     public static final String PUBLICATION_PUBLISHED = "publication.published";
     public static final String DISCUSSION_OPENED     = "discussion.opened";
     public static final String DISCUSSION_MESSAGE    = "discussion.message";
