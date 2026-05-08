@@ -1,6 +1,7 @@
 package com.eneml.ajs.review.internal.web;
 
 import com.eneml.ajs.identity.api.UserDirectoryService;
+import com.eneml.ajs.journal.api.GenreLookup;
 import com.eneml.ajs.review.internal.application.ReviewerFormService;
 import com.eneml.ajs.review.internal.application.ReviewerInboxService;
 import com.eneml.ajs.review.internal.domain.ReviewAssignment;
@@ -9,31 +10,41 @@ import com.eneml.ajs.review.internal.domain.ReviewFormResponse;
 import com.eneml.ajs.review.internal.web.dto.ReviewAssignmentResponse;
 import com.eneml.ajs.review.internal.web.dto.ReviewFormElementResponse;
 import com.eneml.ajs.review.internal.web.dto.ReviewSubmissionRequest;
+import com.eneml.ajs.review.internal.web.dto.ReviewerAttachmentResponse;
 import com.eneml.ajs.review.internal.web.dto.ReviewerFormResponse;
 import com.eneml.ajs.review.internal.web.dto.ReviewerFormResponsesRequest;
 import com.eneml.ajs.review.internal.web.dto.ReviewerManuscriptResponse;
 import com.eneml.ajs.review.internal.web.dto.ReviewerResponseRequest;
 import com.eneml.ajs.review.internal.web.mapper.ReviewMapper;
+import com.eneml.ajs.shared.exception.ConflictException;
 import com.eneml.ajs.shared.exception.NotFoundException;
 import com.eneml.ajs.storage.api.FileStorageService;
 import com.eneml.ajs.storage.api.StoredFileMetadata;
+import com.eneml.ajs.submission.api.FileStage;
 import com.eneml.ajs.submission.api.SubmissionContent;
 import com.eneml.ajs.submission.api.SubmissionFileSummary;
+import com.eneml.ajs.submission.api.SubmissionFiles;
 import com.eneml.ajs.submission.api.SubmissionLookup;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 
@@ -44,12 +55,17 @@ import java.util.List;
 @Tag(name = "Review (reviewer)", description = "Reviewer-side inbox: respond and submit reviews")
 class ReviewerController {
 
+    private static final String REVIEWER_ATTACHMENT_GENRE_CODE = "reviewer-attachment";
+    private static final Duration DOWNLOAD_TTL = Duration.ofMinutes(15);
+
     private final ReviewerInboxService service;
     private final ReviewerFormService formService;
     private final ReviewMapper mapper;
     private final UserDirectoryService userDirectory;
     private final SubmissionLookup submissionLookup;
+    private final SubmissionFiles submissionFiles;
     private final FileStorageService fileStorage;
+    private final GenreLookup genreLookup;
 
     @GetMapping
     @Operation(summary = "List the current user's open review assignments")
@@ -162,6 +178,80 @@ class ReviewerController {
                 .toList();
         return new ReviewerFormResponse(
                 true, f.getId(), f.getTitle(), f.getDescription(), elements, answers);
+    }
+
+    @GetMapping("/{assignmentId}/files")
+    @Operation(summary = "List reviewer-uploaded attachments on this assignment")
+    List<ReviewerAttachmentResponse> listFiles(@AuthenticationPrincipal Jwt jwt,
+                                                @PathVariable Long assignmentId) {
+        Long userId = currentUserId(jwt);
+        ReviewAssignment a = service.getMine(assignmentId, userId);
+        Long submissionId = service.submissionIdFor(a);
+        return submissionFiles.listByStage(submissionId, FileStage.REVIEW_ATTACHMENT).stream()
+                .filter(f -> userId.equals(f.uploaderUserId()))
+                .map(f -> toAttachmentResponse(f, submissionId))
+                .toList();
+    }
+
+    @PostMapping(value = "/{assignmentId}/files",
+                  consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload an attachment to the reviewer's assignment")
+    ResponseEntity<ReviewerAttachmentResponse> uploadFile(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long assignmentId,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "locale", required = false) String locale) throws IOException {
+        Long userId = currentUserId(jwt);
+        ReviewAssignment a = service.getMine(assignmentId, userId);
+        Long submissionId = service.submissionIdFor(a);
+        Long genreId = genreLookup.findByCode(REVIEWER_ATTACHMENT_GENRE_CODE)
+                .map(g -> g.id())
+                .orElseThrow(() -> new ConflictException(
+                        "reviewer-attachment genre is not seeded — see V177"));
+        SubmissionFileSummary saved = submissionFiles.upload(
+                submissionId,
+                FileStage.REVIEW_ATTACHMENT,
+                genreId,
+                file.getInputStream(),
+                file.getContentType() == null
+                        ? MediaType.APPLICATION_OCTET_STREAM_VALUE : file.getContentType(),
+                file.getOriginalFilename(),
+                locale,
+                userId);
+        return ResponseEntity.status(201).body(toAttachmentResponse(saved, submissionId));
+    }
+
+    @DeleteMapping("/{assignmentId}/files/{fileId}")
+    @Operation(summary = "Remove a reviewer-uploaded attachment")
+    ResponseEntity<Void> deleteFile(@AuthenticationPrincipal Jwt jwt,
+                                     @PathVariable Long assignmentId,
+                                     @PathVariable Long fileId) {
+        Long userId = currentUserId(jwt);
+        ReviewAssignment a = service.getMine(assignmentId, userId);
+        Long submissionId = service.submissionIdFor(a);
+        SubmissionFileSummary f = submissionFiles.findById(fileId)
+                .orElseThrow(() -> NotFoundException.of("SubmissionFile", fileId));
+        if (!submissionId.equals(f.submissionId())
+                || f.fileStage() != FileStage.REVIEW_ATTACHMENT
+                || !userId.equals(f.uploaderUserId())) {
+            throw NotFoundException.of("SubmissionFile", fileId);
+        }
+        submissionFiles.delete(submissionId, fileId);
+        return ResponseEntity.noContent().build();
+    }
+
+    private ReviewerAttachmentResponse toAttachmentResponse(SubmissionFileSummary f,
+                                                             Long submissionId) {
+        StoredFileMetadata meta = fileStorage.findById(f.storedFileId()).orElse(null);
+        String url = fileStorage.downloadUrl(f.storedFileId(), DOWNLOAD_TTL).toString();
+        return new ReviewerAttachmentResponse(
+                f.id(),
+                submissionId,
+                meta == null ? "file" : meta.originalFilename(),
+                meta == null ? null : meta.contentType(),
+                meta == null ? 0L : meta.sizeBytes(),
+                url,
+                f.uploadedAt());
     }
 
     @PostMapping("/{assignmentId}/form/responses")
