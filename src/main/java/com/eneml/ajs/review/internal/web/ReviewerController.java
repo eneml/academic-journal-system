@@ -1,10 +1,16 @@
 package com.eneml.ajs.review.internal.web;
 
 import com.eneml.ajs.identity.api.UserDirectoryService;
+import com.eneml.ajs.review.internal.application.ReviewerFormService;
 import com.eneml.ajs.review.internal.application.ReviewerInboxService;
 import com.eneml.ajs.review.internal.domain.ReviewAssignment;
+import com.eneml.ajs.review.internal.domain.ReviewForm;
+import com.eneml.ajs.review.internal.domain.ReviewFormResponse;
 import com.eneml.ajs.review.internal.web.dto.ReviewAssignmentResponse;
+import com.eneml.ajs.review.internal.web.dto.ReviewFormElementResponse;
 import com.eneml.ajs.review.internal.web.dto.ReviewSubmissionRequest;
+import com.eneml.ajs.review.internal.web.dto.ReviewerFormResponse;
+import com.eneml.ajs.review.internal.web.dto.ReviewerFormResponsesRequest;
 import com.eneml.ajs.review.internal.web.dto.ReviewerManuscriptResponse;
 import com.eneml.ajs.review.internal.web.dto.ReviewerResponseRequest;
 import com.eneml.ajs.review.internal.web.mapper.ReviewMapper;
@@ -39,6 +45,7 @@ import java.util.List;
 class ReviewerController {
 
     private final ReviewerInboxService service;
+    private final ReviewerFormService formService;
     private final ReviewMapper mapper;
     private final UserDirectoryService userDirectory;
     private final SubmissionLookup submissionLookup;
@@ -125,6 +132,48 @@ class ReviewerController {
                                      @Valid @RequestBody ReviewSubmissionRequest request) {
         return mapper.toResponse(service.submitReview(
                 assignmentId, currentUserId(jwt), request));
+    }
+
+    @GetMapping("/{assignmentId}/form")
+    @Operation(summary = "Fetch the structured review form bound to my assignment's section, plus my saved answers")
+    ReviewerFormResponse form(@AuthenticationPrincipal Jwt jwt,
+                               @PathVariable Long assignmentId) {
+        ReviewerFormService.Result result = formService.loadFor(assignmentId, currentUserId(jwt));
+        if (result.form() == null) {
+            return new ReviewerFormResponse(false, null, java.util.Map.of(), java.util.Map.of(),
+                    List.of(), List.of());
+        }
+        ReviewForm f = result.form();
+        List<ReviewFormElementResponse> elements = f.getElements().stream()
+                .filter(e -> e.isIncluded())
+                .map(e -> new ReviewFormElementResponse(
+                        e.getId(),
+                        e.getSeq(),
+                        e.getElementType(),
+                        e.isIncluded(),
+                        e.isRequired(),
+                        e.getQuestion(),
+                        e.getDescription(),
+                        e.getPossibleResponses()))
+                .toList();
+        List<ReviewerFormResponse.ReviewerFormAnswer> answers = result.answers().stream()
+                .map(r -> new ReviewerFormResponse.ReviewerFormAnswer(
+                        r.getElement().getId(), r.getResponseValue()))
+                .toList();
+        return new ReviewerFormResponse(
+                true, f.getId(), f.getTitle(), f.getDescription(), elements, answers);
+    }
+
+    @PostMapping("/{assignmentId}/form/responses")
+    @Operation(summary = "Save the reviewer's answers to the structured review form")
+    void saveFormResponses(@AuthenticationPrincipal Jwt jwt,
+                           @PathVariable Long assignmentId,
+                           @Valid @RequestBody ReviewerFormResponsesRequest request) {
+        java.util.Map<Long, String> answers = new java.util.LinkedHashMap<>();
+        for (ReviewerFormResponsesRequest.Entry e : request.answers()) {
+            answers.put(e.elementId(), e.responseValue());
+        }
+        formService.saveAnswers(assignmentId, currentUserId(jwt), answers);
     }
 
     private Long currentUserId(Jwt jwt) {

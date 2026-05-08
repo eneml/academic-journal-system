@@ -15,6 +15,7 @@ public record SectionSummary(
         Map<String, String> abbrev,
         boolean inactive,
         boolean editorRestricted,
-        boolean abstractsRequired
+        boolean abstractsRequired,
+        Long reviewFormId
 ) {
 }
