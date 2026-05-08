@@ -52,6 +52,7 @@ type AuditEntry = components["schemas"]["EventLogEntrySummary"];
 type Participant = components["schemas"]["StageParticipantSummary"];
 type Discussion = components["schemas"]["DiscussionSummary"];
 type DiscussionMessage = components["schemas"]["DiscussionMessageSummary"];
+type ReviewerSuggestion = components["schemas"]["ReviewerSuggestionSummary"];
 type StageRole = NonNullable<Participant["role"]>;
 type Stage = NonNullable<Participant["stage"]>;
 
@@ -260,6 +261,7 @@ function EditorialSubmissionDetailPage(): ReactNode {
               rounds={rounds}
               onChanged={() => void reload()}
             />
+            <ReviewerSuggestionsCard submissionId={submissionId} />
           </div>
           <div id="tab-workflow" className="scroll-mt-44">
             <DecisionCard
@@ -2649,5 +2651,160 @@ function DiscussionDetailDrawer({
         </form>
       </div>
     </div>
+  );
+}
+
+interface ReviewerSuggestionsCardProps {
+  submissionId: number;
+}
+
+function ReviewerSuggestionsCard({
+  submissionId,
+}: ReviewerSuggestionsCardProps): ReactNode {
+  const [items, setItems] = useState<ReviewerSuggestion[] | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const reload = async (): Promise<void> => {
+    setItems(null);
+    const data = await api<ReviewerSuggestion[]>(
+      `/api/v1/submissions/${submissionId}/reviewer-suggestions`,
+    );
+    setItems(data ?? []);
+  };
+
+  useEffect(() => {
+    void reload();
+  }, [submissionId]);
+
+  const approve = async (id?: number): Promise<void> => {
+    if (id == null) return;
+    setBusy(true);
+    await api(
+      `/api/v1/submissions/${submissionId}/reviewer-suggestions/${id}/approve`,
+      { method: "POST" },
+    );
+    setBusy(false);
+    await reload();
+  };
+
+  const remove = async (id?: number): Promise<void> => {
+    if (id == null) return;
+    if (!window.confirm("Remove this suggestion?")) return;
+    setBusy(true);
+    await api(
+      `/api/v1/submissions/${submissionId}/reviewer-suggestions/${id}`,
+      { method: "DELETE" },
+    );
+    setBusy(false);
+    await reload();
+  };
+
+  if (items === null) return null;
+
+  return (
+    <Card style={{ marginTop: 16 }}>
+      <h3
+        style={{
+          margin: 0,
+          marginBottom: 12,
+          fontSize: 14,
+          textTransform: "uppercase",
+          letterSpacing: 1,
+        }}
+      >
+        Author-suggested reviewers ({items.length})
+      </h3>
+      {items.length === 0 ? (
+        <p style={{ color: "var(--muted)", fontSize: 13, margin: 0 }}>
+          The author did not propose any reviewers.
+        </p>
+      ) : (
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <thead>
+            <tr style={{ textAlign: "left", color: "var(--muted)" }}>
+              <th style={{ padding: "4px 0" }}>Name</th>
+              <th style={{ padding: "4px 0" }}>Email · ORCID</th>
+              <th style={{ padding: "4px 0" }}>Affiliation</th>
+              <th style={{ padding: "4px 0" }}>Status</th>
+              <th style={{ padding: "4px 0" }} />
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((s) => (
+              <tr key={s.id} style={{ borderTop: "1px solid var(--border)", verticalAlign: "top" }}>
+                <td style={{ padding: "8px 0", fontWeight: 600 }}>
+                  {`${s.givenName ?? ""} ${s.familyName ?? ""}`.trim() || s.email}
+                  {s.suggestionReason && (
+                    <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--muted)", fontWeight: 400 }}>
+                      {s.suggestionReason}
+                    </p>
+                  )}
+                </td>
+                <td style={{ padding: "8px 0", color: "var(--muted)" }}>
+                  {s.email}
+                  {s.orcidId && (
+                    <>
+                      <br />
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>
+                        {s.orcidId}
+                      </span>
+                    </>
+                  )}
+                </td>
+                <td style={{ padding: "8px 0", color: "var(--muted)" }}>
+                  {s.affiliation || "—"}
+                </td>
+                <td style={{ padding: "8px 0" }}>
+                  {s.approvedAt ? (
+                    <span style={{ color: "var(--cobalt)" }}>
+                      approved {new Date(s.approvedAt).toLocaleDateString()}
+                    </span>
+                  ) : (
+                    <span style={{ color: "var(--muted)" }}>pending</span>
+                  )}
+                </td>
+                <td style={{ padding: "8px 0", textAlign: "right", whiteSpace: "nowrap" }}>
+                  {!s.approvedAt && (
+                    <button
+                      type="button"
+                      onClick={() => void approve(s.id)}
+                      disabled={busy}
+                      style={{
+                        padding: "4px 10px",
+                        marginRight: 6,
+                        border: "1px solid var(--cobalt)",
+                        background: "var(--cobalt)",
+                        color: "white",
+                        borderRadius: 4,
+                        cursor: "pointer",
+                        fontSize: 12,
+                      }}
+                    >
+                      Approve
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => void remove(s.id)}
+                    disabled={busy}
+                    style={{
+                      padding: "4px 10px",
+                      border: "1px solid var(--border)",
+                      background: "transparent",
+                      color: "var(--danger)",
+                      borderRadius: 4,
+                      cursor: "pointer",
+                      fontSize: 12,
+                    }}
+                  >
+                    Remove
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </Card>
   );
 }
