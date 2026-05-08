@@ -501,7 +501,7 @@ function IssueGalleysCard({ issueId }: { issueId: number }): ReactNode {
                 </div>
                 <Button
                   type="button"
-                  variant={g.approved ? "primary" : "secondary"}
+                  variant={g.approved ? "default" : "secondary"}
                   size="sm"
                   onClick={() => void onApprove(g)}
                 >

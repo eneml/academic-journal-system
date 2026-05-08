@@ -340,7 +340,7 @@ function HighlightStrip({
     <section className="mt-12 px-6 lg:px-14">
       <div className="mb-4 flex items-baseline justify-between">
         <h3 className="m-0 font-serif-display text-[22px] font-medium tracking-[-0.014em] text-ink">
-          Editor's picks
+          Editor&rsquo;s picks
         </h3>
         <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-muted">
           {tiles.length} curated

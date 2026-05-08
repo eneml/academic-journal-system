@@ -46,8 +46,8 @@ export function PdfViewerClient({ pdfHref }: { pdfHref: string }): ReactNode {
   if (resolved === "ERR") {
     return (
       <div className="rounded-md border border-border bg-bg-tint p-8 text-center text-[12.5px] text-muted">
-        Couldn't load the PDF inline. Use the Galleys panel on the right to
-        download it directly.
+        Couldn&rsquo;t load the PDF inline. Use the Galleys panel on the right
+        to download it directly.
       </div>
     );
   }
@@ -60,7 +60,7 @@ export function PdfViewerClient({ pdfHref }: { pdfHref: string }): ReactNode {
         aria-label="Article PDF"
       >
         <div className="p-8 text-center text-[12.5px] text-muted">
-          Your browser can't display this PDF inline. {" "}
+          Your browser can&rsquo;t display this PDF inline. {" "}
           <a
             href={resolved}
             target="_blank"

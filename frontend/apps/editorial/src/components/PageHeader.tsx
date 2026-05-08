@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 
 export interface PageHeaderProps {
-  /** Optional small-caps eyebrow above the title. */
-  eyebrow?: string;
+  /** Optional small-caps eyebrow above the title. Accepts plain text or
+   *  a small inline element (e.g. a back-link). */
+  eyebrow?: ReactNode;
   title: string;
   /** Subtitle line — short editorial summary like "47 active manuscripts across 5 stages". */
   description?: string;

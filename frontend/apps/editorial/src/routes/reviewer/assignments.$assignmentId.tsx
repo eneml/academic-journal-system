@@ -1187,7 +1187,7 @@ function ReviewerAttachmentsCard({
                     fontFamily: "var(--mono)",
                   }}
                 >
-                  {formatBytes(f.sizeBytes)} · {f.contentType ?? "?"}
+                  {formatBytes(f.sizeBytes ?? 0)} · {f.contentType ?? "?"}
                 </div>
               </div>
               {f.downloadUrl ? (
