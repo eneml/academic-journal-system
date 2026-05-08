@@ -584,7 +584,7 @@ function FeaturedRailMetrics({
 }
 
 // ----------------------------------------------------------------------------
-// Open Call card (ink-bg)
+// Open Call card
 // ----------------------------------------------------------------------------
 
 function OpenCallCard({
@@ -613,7 +613,14 @@ function OpenCallCard({
     : null;
   const daysRemaining = dueAt ? daysUntil(dueAt) : null;
   return (
-    <div className="ink-bg grid items-center gap-8 rounded-lg p-9 shadow-cover lg:grid-cols-[1fr_auto]">
+    <div
+      className="grid items-center gap-8 rounded-lg p-9 text-[oklch(95%_0.005_90)] shadow-cover lg:grid-cols-[1fr_auto]"
+      style={{
+        background:
+          "radial-gradient(ellipse 70% 65% at 30% 0%, oklch(22% 0.035 268) 0%, var(--ink) 80%)",
+        borderTop: "1px solid oklch(34% 0.025 268)",
+      }}
+    >
       <div>
         <div className="mb-2.5 flex items-center gap-2.5">
           <span className="sc text-amber" style={{ letterSpacing: "0.18em" }}>
