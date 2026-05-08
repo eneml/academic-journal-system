@@ -72,6 +72,18 @@ public class Submission extends AuditableEntity {
     @Column(columnDefinition = "jsonb", nullable = false)
     private List<String> disciplines = new java.util.ArrayList<>();
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb", nullable = false)
+    private Map<String, String> subjects = new HashMap<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb", nullable = false)
+    private List<String> languages = new java.util.ArrayList<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "data_availability", columnDefinition = "jsonb", nullable = false)
+    private Map<String, String> dataAvailability = new HashMap<>();
+
     @Column(name = "references_raw", columnDefinition = "text")
     private String referencesRaw;
 

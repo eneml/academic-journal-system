@@ -21,6 +21,15 @@ public record SubmissionDetailsRequest(
         @NotNull
         List<@Size(max = 128) String> disciplines,
 
+        @NotNull
+        Map<String, String> subjects,
+
+        @NotNull
+        List<@Size(min = 2, max = 8) String> languages,
+
+        @NotNull
+        Map<String, String> dataAvailability,
+
         @Size(max = 65536)
         String referencesRaw,
 
