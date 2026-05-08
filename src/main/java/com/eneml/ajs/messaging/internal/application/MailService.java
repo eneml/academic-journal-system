@@ -6,7 +6,9 @@ import com.eneml.ajs.journal.api.JournalConfigSummary;
 import com.eneml.ajs.journal.api.JournalLookup;
 import com.eneml.ajs.messaging.api.NotificationLevel;
 import com.eneml.ajs.messaging.internal.application.template.NotificationSubscriptionService;
+import com.eneml.ajs.messaging.internal.domain.EmailLog;
 import com.eneml.ajs.messaging.internal.domain.Notification;
+import com.eneml.ajs.messaging.internal.persistence.EmailLogRepository;
 import com.eneml.ajs.messaging.internal.persistence.NotificationRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -43,6 +45,7 @@ public class MailService {
     private final JournalLookup journalLookup;
     private final NotificationRepository notificationRepository;
     private final NotificationSubscriptionService subscriptions;
+    private final EmailLogRepository emailLogRepository;
 
     @Value("${app.email.from}")
     private String fromAddress;
@@ -71,6 +74,8 @@ public class MailService {
                 && subscriptions.isBlocked(n.getUserId(), n.getTemplateKey())) {
             log.debug("notification {} skipped: user {} muted '{}'",
                     notificationId, n.getUserId(), n.getTemplateKey());
+            emailLogRepository.save(EmailLog.skipped(n.getTemplateKey(), "(blocked)",
+                    n.getTitle(), n.getUserId(), n.getId(), "user opted out"));
             return;
         }
         UserSummary recipient = userDirectory.findById(n.getUserId()).orElse(null);
@@ -81,6 +86,7 @@ public class MailService {
 
         JournalConfigSummary config = journalLookup.getConfig();
         String journalName = pickName(config);
+        String subject = "[" + journalName + "] " + n.getTitle();
 
         Context ctx = new Context();
         ctx.setVariable("journalName", journalName);
@@ -95,12 +101,16 @@ public class MailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
             helper.setFrom(fromAddress, fromName + " — " + journalName);
             helper.setTo(recipient.email());
-            helper.setSubject("[" + journalName + "] " + n.getTitle());
+            helper.setSubject(subject);
             helper.setText(plainTextFor(n), html);
             mailSender.send(message);
+            emailLogRepository.save(EmailLog.sent(n.getTemplateKey(), recipient.email(),
+                    subject, n.getUserId(), n.getId()));
         } catch (MessagingException | MailException | java.io.UnsupportedEncodingException e) {
             log.warn("failed to deliver notification {} to {}: {}",
                     notificationId, recipient.email(), e.getMessage());
+            emailLogRepository.save(EmailLog.failed(n.getTemplateKey(), recipient.email(),
+                    subject, n.getUserId(), n.getId(), e.getMessage()));
         }
     }
 
@@ -130,9 +140,20 @@ public class MailService {
      * subject/title/body/actionUrl variables.
      */
     public void sendDirect(String toEmail, String subject, String body, String actionUrl) {
+        sendDirect(toEmail, subject, body, actionUrl, null);
+    }
+
+    /**
+     * Same as {@link #sendDirect(String, String, String, String)} but
+     * tags the email_log row with a template key so the audit can group
+     * by template family (e.g. all invitation.created emails).
+     */
+    public void sendDirect(String toEmail, String subject, String body, String actionUrl,
+                           String templateKey) {
         if (toEmail == null || toEmail.isBlank()) return;
         JournalConfigSummary config = journalLookup.getConfig();
         String journalName = pickName(config);
+        String fullSubject = "[" + journalName + "] " + subject;
 
         Context ctx = new Context();
         ctx.setVariable("journalName", journalName);
@@ -147,15 +168,18 @@ public class MailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
             helper.setFrom(fromAddress, fromName + " — " + journalName);
             helper.setTo(toEmail);
-            helper.setSubject("[" + journalName + "] " + subject);
+            helper.setSubject(fullSubject);
             StringBuilder plain = new StringBuilder();
             plain.append(subject).append("\n\n");
             if (body != null && !body.isBlank()) plain.append(body).append("\n\n");
             if (actionUrl != null && !actionUrl.isBlank()) plain.append("Open: ").append(actionUrl).append("\n");
             helper.setText(plain.toString(), html);
             mailSender.send(message);
+            emailLogRepository.save(EmailLog.sent(templateKey, toEmail, fullSubject, null, null));
         } catch (MessagingException | MailException | java.io.UnsupportedEncodingException e) {
             log.warn("failed to deliver direct mail to {}: {}", toEmail, e.getMessage());
+            emailLogRepository.save(EmailLog.failed(templateKey, toEmail, fullSubject,
+                    null, null, e.getMessage()));
         }
     }
 
