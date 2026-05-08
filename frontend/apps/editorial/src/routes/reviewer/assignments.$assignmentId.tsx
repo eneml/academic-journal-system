@@ -21,6 +21,8 @@ export const Route = createFileRoute("/reviewer/assignments/$assignmentId")({
 });
 
 type Assignment = components["schemas"]["ReviewAssignmentResponse"];
+type ReviewerFormResponse = components["schemas"]["ReviewerFormResponse"];
+type ReviewFormElement = components["schemas"]["ReviewFormElementResponse"];
 
 /**
  * Recommendations match the backend {@code ReviewRecommendation} enum exactly.
@@ -455,6 +457,46 @@ function SubmitReviewLayout({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [reviewForm, setReviewForm] = useState<ReviewerFormResponse | null>(null);
+  const [formAnswers, setFormAnswers] = useState<Record<number, string>>({});
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const data = await api<ReviewerFormResponse>(
+        `/api/v1/reviewer/assignments/${assignmentId}/form`,
+      );
+      if (cancelled) return;
+      setReviewForm(data);
+      const seeded: Record<number, string> = {};
+      for (const a of data?.answers ?? []) {
+        if (a.elementId != null) seeded[a.elementId] = a.responseValue ?? "";
+      }
+      setFormAnswers(seeded);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [assignmentId]);
+  const updateFormAnswer = (elementId: number, value: string): void => {
+    setFormAnswers((prev) => ({ ...prev, [elementId]: value }));
+  };
+  const saveFormAnswers = async (): Promise<boolean> => {
+    if (!reviewForm?.present) return true;
+    const result = await api(
+      `/api/v1/reviewer/assignments/${assignmentId}/form/responses`,
+      {
+        method: "POST",
+        body: {
+          answers: Object.entries(formAnswers).map(([id, v]) => ({
+            elementId: Number(id),
+            responseValue: v,
+          })),
+        },
+      },
+    );
+    return result !== null;
+  };
+
   const wordCount = wordsOf(commentsToAuthor);
 
   const submit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
@@ -466,8 +508,28 @@ function SubmitReviewLayout({
       setError("Add at least one set of comments before submitting.");
       return;
     }
+    if (reviewForm?.present) {
+      const required = (reviewForm.elements ?? []).filter((e) => e.required && e.included);
+      const missing = required.filter((e) => !formAnswers[e.id ?? -1]?.trim());
+      if (missing.length > 0) {
+        setError(
+          `Please answer the required form questions: ${missing
+            .map((e) => Object.values(e.question ?? {})[0] ?? `#${e.id}`)
+            .join(", ")}`,
+        );
+        return;
+      }
+    }
     setBusy(true);
     setError(null);
+    if (reviewForm?.present) {
+      const ok = await saveFormAnswers();
+      if (!ok) {
+        setBusy(false);
+        setError("Could not save the structured form. Try again.");
+        return;
+      }
+    }
     const result = await api(
       `/api/v1/reviewer/assignments/${assignmentId}/submit`,
       {
@@ -516,6 +578,14 @@ function SubmitReviewLayout({
           value={recommendation}
           onChange={setRecommendation}
         />
+
+        {reviewForm?.present && (reviewForm.elements ?? []).length > 0 && (
+          <ReviewFormCard
+            form={reviewForm}
+            answers={formAnswers}
+            onChange={updateFormAnswer}
+          />
+        )}
 
         <CommentsCard
           title="Comments to author"
@@ -1243,6 +1313,192 @@ function wordsOf(text: string): number {
   const trimmed = text.trim();
   if (trimmed.length === 0) return 0;
   return trimmed.split(/\s+/).length;
+}
+
+interface ReviewFormCardProps {
+  form: ReviewerFormResponse;
+  answers: Record<number, string>;
+  onChange: (elementId: number, value: string) => void;
+}
+
+function ReviewFormCard({ form, answers, onChange }: ReviewFormCardProps): ReactNode {
+  const elements = form.elements ?? [];
+  const title = Object.values(form.title ?? {}).find((v) => v && v.trim()) ?? "Review form";
+  const description = Object.values(form.description ?? {}).find((v) => v && v.trim()) ?? "";
+  return (
+    <Card>
+      <h2 style={h2Style}>{title}</h2>
+      {description && (
+        <p style={{ margin: "0 0 12px", fontSize: 13, color: "var(--muted)" }}>{description}</p>
+      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {elements.map((el) => (
+          <ReviewFormField
+            key={el.id}
+            element={el}
+            value={answers[el.id ?? -1] ?? ""}
+            onChange={(v) => el.id != null && onChange(el.id, v)}
+          />
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function ReviewFormField({
+  element,
+  value,
+  onChange,
+}: {
+  element: ReviewFormElement;
+  value: string;
+  onChange: (v: string) => void;
+}): ReactNode {
+  const label = Object.values(element.question ?? {}).find((v) => v && v.trim()) ?? "";
+  const helper = Object.values(element.description ?? {}).find((v) => v && v.trim()) ?? "";
+  const options = element.possibleResponses ?? [];
+
+  return (
+    <div>
+      <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+        {label}
+        {element.required && <span style={{ color: "var(--danger)", marginLeft: 4 }}>*</span>}
+      </label>
+      {helper && (
+        <p style={{ margin: "0 0 6px", fontSize: 12, color: "var(--muted)" }}>{helper}</p>
+      )}
+      {(() => {
+        switch (element.elementType) {
+          case "SMALL_TEXT":
+            return (
+              <input
+                type="text"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                style={{
+                  width: 240,
+                  padding: 8,
+                  border: "1px solid var(--border)",
+                  borderRadius: 4,
+                }}
+              />
+            );
+          case "TEXT":
+            return (
+              <input
+                type="text"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: 8,
+                  border: "1px solid var(--border)",
+                  borderRadius: 4,
+                }}
+              />
+            );
+          case "TEXTAREA":
+            return (
+              <textarea
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                rows={4}
+                style={{
+                  width: "100%",
+                  padding: 8,
+                  border: "1px solid var(--border)",
+                  borderRadius: 4,
+                  resize: "vertical",
+                }}
+              />
+            );
+          case "RADIO":
+            return (
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {options.map((opt) => {
+                  const optValue = String(opt.value ?? "");
+                  const lbl =
+                    typeof opt.label === "object" && opt.label
+                      ? String((opt.label as Record<string, string>).en ?? optValue)
+                      : String(opt.label ?? optValue);
+                  return (
+                    <label key={optValue} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+                      <input
+                        type="radio"
+                        name={`element-${element.id}`}
+                        checked={value === optValue}
+                        onChange={() => onChange(optValue)}
+                      />
+                      {lbl}
+                    </label>
+                  );
+                })}
+              </div>
+            );
+          case "DROPDOWN":
+            return (
+              <select
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                style={{ padding: 8, border: "1px solid var(--border)", borderRadius: 4 }}
+              >
+                <option value="">— select —</option>
+                {options.map((opt) => {
+                  const optValue = String(opt.value ?? "");
+                  const lbl =
+                    typeof opt.label === "object" && opt.label
+                      ? String((opt.label as Record<string, string>).en ?? optValue)
+                      : String(opt.label ?? optValue);
+                  return (
+                    <option key={optValue} value={optValue}>
+                      {lbl}
+                    </option>
+                  );
+                })}
+              </select>
+            );
+          case "CHECKBOXES": {
+            let selected: string[] = [];
+            try {
+              selected = value ? (JSON.parse(value) as string[]) : [];
+              if (!Array.isArray(selected)) selected = [];
+            } catch {
+              selected = [];
+            }
+            return (
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {options.map((opt) => {
+                  const optValue = String(opt.value ?? "");
+                  const lbl =
+                    typeof opt.label === "object" && opt.label
+                      ? String((opt.label as Record<string, string>).en ?? optValue)
+                      : String(opt.label ?? optValue);
+                  const checked = selected.includes(optValue);
+                  return (
+                    <label key={optValue} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          const next = checked
+                            ? selected.filter((v) => v !== optValue)
+                            : [...selected, optValue];
+                          onChange(JSON.stringify(next));
+                        }}
+                      />
+                      {lbl}
+                    </label>
+                  );
+                })}
+              </div>
+            );
+          }
+          default:
+            return null;
+        }
+      })()}
+    </div>
+  );
 }
 
 /* ─────────────────────── styles ─────────────────────── */
