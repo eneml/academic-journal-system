@@ -81,7 +81,14 @@ public enum CanonicalEmailTemplateKey {
             "Sent to participants when a workflow discussion is opened."),
     DISCUSSION_MESSAGE(
             "discussion.message",
-            "Sent to participants when a new message is posted to a workflow discussion.");
+            "Sent to participants when a new message is posted to a workflow discussion."),
+
+    EDITORIAL_REMINDER(
+            "editorial.reminder",
+            "Monthly nudge to editors with open editorial work."),
+    EDITORIAL_STATISTICS_REPORT(
+            "editorial.statisticsReport",
+            "Monthly KPI digest sent to admins.");
 
     private final String key;
     private final String description;

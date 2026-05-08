@@ -11,6 +11,7 @@
 @org.springframework.modulith.ApplicationModule(
     displayName = "Scheduling",
     allowedDependencies = { "shared", "submission::api", "review::api",
-                            "editorial::api", "issue::api", "publication::api" }
+                            "editorial::api", "issue::api", "publication::api",
+                            "identity::api", "dashboard::api" }
 )
 package com.eneml.ajs.scheduling;

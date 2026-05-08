@@ -21,6 +21,8 @@ public final class NotificationType {
     public static final String PUBLICATION_PUBLISHED = "publication.published";
     public static final String DISCUSSION_OPENED     = "discussion.opened";
     public static final String DISCUSSION_MESSAGE    = "discussion.message";
+    public static final String EDITORIAL_REMINDER    = "editorial.reminder";
+    public static final String EDITORIAL_STATS       = "editorial.statisticsReport";
 
     private NotificationType() {}
 }
