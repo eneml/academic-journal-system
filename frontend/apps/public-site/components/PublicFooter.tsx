@@ -54,7 +54,13 @@ export function PublicFooter({
   const { lead, accent, trail } = splitAccent(JOURNAL_NAME);
 
   return (
-    <footer className="ink-bg mt-24 px-6 pt-14 pb-7 text-[oklch(82%_0.01_270)] lg:px-14">
+    <footer
+      className="mt-24 border-t px-6 pt-14 pb-7 text-[oklch(82%_0.01_270)] lg:px-14"
+      style={{
+        background: "var(--ink)",
+        borderTopColor: "oklch(28% 0.02 270)",
+      }}
+    >
       {tagline ? (
         <div className="mb-9 flex items-center justify-center gap-3 text-[oklch(70%_0.02_270)]">
           <span
