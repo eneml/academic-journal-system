@@ -72,6 +72,8 @@ public record JournalConfigUpdateRequest(
         String tagline,
 
         @Size(max = 8)
-        String taglineOrnament
+        String taglineOrnament,
+
+        boolean reviewerSuggestionsEnabled
 ) {
 }

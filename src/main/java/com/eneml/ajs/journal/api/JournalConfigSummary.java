@@ -23,6 +23,7 @@ public record JournalConfigSummary(
         String contactEmail,
         String issnPrint,
         String issnOnline,
-        boolean submissionsOpen
+        boolean submissionsOpen,
+        boolean reviewerSuggestionsEnabled
 ) {
 }

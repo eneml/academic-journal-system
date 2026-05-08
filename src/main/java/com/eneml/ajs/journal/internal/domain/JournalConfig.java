@@ -68,6 +68,9 @@ public class JournalConfig extends AuditableEntity {
     @Column(name = "submissions_open", nullable = false)
     private boolean submissionsOpen = true;
 
+    @Column(name = "reviewer_suggestions_enabled", nullable = false)
+    private boolean reviewerSuggestionsEnabled = true;
+
     @Column(name = "acronym", length = 32)
     private String acronym;
 
