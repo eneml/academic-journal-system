@@ -37,6 +37,9 @@ class PublicationController {
     private final SubmissionLookup submissionLookup;
     private final DoiLookup doiLookup;
     private final MetricsRecorder metricsRecorder;
+    private final com.eneml.ajs.publication.api.GalleyLookup galleyLookup;
+    private final com.eneml.ajs.storage.api.FileStorageService fileStorage;
+    private final com.eneml.ajs.publication.internal.application.HtmlGalleyRenderer htmlRenderer;
 
     @GetMapping("/publications/recent")
     @Operation(summary = "Most recently published publications (public)")
@@ -111,9 +114,7 @@ class PublicationController {
     @GetMapping("/articles/{slugOrId}/galleys")
     @Operation(summary = "List approved galleys for a published article (public)")
     java.util.List<com.eneml.ajs.publication.api.GalleySummary> articleGalleys(
-            @PathVariable String slugOrId,
-            @org.springframework.beans.factory.annotation.Autowired
-            com.eneml.ajs.publication.api.GalleyLookup galleyLookup) {
+            @PathVariable String slugOrId) {
         var summary = lookup.findByUrlPath(slugOrId)
                 .or(() -> tryNumeric(slugOrId).flatMap(lookup::findById))
                 .orElse(null);
@@ -124,15 +125,38 @@ class PublicationController {
         return galleyLookup.approvedGalleysOfPublication(summary.id());
     }
 
+    @GetMapping(value = "/articles/{slugOrId}/galleys/{galleyId}/html",
+                produces = "text/html;charset=UTF-8")
+    @Operation(summary = "Render an HTML galley with dependent-asset URLs rewritten to presigned storage URLs")
+    org.springframework.http.ResponseEntity<String> articleGalleyHtml(
+            @PathVariable String slugOrId,
+            @PathVariable Long galleyId) {
+        var summary = lookup.findByUrlPath(slugOrId)
+                .or(() -> tryNumeric(slugOrId).flatMap(lookup::findById))
+                .orElse(null);
+        if (summary == null
+                || summary.status() != com.eneml.ajs.publication.api.PublicationStatus.PUBLISHED
+                || summary.accessStatus() != com.eneml.ajs.publication.api.AccessStatus.OPEN) {
+            throw com.eneml.ajs.shared.exception.NotFoundException.of("Article", slugOrId);
+        }
+        var galley = galleyLookup.findById(galleyId)
+                .filter(g -> summary.id().equals(g.publicationId()))
+                .filter(com.eneml.ajs.publication.api.GalleySummary::approved)
+                .orElseThrow(() -> com.eneml.ajs.shared.exception.NotFoundException.of("Galley", galleyId));
+        if (galley.submissionFileId() == null) {
+            throw com.eneml.ajs.shared.exception.NotFoundException.of("HTML galley body", galleyId);
+        }
+        String html = htmlRenderer.render(galleyId);
+        return org.springframework.http.ResponseEntity.ok()
+                .header("Cache-Control", "private, max-age=300")
+                .body(html);
+    }
+
     @GetMapping("/articles/{slugOrId}/galleys/{galleyId}/download-url")
     @Operation(summary = "Get a short-lived presigned URL for a galley's underlying file (public for OPEN articles)")
     java.util.Map<String, String> articleGalleyDownloadUrl(
             @PathVariable String slugOrId,
-            @PathVariable Long galleyId,
-            @org.springframework.beans.factory.annotation.Autowired
-            com.eneml.ajs.publication.api.GalleyLookup galleyLookup,
-            @org.springframework.beans.factory.annotation.Autowired
-            com.eneml.ajs.storage.api.FileStorageService fileStorage) {
+            @PathVariable Long galleyId) {
         var summary = lookup.findByUrlPath(slugOrId)
                 .or(() -> tryNumeric(slugOrId).flatMap(lookup::findById))
                 .orElse(null);
