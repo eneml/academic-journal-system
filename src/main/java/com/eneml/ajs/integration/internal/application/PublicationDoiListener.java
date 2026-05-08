@@ -59,5 +59,9 @@ class PublicationDoiListener {
                         DepositSubject.PUBLICATION, publication.id(), actorUserId);
             }
         }
+        if (properties.doaj().enabled()) {
+            depositService.enqueue(DepositTarget.DOAJ,
+                    DepositSubject.PUBLICATION, publication.id());
+        }
     }
 }

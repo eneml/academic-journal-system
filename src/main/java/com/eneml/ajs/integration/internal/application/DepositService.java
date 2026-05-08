@@ -44,6 +44,8 @@ public class DepositService {
     private final OrcidWorkXmlGenerator orcidWorkGenerator;
     private final OrcidClient orcidClient;
     private final OrcidAuthService orcidAuthService;
+    private final DoajPayloadGenerator doajGenerator;
+    private final DoajClient doajClient;
     private final PublicationLookup publicationLookup;
     private final SubmissionLookup submissionLookup;
     private final UserDirectoryService userDirectory;
@@ -102,6 +104,27 @@ public class DepositService {
         switch (r.getTarget()) {
             case CROSSREF -> processCrossRef(r);
             case ORCID    -> processOrcid(r);
+            case DOAJ     -> processDoaj(r);
+        }
+    }
+
+    private void processDoaj(DepositRecord r) {
+        if (!properties.doaj().enabled()) {
+            r.markSkipped("DOAJ integration disabled");
+            return;
+        }
+        if (r.getSubjectType() != DepositSubject.PUBLICATION) {
+            r.markSkipped("DOAJ deposit only supported for PUBLICATION subjects");
+            return;
+        }
+        String body = doajGenerator.generate(r.getSubjectId());
+        r.setPayload(body);
+        DoajClient.Result result = doajClient.submit(body);
+        r.markSent(result.responseBody());
+        if (result.accepted()) {
+            r.markAccepted(result.externalRef());
+        } else {
+            r.markFailed(result.errorMessage());
         }
     }
 
