@@ -141,16 +141,40 @@ invitation    — NEW Phase 20. Invite users (typically reviewers) not yet on
 | 22 | Search galley full-text indexing          | V220       | `published_search_index.fulltext_text` + new tsvector at weight D; PDFBox extractor invoked on `GalleyApproved` for PDF galleys | — (no UI surface) |
 | 23 | COUNTER R5 / SUSHI                        | —          | Deferred — only if a library asks. | — |
 
-## Frontend follow-ups (deferred, code path is clear)
+## Frontend follow-ups (delivered)
 
-- Phase 14: pdf.js viewer on the public article page; HTML galley dependent-asset rewriting on serve.
-- Phase 15: admin DOI manager listing STALE rows + bulk re-deposit.
-- Phase 16: issue editor file upload UI.
-- Phase 17: replace homepage "most recent" hardcoded section with `/api/v1/highlights` cards.
-- Phase 20: editor invite-non-user UI + `/invitations/accept?key=…` accept page.
-- Phase 21: admin /admin/email-log table.
+- **Phase 14**: `<PdfViewerClient>` client component embeds the article's
+  PDF galley inline via the native browser viewer (resolves the presigned
+  URL at fetch-time so SSR cache doesn't serve a stale link). Falls back
+  to the existing Galleys panel when the browser refuses to embed PDFs.
+  HTML galley dependent-asset rewriting deferred — needs a serve-side
+  rewriter, not just a UI change.
+- **Phase 15**: `/admin/dois` lists every minted DOI with status filter
+  chips (STALE / ERROR / REGISTERED / SUBMITTED / NOT_REGISTERED) and a
+  Re-deposit button that flips a row back to NOT_REGISTERED so the
+  existing dispatcher picks it up. Extra `Mark stale` action on
+  REGISTERED rows. Backend port at `/api/v1/admin/dois`.
+- **Phase 16**: `IssueGalleysCard` injected into the issue curate page —
+  upload-from-disk via multipart (new `POST /issues/{id}/galleys/upload`
+  endpoint) + paste a remote URL + per-row Approve / Remove. Combined
+  PDF / EPUB live in the same row.
+- **Phase 17**: `<HighlightStrip>` "Editor's picks" on the homepage,
+  hidden when no highlights exist; admin CRUD at `/admin/highlights`
+  with sort order, per-locale title/description, optional cover image
+  storedFileId, and either a publication target or external URL.
+- **Phase 20**: `/admin/invitations` (list + invite form with
+  type/email/expiry/optional submission binding) and
+  `/invitations/accept?key=…` accept page. Key persists across the
+  Keycloak sign-in redirect via sessionStorage so the link still works
+  after auth.
+- **Phase 21**: `/admin/email-log` browses outbound mail with server-side
+  filters on recipient / templateKey / status plus a quick filter for
+  subject and error message.
 
-These all follow patterns already in the editorial app (admin CRUD pages, public-site fetchers); no architectural surprises.
+Admin nav (in `AppShell`) now includes the long-tail admin pages that
+existed but weren't reachable from the menu: Highlights, Categories,
+Review forms, Email templates, Invitations, DOIs, Email log. Audit
+log and Settings stay where they were.
 
 ## Won't port (scope cut, do not rebuild)
 

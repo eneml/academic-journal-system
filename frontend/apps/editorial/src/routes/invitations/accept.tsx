@@ -29,13 +29,35 @@ interface InvitationView {
   acceptedAt: string | null;
 }
 
+const PENDING_INVITATION_KEY = "ajs.pendingInvitationKey";
+
 function AcceptInvitationPage(): ReactNode {
-  const { key } = useSearch({ from: "/invitations/accept" });
+  const { key: searchKey } = useSearch({ from: "/invitations/accept" });
   const { user, signIn } = useAuth();
   const navigate = useNavigate();
   const [invitation, setInvitation] = useState<InvitationView | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  // The OIDC redirect drops the query string when it bounces us through
+  // Keycloak. Stash the key in sessionStorage on first load and pick it
+  // up again post-login so the accept link survives the round trip.
+  const [key] = useState<string | undefined>(() => {
+    if (searchKey) {
+      try {
+        sessionStorage.setItem(PENDING_INVITATION_KEY, searchKey);
+      } catch {
+        // sessionStorage can throw in private mode — accept page falls back
+        // to the in-URL key only.
+      }
+      return searchKey;
+    }
+    try {
+      return sessionStorage.getItem(PENDING_INVITATION_KEY) ?? undefined;
+    } catch {
+      return undefined;
+    }
+  });
 
   useEffect(() => {
     if (!key) {
@@ -64,6 +86,11 @@ function AcceptInvitationPage(): ReactNode {
       { method: "POST" },
     );
     setBusy(false);
+    try {
+      sessionStorage.removeItem(PENDING_INVITATION_KEY);
+    } catch {
+      // ignore
+    }
     if (result) {
       toast.success("Invitation accepted.");
       void navigate({ to: "/" });
@@ -80,6 +107,11 @@ function AcceptInvitationPage(): ReactNode {
       { method: "POST" },
     );
     setBusy(false);
+    try {
+      sessionStorage.removeItem(PENDING_INVITATION_KEY);
+    } catch {
+      // ignore
+    }
     if (result) {
       toast.success("Invitation declined.");
       setInvitation({ ...result });
