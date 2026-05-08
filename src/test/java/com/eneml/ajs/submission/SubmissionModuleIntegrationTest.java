@@ -105,6 +105,9 @@ class SubmissionModuleIntegrationTest {
                         Map.of("en", "An abstract."),
                         List.of("phenomenology", "philosophy"),
                         List.of("Humanities"),
+                        Map.of(),
+                        List.of(),
+                        Map.of(),
                         null,
                         "Please review",
                         SubmissionProgress.DETAILS),
@@ -151,7 +154,9 @@ class SubmissionModuleIntegrationTest {
                 draft.getId(),
                 new SubmissionDetailsRequest(
                         Map.of("en", "stolen"), Map.of(),
-                        List.of(), List.of(), null, null, SubmissionProgress.DETAILS),
+                        List.of(), List.of(),
+                        Map.of(), List.of(), Map.of(),
+                        null, null, SubmissionProgress.DETAILS),
                 bob))
                 .isInstanceOf(AccessDeniedException.class);
     }

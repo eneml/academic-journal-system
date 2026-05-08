@@ -252,7 +252,14 @@ class JournalModuleIntegrationTest {
                 "University of Bucharest Press",
                 "RO",
                 null,
-                null));
+                null,
+                true,
+                Map.of(),
+                Map.of(),
+                java.util.List.of(),
+                null,
+                "aj.{publicationId}",
+                false));
 
         var refreshed = journalLookup.getConfig();
         assertThat(refreshed.name()).containsEntry("en", "AJS Quarterly");
