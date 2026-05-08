@@ -15,6 +15,11 @@ export const Route = createFileRoute("/admin/settings")({
   component: SettingsPage,
 });
 
+interface ChecklistItem {
+  id: string;
+  label: Record<string, string>;
+}
+
 interface JournalConfig {
   name: Record<string, string>;
   issnPrint: string | null;
@@ -33,6 +38,12 @@ interface JournalConfig {
   frequency: string | null;
   publisher: string | null;
   countryOfPublication: string | null;
+  tagline: string | null;
+  taglineOrnament: string | null;
+  reviewerSuggestionsEnabled: boolean;
+  privacyStatement: Record<string, string>;
+  competingInterestsPolicy: Record<string, string>;
+  submissionChecklist: ChecklistItem[];
   version: number;
   updatedAt: string;
 }
@@ -119,6 +130,12 @@ function SettingsAdmin(): ReactNode {
       frequency: draft.frequency,
       publisher: draft.publisher,
       countryOfPublication: draft.countryOfPublication,
+      tagline: draft.tagline,
+      taglineOrnament: draft.taglineOrnament,
+      reviewerSuggestionsEnabled: draft.reviewerSuggestionsEnabled,
+      privacyStatement: draft.privacyStatement,
+      competingInterestsPolicy: draft.competingInterestsPolicy,
+      submissionChecklist: draft.submissionChecklist,
     };
     const updated = await api<JournalConfig>("/api/v1/journal/config", {
       method: "PUT",
@@ -464,40 +481,91 @@ function PoliciesTab({
 }): ReactNode {
   const set = <K extends keyof JournalConfig>(key: K, value: JournalConfig[K]) =>
     onChange({ ...draft, [key]: value });
-  const setNotice = (loc: string, value: string) =>
+  const setLocalized = (
+    field: "copyrightNotice" | "privacyStatement" | "competingInterestsPolicy",
+    loc: string,
+    value: string,
+  ) =>
     onChange({
       ...draft,
-      copyrightNotice: { ...draft.copyrightNotice, [loc]: value },
+      [field]: { ...draft[field], [loc]: value },
     });
   return (
-    <Card>
-      <h2 className="m-0 mb-1 font-serif-display text-[20px] font-medium">
-        Policies
-      </h2>
-      <p className="mt-0 mb-5 text-[12.5px] text-muted">
-        License URL and per-locale copyright notice shown on the public site.
-      </p>
-      <div className="grid gap-4">
-        <Field label="License URL">
-          <Input
-            type="url"
-            value={draft.licenseUrl ?? ""}
-            onChange={(e) => set("licenseUrl", e.target.value || null)}
-            placeholder="https://creativecommons.org/licenses/by/4.0/"
-          />
-        </Field>
-        {draft.supportedLocales.map((loc) => (
-          <Field key={loc} label={`Copyright notice (${loc.toUpperCase()})`}>
-            <textarea
-              rows={3}
-              value={draft.copyrightNotice[loc] ?? ""}
-              onChange={(e) => setNotice(loc, e.target.value)}
-              className="flex w-full rounded-md border border-border bg-white px-3 py-2 text-sm font-sans text-fg focus-visible:outline-none focus-visible:border-cobalt"
+    <div className="grid gap-6">
+      <Card>
+        <h2 className="m-0 mb-1 font-serif-display text-[20px] font-medium">
+          Copyright
+        </h2>
+        <p className="mt-0 mb-5 text-[12.5px] text-muted">
+          License URL and per-locale copyright notice shown on the public site.
+        </p>
+        <div className="grid gap-4">
+          <Field label="License URL">
+            <Input
+              type="url"
+              value={draft.licenseUrl ?? ""}
+              onChange={(e) => set("licenseUrl", e.target.value || null)}
+              placeholder="https://creativecommons.org/licenses/by/4.0/"
             />
           </Field>
-        ))}
-      </div>
-    </Card>
+          {draft.supportedLocales.map((loc) => (
+            <Field key={loc} label={`Copyright notice (${loc.toUpperCase()})`}>
+              <textarea
+                rows={3}
+                value={draft.copyrightNotice[loc] ?? ""}
+                onChange={(e) => setLocalized("copyrightNotice", loc, e.target.value)}
+                className="flex w-full rounded-md border border-border bg-white px-3 py-2 text-sm font-sans text-fg focus-visible:outline-none focus-visible:border-cobalt"
+              />
+            </Field>
+          ))}
+        </div>
+      </Card>
+
+      <Card>
+        <h2 className="m-0 mb-1 font-serif-display text-[20px] font-medium">
+          Privacy statement
+        </h2>
+        <p className="mt-0 mb-5 text-[12.5px] text-muted">
+          How the journal handles personal data. Linked from the wizard's
+          Start step and the public site footer.
+        </p>
+        <div className="grid gap-4">
+          {draft.supportedLocales.map((loc) => (
+            <Field key={loc} label={`Privacy statement (${loc.toUpperCase()})`}>
+              <textarea
+                rows={4}
+                value={draft.privacyStatement[loc] ?? ""}
+                onChange={(e) => setLocalized("privacyStatement", loc, e.target.value)}
+                className="flex w-full rounded-md border border-border bg-white px-3 py-2 text-sm font-sans text-fg focus-visible:outline-none focus-visible:border-cobalt"
+              />
+            </Field>
+          ))}
+        </div>
+      </Card>
+
+      <Card>
+        <h2 className="m-0 mb-1 font-serif-display text-[20px] font-medium">
+          Competing interests policy
+        </h2>
+        <p className="mt-0 mb-5 text-[12.5px] text-muted">
+          Authors and reviewers see this on the disclosure step.
+        </p>
+        <div className="grid gap-4">
+          {draft.supportedLocales.map((loc) => (
+            <Field key={loc} label={`Competing interests (${loc.toUpperCase()})`}>
+              <textarea
+                rows={4}
+                value={draft.competingInterestsPolicy[loc] ?? ""}
+                onChange={(e) =>
+                  setLocalized("competingInterestsPolicy", loc, e.target.value)
+                }
+                className="flex w-full rounded-md border border-border bg-white px-3 py-2 text-sm font-sans text-fg focus-visible:outline-none focus-visible:border-cobalt"
+              />
+            </Field>
+          ))}
+        </div>
+      </Card>
+    </div>
   );
 }
 
@@ -508,34 +576,113 @@ function SubmissionsTab({
   draft: JournalConfig;
   onChange: (next: JournalConfig) => void;
 }): ReactNode {
+  const updateItem = (idx: number, next: ChecklistItem): void => {
+    const list = draft.submissionChecklist.slice();
+    list[idx] = next;
+    onChange({ ...draft, submissionChecklist: list });
+  };
+  const removeItem = (idx: number): void => {
+    const list = draft.submissionChecklist.slice();
+    list.splice(idx, 1);
+    onChange({ ...draft, submissionChecklist: list });
+  };
+  const addItem = (): void => {
+    const id = `item-${Date.now()}`;
+    onChange({
+      ...draft,
+      submissionChecklist: [
+        ...draft.submissionChecklist,
+        { id, label: Object.fromEntries(draft.supportedLocales.map((l) => [l, ""])) },
+      ],
+    });
+  };
   return (
-    <Card>
-      <h2 className="m-0 mb-1 font-serif-display text-[20px] font-medium">
-        Submissions
-      </h2>
-      <p className="mt-0 mb-5 text-[12.5px] text-muted">
-        Whether new manuscript submissions are accepted right now.
-      </p>
-      <label className="flex items-start gap-3">
-        <input
-          type="checkbox"
-          checked={draft.submissionsOpen}
-          onChange={(e) =>
-            onChange({ ...draft, submissionsOpen: e.target.checked })
-          }
-          className="mt-1 size-4 rounded border-border accent-cobalt"
-        />
-        <span>
-          <span className="block text-[13px] font-medium text-fg">
-            Submissions are open
+    <div className="grid gap-6">
+      <Card>
+        <h2 className="m-0 mb-1 font-serif-display text-[20px] font-medium">
+          Submissions
+        </h2>
+        <p className="mt-0 mb-5 text-[12.5px] text-muted">
+          Whether new manuscript submissions are accepted right now.
+        </p>
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            checked={draft.submissionsOpen}
+            onChange={(e) =>
+              onChange({ ...draft, submissionsOpen: e.target.checked })
+            }
+            className="mt-1 size-4 rounded border-border accent-cobalt"
+          />
+          <span>
+            <span className="block text-[13px] font-medium text-fg">
+              Submissions are open
+            </span>
+            <span className="block text-[11.5px] text-muted">
+              When unchecked, the public Submit form is hidden and the API rejects
+              new submissions with a friendly explanation.
+            </span>
           </span>
-          <span className="block text-[11.5px] text-muted">
-            When unchecked, the public Submit form is hidden and the API rejects
-            new submissions with a friendly explanation.
-          </span>
-        </span>
-      </label>
-    </Card>
+        </label>
+      </Card>
+
+      <Card>
+        <h2 className="m-0 mb-1 font-serif-display text-[20px] font-medium">
+          Submission checklist
+        </h2>
+        <p className="mt-0 mb-5 text-[12.5px] text-muted">
+          Statements the author must agree to before they can submit. Stable
+          ids stay attached to each row so reordering doesn't break references.
+        </p>
+        <div className="flex flex-col gap-4">
+          {draft.submissionChecklist.length === 0 ? (
+            <p className="m-0 text-[12.5px] italic text-muted">
+              No items yet — submissions skip the checklist step entirely.
+            </p>
+          ) : null}
+          {draft.submissionChecklist.map((item, idx) => (
+            <div
+              key={item.id}
+              className="rounded-md border border-border bg-bg-tint/40 p-3"
+            >
+              <div className="mb-2 flex items-center gap-2">
+                <span className="font-mono text-[10.5px] uppercase tracking-wider text-muted">
+                  {item.id}
+                </span>
+                <span className="flex-1" />
+                <button
+                  type="button"
+                  onClick={() => removeItem(idx)}
+                  className="text-[11.5px] text-danger hover:underline"
+                >
+                  Remove
+                </button>
+              </div>
+              <div className="grid gap-3">
+                {draft.supportedLocales.map((loc) => (
+                  <Field key={loc} label={`Label (${loc.toUpperCase()})`}>
+                    <textarea
+                      rows={2}
+                      value={item.label[loc] ?? ""}
+                      onChange={(e) =>
+                        updateItem(idx, {
+                          ...item,
+                          label: { ...item.label, [loc]: e.target.value },
+                        })
+                      }
+                      className="flex w-full rounded-md border border-border bg-white px-3 py-2 text-sm font-sans text-fg focus-visible:outline-none focus-visible:border-cobalt"
+                    />
+                  </Field>
+                ))}
+              </div>
+            </div>
+          ))}
+          <Button type="button" variant="secondary" onClick={addItem}>
+            Add checklist item
+          </Button>
+        </div>
+      </Card>
+    </div>
   );
 }
 
