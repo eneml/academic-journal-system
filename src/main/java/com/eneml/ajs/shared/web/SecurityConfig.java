@@ -83,6 +83,7 @@ class SecurityConfig {
                                 "/api/v1/categories/by-path/**",
                                 "/api/v1/categories/*/publications",
                                 "/api/v1/publications/*/categories",
+                                "/api/v1/articles/*/recommendations/by-author",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
