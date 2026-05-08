@@ -92,6 +92,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/review-forms/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["one"];
+        put: operations["update_2"];
+        post?: never;
+        delete: operations["delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/review-forms/{id}/elements/{elementId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updateElement"];
+        post?: never;
+        delete: operations["deleteElement"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/publications/{publicationId}": {
         parameters: {
             query?: never;
@@ -102,7 +134,7 @@ export interface paths {
         /** Get a publication by id */
         get: operations["get_1"];
         /** Update a draft publication's metadata */
-        put: operations["update_2"];
+        put: operations["update_3"];
         post?: never;
         delete?: never;
         options?: never;
@@ -119,7 +151,7 @@ export interface paths {
         };
         get?: never;
         /** Update a galley's metadata */
-        put: operations["update_3"];
+        put: operations["update_4"];
         post?: never;
         /** Remove a galley */
         delete: operations["remove_1"];
@@ -154,7 +186,7 @@ export interface paths {
         /** Get section by id (public) */
         get: operations["get_2"];
         /** Update a section (code is immutable) */
-        put: operations["update_4"];
+        put: operations["update_5"];
         post?: never;
         /** Soft-deactivate a section (kept for historical references) */
         delete: operations["deactivate"];
@@ -173,7 +205,7 @@ export interface paths {
         /** Get masthead entry by id (public) */
         get: operations["get_3"];
         /** Update a masthead entry */
-        put: operations["update_5"];
+        put: operations["update_6"];
         post?: never;
         /** Remove an entry from the masthead */
         delete: operations["remove_2"];
@@ -190,9 +222,9 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["update_6"];
+        put: operations["update_7"];
         post?: never;
-        delete: operations["delete"];
+        delete: operations["delete_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -208,7 +240,7 @@ export interface paths {
         /** Get genre by id (public) */
         get: operations["get_4"];
         /** Update a genre (code is immutable; use enable/disable for state) */
-        put: operations["update_7"];
+        put: operations["update_8"];
         post?: never;
         delete?: never;
         options?: never;
@@ -226,7 +258,7 @@ export interface paths {
         /** Get journal configuration (public) */
         get: operations["get_5"];
         /** Update journal configuration */
-        put: operations["update_8"];
+        put: operations["update_9"];
         post?: never;
         delete?: never;
         options?: never;
@@ -244,10 +276,10 @@ export interface paths {
         /** Get an issue by id */
         get: operations["get_6"];
         /** Update an issue */
-        put: operations["update_9"];
+        put: operations["update_10"];
         post?: never;
         /** Delete an unpublished issue */
-        delete: operations["delete_1"];
+        delete: operations["delete_2"];
         options?: never;
         head?: never;
         patch?: never;
@@ -279,10 +311,10 @@ export interface paths {
         /** Get a single announcement by id (public) */
         get: operations["get_7"];
         /** Update an announcement */
-        put: operations["update_10"];
+        put: operations["update_11"];
         post?: never;
         /** Permanently delete an announcement */
-        delete: operations["delete_2"];
+        delete: operations["delete_3"];
         options?: never;
         head?: never;
         patch?: never;
@@ -585,6 +617,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reviewer/assignments/{assignmentId}/form/responses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save the reviewer's answers to the structured review form */
+        post: operations["saveFormResponses"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/review-forms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_5"];
+        put?: never;
+        post: operations["create_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/review-forms/{id}/elements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["addElement"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/review-forms/{id}/elements/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reorder_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/publications/{publicationId}/versions": {
         parameters: {
             query?: never;
@@ -661,7 +758,7 @@ export interface paths {
             cookie?: never;
         };
         /** List galleys for a publication */
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
         /** Add a galley (PDF/HTML/JATS) to the publication */
         post: operations["add_1"];
@@ -763,7 +860,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
         post: operations["save"];
         delete?: never;
@@ -780,10 +877,10 @@ export interface paths {
             cookie?: never;
         };
         /** List sections (public) */
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
         /** Create a section */
-        post: operations["create_1"];
+        post: operations["create_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -817,7 +914,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Reorder sections (assigns seq = 10, 20, 30, ...) */
-        post: operations["reorder_1"];
+        post: operations["reorder_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -832,7 +929,7 @@ export interface paths {
             cookie?: never;
         };
         /** List masthead entries (public, enriched with author info) */
-        get: operations["list_8"];
+        get: operations["list_9"];
         put?: never;
         /** Add an entry to the masthead */
         post: operations["add_2"];
@@ -852,7 +949,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Reorder masthead entries */
-        post: operations["reorder_2"];
+        post: operations["reorder_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -866,9 +963,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
-        post: operations["create_2"];
+        post: operations["create_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -883,10 +980,10 @@ export interface paths {
             cookie?: never;
         };
         /** List genres (public) */
-        get: operations["list_10"];
+        get: operations["list_11"];
         put?: never;
         /** Create a genre */
-        post: operations["create_3"];
+        post: operations["create_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -937,7 +1034,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Reorder genres */
-        post: operations["reorder_3"];
+        post: operations["reorder_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -952,10 +1049,10 @@ export interface paths {
             cookie?: never;
         };
         /** List all issues */
-        get: operations["list_11"];
+        get: operations["list_12"];
         put?: never;
         /** Create an issue */
-        post: operations["create_4"];
+        post: operations["create_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1090,10 +1187,10 @@ export interface paths {
             cookie?: never;
         };
         /** List currently visible announcements (public) */
-        get: operations["list_12"];
+        get: operations["list_13"];
         put?: never;
         /** Post an announcement */
-        post: operations["create_5"];
+        post: operations["create_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1147,7 +1244,7 @@ export interface paths {
         delete: operations["unassign"];
         options?: never;
         head?: never;
-        patch: operations["update_11"];
+        patch: operations["update_12"];
         trace?: never;
     };
     "/api/v1/issues/{id}/articles": {
@@ -1313,6 +1410,23 @@ export interface paths {
         };
         /** Get the (blinded) manuscript belonging to one of my assignments */
         get: operations["manuscript"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviewer/assignments/{assignmentId}/form": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Fetch the structured review form bound to my assignment's section, plus my saved answers */
+        get: operations["form"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1598,7 +1712,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_13"];
+        get: operations["list_14"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1614,7 +1728,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["one"];
+        get: operations["one_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2110,6 +2224,65 @@ export interface components {
             version?: number;
             /** Format: date-time */
             updatedAt?: string;
+        };
+        ReviewFormUpsertRequest: {
+            code: string;
+            title: {
+                [key: string]: string;
+            };
+            description?: {
+                [key: string]: string;
+            };
+            active?: boolean;
+        };
+        ReviewFormElementResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int32 */
+            seq?: number;
+            /** @enum {string} */
+            elementType?: "SMALL_TEXT" | "TEXT" | "TEXTAREA" | "CHECKBOXES" | "RADIO" | "DROPDOWN";
+            included?: boolean;
+            required?: boolean;
+            question?: {
+                [key: string]: string;
+            };
+            description?: {
+                [key: string]: string;
+            };
+            possibleResponses?: {
+                [key: string]: Record<string, never>;
+            }[];
+        };
+        ReviewFormResponse: {
+            /** Format: int64 */
+            id?: number;
+            code?: string;
+            title?: {
+                [key: string]: string;
+            };
+            description?: {
+                [key: string]: string;
+            };
+            active?: boolean;
+            /** Format: int32 */
+            completeCount?: number;
+            elements?: components["schemas"]["ReviewFormElementResponse"][];
+        };
+        ReviewFormElementUpsertRequest: {
+            /** @enum {string} */
+            elementType: "SMALL_TEXT" | "TEXT" | "TEXTAREA" | "CHECKBOXES" | "RADIO" | "DROPDOWN";
+            included?: boolean;
+            required?: boolean;
+            question: {
+                [key: string]: string;
+            };
+            description?: {
+                [key: string]: string;
+            };
+            possibleResponses?: {
+                [key: string]: Record<string, never>;
+            }[];
         };
         PublicationUpsertRequest: {
             /** @enum {string} */
@@ -2710,7 +2883,7 @@ export interface components {
         };
         TakeDecisionRequest: {
             /** @enum {string} */
-            type: "EXTERNAL_REVIEW" | "SKIP_REVIEW" | "INITIAL_DECLINE" | "ACCEPT" | "DECLINE" | "REQUEST_REVISIONS" | "RESUBMIT_FOR_REVIEW" | "NEW_REVIEW_ROUND" | "CANCEL_REVIEW_ROUND" | "SEND_TO_PRODUCTION" | "BACK_FROM_PRODUCTION" | "BACK_FROM_COPYEDITING";
+            type: "EXTERNAL_REVIEW" | "SKIP_REVIEW" | "INITIAL_DECLINE" | "ACCEPT" | "DECLINE" | "REQUEST_REVISIONS" | "RESUBMIT_FOR_REVIEW" | "NEW_REVIEW_ROUND" | "CANCEL_REVIEW_ROUND" | "SEND_TO_PRODUCTION" | "BACK_FROM_PRODUCTION" | "BACK_FROM_COPYEDITING" | "RECOMMEND_ACCEPT" | "RECOMMEND_DECLINE" | "RECOMMEND_REVISIONS" | "RECOMMEND_RESUBMIT" | "REVERT_DECLINE" | "REVERT_INITIAL_DECLINE";
             /** Format: int64 */
             reviewRoundId?: number;
             summary?: string;
@@ -2724,7 +2897,7 @@ export interface components {
             /** Format: int64 */
             reviewRoundId?: number;
             /** @enum {string} */
-            decisionType?: "EXTERNAL_REVIEW" | "SKIP_REVIEW" | "INITIAL_DECLINE" | "ACCEPT" | "DECLINE" | "REQUEST_REVISIONS" | "RESUBMIT_FOR_REVIEW" | "NEW_REVIEW_ROUND" | "CANCEL_REVIEW_ROUND" | "SEND_TO_PRODUCTION" | "BACK_FROM_PRODUCTION" | "BACK_FROM_COPYEDITING";
+            decisionType?: "EXTERNAL_REVIEW" | "SKIP_REVIEW" | "INITIAL_DECLINE" | "ACCEPT" | "DECLINE" | "REQUEST_REVISIONS" | "RESUBMIT_FOR_REVIEW" | "NEW_REVIEW_ROUND" | "CANCEL_REVIEW_ROUND" | "SEND_TO_PRODUCTION" | "BACK_FROM_PRODUCTION" | "BACK_FROM_COPYEDITING" | "RECOMMEND_ACCEPT" | "RECOMMEND_DECLINE" | "RECOMMEND_REVISIONS" | "RECOMMEND_RESUBMIT" | "REVERT_DECLINE" | "REVERT_INITIAL_DECLINE";
             /** @enum {string} */
             previousStage?: "SUBMISSION" | "EXTERNAL_REVIEW" | "EDITING" | "PRODUCTION" | "PUBLISHED";
             /** @enum {string} */
@@ -2743,7 +2916,7 @@ export interface components {
         };
         DecisionPreviewRequest: {
             /** @enum {string} */
-            type: "EXTERNAL_REVIEW" | "SKIP_REVIEW" | "INITIAL_DECLINE" | "ACCEPT" | "DECLINE" | "REQUEST_REVISIONS" | "RESUBMIT_FOR_REVIEW" | "NEW_REVIEW_ROUND" | "CANCEL_REVIEW_ROUND" | "SEND_TO_PRODUCTION" | "BACK_FROM_PRODUCTION" | "BACK_FROM_COPYEDITING";
+            type: "EXTERNAL_REVIEW" | "SKIP_REVIEW" | "INITIAL_DECLINE" | "ACCEPT" | "DECLINE" | "REQUEST_REVISIONS" | "RESUBMIT_FOR_REVIEW" | "NEW_REVIEW_ROUND" | "CANCEL_REVIEW_ROUND" | "SEND_TO_PRODUCTION" | "BACK_FROM_PRODUCTION" | "BACK_FROM_COPYEDITING" | "RECOMMEND_ACCEPT" | "RECOMMEND_DECLINE" | "RECOMMEND_REVISIONS" | "RECOMMEND_RESUBMIT" | "REVERT_DECLINE" | "REVERT_INITIAL_DECLINE";
             /** Format: int64 */
             reviewRoundId?: number;
         };
@@ -2768,7 +2941,7 @@ export interface components {
         };
         DecisionPreviewResponse: {
             /** @enum {string} */
-            type?: "EXTERNAL_REVIEW" | "SKIP_REVIEW" | "INITIAL_DECLINE" | "ACCEPT" | "DECLINE" | "REQUEST_REVISIONS" | "RESUBMIT_FOR_REVIEW" | "NEW_REVIEW_ROUND" | "CANCEL_REVIEW_ROUND" | "SEND_TO_PRODUCTION" | "BACK_FROM_PRODUCTION" | "BACK_FROM_COPYEDITING";
+            type?: "EXTERNAL_REVIEW" | "SKIP_REVIEW" | "INITIAL_DECLINE" | "ACCEPT" | "DECLINE" | "REQUEST_REVISIONS" | "RESUBMIT_FOR_REVIEW" | "NEW_REVIEW_ROUND" | "CANCEL_REVIEW_ROUND" | "SEND_TO_PRODUCTION" | "BACK_FROM_PRODUCTION" | "BACK_FROM_COPYEDITING" | "RECOMMEND_ACCEPT" | "RECOMMEND_DECLINE" | "RECOMMEND_REVISIONS" | "RECOMMEND_RESUBMIT" | "REVERT_DECLINE" | "REVERT_INITIAL_DECLINE";
             /** @enum {string} */
             previousStage?: "SUBMISSION" | "EXTERNAL_REVIEW" | "EDITING" | "PRODUCTION" | "PUBLISHED";
             /** @enum {string} */
@@ -2790,6 +2963,17 @@ export interface components {
         ReviewerResponseRequest: {
             accept: boolean;
             message?: string;
+        };
+        Entry: {
+            /** Format: int64 */
+            elementId: number;
+            responseValue?: string;
+        };
+        ReviewerFormResponsesRequest: {
+            answers: components["schemas"]["Entry"][];
+        };
+        ReviewFormElementReorderRequest: {
+            orderedElementIds: number[];
         };
         AssignDoiRequest: {
             doi: string;
@@ -2926,16 +3110,16 @@ export interface components {
             sort?: string[];
         };
         PageUserResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             sort?: components["schemas"]["SortObject"];
             pageable?: components["schemas"]["PageableObject"];
-            /** Format: int32 */
-            numberOfElements?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["UserResponse"][];
@@ -2955,21 +3139,21 @@ export interface components {
             offset?: number;
         };
         SortObject: {
-            unsorted?: boolean;
             sorted?: boolean;
+            unsorted?: boolean;
             empty?: boolean;
         };
         PageSubmissionResponse: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             sort?: components["schemas"]["SortObject"];
             pageable?: components["schemas"]["PageableObject"];
-            /** Format: int32 */
-            numberOfElements?: number;
             first?: boolean;
             last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["SubmissionResponse"][];
@@ -3059,6 +3243,24 @@ export interface components {
             };
             keywords?: string[];
             files?: components["schemas"]["File"][];
+        };
+        ReviewerFormAnswer: {
+            /** Format: int64 */
+            elementId?: number;
+            responseValue?: string;
+        };
+        ReviewerFormResponse: {
+            present?: boolean;
+            /** Format: int64 */
+            formId?: number;
+            title?: {
+                [key: string]: string;
+            };
+            description?: {
+                [key: string]: string;
+            };
+            elements?: components["schemas"]["ReviewFormElementResponse"][];
+            answers?: components["schemas"]["ReviewerFormAnswer"][];
         };
         PublicationMetricsSummary: {
             /** Format: int64 */
@@ -3236,7 +3438,7 @@ export interface components {
         };
         DecisionBreakdown: {
             /** @enum {string} */
-            type?: "EXTERNAL_REVIEW" | "SKIP_REVIEW" | "INITIAL_DECLINE" | "ACCEPT" | "DECLINE" | "REQUEST_REVISIONS" | "RESUBMIT_FOR_REVIEW" | "NEW_REVIEW_ROUND" | "CANCEL_REVIEW_ROUND" | "SEND_TO_PRODUCTION" | "BACK_FROM_PRODUCTION" | "BACK_FROM_COPYEDITING";
+            type?: "EXTERNAL_REVIEW" | "SKIP_REVIEW" | "INITIAL_DECLINE" | "ACCEPT" | "DECLINE" | "REQUEST_REVISIONS" | "RESUBMIT_FOR_REVIEW" | "NEW_REVIEW_ROUND" | "CANCEL_REVIEW_ROUND" | "SEND_TO_PRODUCTION" | "BACK_FROM_PRODUCTION" | "BACK_FROM_COPYEDITING" | "RECOMMEND_ACCEPT" | "RECOMMEND_DECLINE" | "RECOMMEND_REVISIONS" | "RECOMMEND_RESUBMIT" | "REVERT_DECLINE" | "REVERT_INITIAL_DECLINE";
             /** Format: int64 */
             count?: number;
         };
@@ -3468,6 +3670,122 @@ export interface operations {
             };
         };
     };
+    one: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewFormResponse"];
+                };
+            };
+        };
+    };
+    update_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewFormUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewFormResponse"];
+                };
+            };
+        };
+    };
+    delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateElement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                elementId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewFormElementUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewFormElementResponse"];
+                };
+            };
+        };
+    };
+    deleteElement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                elementId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     get_1: {
         parameters: {
             query?: never;
@@ -3490,7 +3808,7 @@ export interface operations {
             };
         };
     };
-    update_2: {
+    update_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -3516,7 +3834,7 @@ export interface operations {
             };
         };
     };
-    update_3: {
+    update_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -3612,7 +3930,7 @@ export interface operations {
             };
         };
     };
-    update_4: {
+    update_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -3682,7 +4000,7 @@ export interface operations {
             };
         };
     };
-    update_5: {
+    update_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -3728,7 +4046,7 @@ export interface operations {
             };
         };
     };
-    update_6: {
+    update_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -3754,7 +4072,7 @@ export interface operations {
             };
         };
     };
-    delete: {
+    delete_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -3796,7 +4114,7 @@ export interface operations {
             };
         };
     };
-    update_7: {
+    update_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -3842,7 +4160,7 @@ export interface operations {
             };
         };
     };
-    update_8: {
+    update_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -3888,7 +4206,7 @@ export interface operations {
             };
         };
     };
-    update_9: {
+    update_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -3914,7 +4232,7 @@ export interface operations {
             };
         };
     };
-    delete_1: {
+    delete_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -4004,7 +4322,7 @@ export interface operations {
             };
         };
     };
-    update_10: {
+    update_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -4030,7 +4348,7 @@ export interface operations {
             };
         };
     };
-    delete_2: {
+    delete_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -4709,6 +5027,126 @@ export interface operations {
             };
         };
     };
+    saveFormResponses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewerFormResponsesRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_5: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewFormResponse"][];
+                };
+            };
+        };
+    };
+    create_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewFormUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewFormResponse"];
+                };
+            };
+        };
+    };
+    addElement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewFormElementUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewFormElementResponse"];
+                };
+            };
+        };
+    };
+    reorder_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewFormElementReorderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewFormResponse"];
+                };
+            };
+        };
+    };
     createNextVersion: {
         parameters: {
             query?: never;
@@ -4799,7 +5237,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -4964,7 +5402,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_7: {
         parameters: {
             query?: {
                 page?: number;
@@ -5011,7 +5449,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query?: {
                 includeInactive?: boolean;
@@ -5033,7 +5471,7 @@ export interface operations {
             };
         };
     };
-    create_1: {
+    create_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -5079,7 +5517,7 @@ export interface operations {
             };
         };
     };
-    reorder_1: {
+    reorder_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -5101,7 +5539,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_9: {
         parameters: {
             query?: {
                 visibleOnly?: boolean;
@@ -5147,7 +5585,7 @@ export interface operations {
             };
         };
     };
-    reorder_2: {
+    reorder_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -5169,7 +5607,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_10: {
         parameters: {
             query?: {
                 includeInactive?: boolean;
@@ -5191,7 +5629,7 @@ export interface operations {
             };
         };
     };
-    create_2: {
+    create_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -5215,7 +5653,7 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_11: {
         parameters: {
             query?: {
                 enabledOnly?: boolean;
@@ -5237,7 +5675,7 @@ export interface operations {
             };
         };
     };
-    create_3: {
+    create_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -5305,7 +5743,7 @@ export interface operations {
             };
         };
     };
-    reorder_3: {
+    reorder_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -5327,7 +5765,7 @@ export interface operations {
             };
         };
     };
-    list_11: {
+    list_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -5347,7 +5785,7 @@ export interface operations {
             };
         };
     };
-    create_4: {
+    create_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -5582,7 +6020,7 @@ export interface operations {
             };
         };
     };
-    list_12: {
+    list_13: {
         parameters: {
             query?: {
                 limit?: number;
@@ -5604,7 +6042,7 @@ export interface operations {
             };
         };
     };
-    create_5: {
+    create_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -5695,7 +6133,7 @@ export interface operations {
             };
         };
     };
-    update_11: {
+    update_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -5967,6 +6405,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ReviewerManuscriptResponse"];
+                };
+            };
+        };
+    };
+    form: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewerFormResponse"];
                 };
             };
         };
@@ -6322,7 +6782,7 @@ export interface operations {
             };
         };
     };
-    list_13: {
+    list_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -6342,7 +6802,7 @@ export interface operations {
             };
         };
     };
-    one: {
+    one_1: {
         parameters: {
             query?: never;
             header?: never;
