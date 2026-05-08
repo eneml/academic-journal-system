@@ -102,6 +102,13 @@ class SubmissionFilesAdapter implements SubmissionFiles {
         repository.delete(f);
     }
 
+    @Override
+    public List<SubmissionFileSummary> findChildrenByParent(Long parentFileId) {
+        return repository.findByParentSubmissionFileId(parentFileId).stream()
+                .map(this::toSummary)
+                .toList();
+    }
+
     private SubmissionFileSummary toSummary(SubmissionFile f) {
         return new SubmissionFileSummary(
                 f.getId(),
@@ -109,6 +116,7 @@ class SubmissionFilesAdapter implements SubmissionFiles {
                 f.getFileStage(),
                 f.getStoredFileId(),
                 f.getUploaderUserId(),
+                f.getParentSubmissionFileId(),
                 f.getCreatedAt());
     }
 }

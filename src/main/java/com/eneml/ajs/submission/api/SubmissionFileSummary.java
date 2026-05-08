@@ -14,6 +14,7 @@ public record SubmissionFileSummary(
         FileStage fileStage,
         Long storedFileId,
         Long uploaderUserId,
+        Long parentSubmissionFileId,
         Instant uploadedAt
 ) {
 }

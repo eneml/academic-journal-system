@@ -65,6 +65,7 @@ class SubmissionLookupAdapter implements SubmissionLookup {
                         f.getFileStage(),
                         f.getStoredFileId(),
                         f.getUploaderUserId(),
+                        f.getParentSubmissionFileId(),
                         f.getCreatedAt()))
                 .toList();
     }

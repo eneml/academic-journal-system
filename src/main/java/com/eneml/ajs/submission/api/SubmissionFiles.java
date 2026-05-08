@@ -31,6 +31,13 @@ public interface SubmissionFiles {
     List<SubmissionFileSummary> listByStage(Long submissionId, FileStage fileStage);
 
     /**
+     * Files declared as dependents of {@code parentFileId} via the
+     * self-FK on {@code submission_file}. Used by HTML galley rendering
+     * to resolve {@code <img src="image.png">} into a presigned URL.
+     */
+    List<SubmissionFileSummary> findChildrenByParent(Long parentFileId);
+
+    /**
      * Mints a presigned download URL for a previously uploaded file. The
      * URL is short-lived; the caller is expected to redirect the user
      * straight to it.

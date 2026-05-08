@@ -18,4 +18,11 @@ public interface SubmissionFileRepository extends JpaRepository<SubmissionFile, 
             ORDER BY f.id
             """)
     List<SubmissionFile> findBySubmissionIdAndFileStage(Long submissionId, FileStage fileStage);
+
+    @Query("""
+            SELECT f FROM SubmissionFile f
+            WHERE f.parentSubmissionFileId = :parentFileId
+            ORDER BY f.id
+            """)
+    List<SubmissionFile> findByParentSubmissionFileId(Long parentFileId);
 }
