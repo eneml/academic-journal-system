@@ -490,6 +490,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/submissions/{submissionId}/review-rounds/{roundId}/assignments/{assignmentId}/unassign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Unassign a reviewer + email them */
+        post: operations["unassign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/submissions/{submissionId}/review-rounds/{roundId}/assignments/{assignmentId}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Re-fire the original review-request email */
+        post: operations["resend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/submissions/{submissionId}/review-rounds/{roundId}/assignments/{assignmentId}/reinstate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reinstate a previously declined assignment */
+        post: operations["reinstate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/submissions/{submissionId}/review-rounds/{roundId}/assignments/{assignmentId}/confirm": {
         parameters: {
             query?: never;
@@ -516,7 +567,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Cancel a reviewer assignment */
+        /** Cancel a reviewer assignment (silent) */
         post: operations["cancel"];
         delete?: never;
         options?: never;
@@ -724,6 +775,24 @@ export interface paths {
         put?: never;
         /** Save the reviewer's answers to the structured review form */
         post: operations["saveFormResponses"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviewer/assignments/{assignmentId}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List reviewer-uploaded attachments on this assignment */
+        get: operations["listFiles"];
+        put?: never;
+        /** Upload an attachment to the reviewer's assignment */
+        post: operations["uploadFile"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1417,7 +1486,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["unassign"];
+        delete: operations["unassign_1"];
         options?: never;
         head?: never;
         patch: operations["update_14"];
@@ -1913,6 +1982,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/categories/{categoryId}/publications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_18"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/categories/by-path/{path}": {
         parameters: {
             query?: never;
@@ -1972,6 +2057,23 @@ export interface paths {
         };
         /** List all PUBLISHED versions of an article (public) */
         get: operations["articleVersions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/articles/{slugOrId}/recommendations/by-author": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Other published articles by any of this article's authors (public) */
+        get: operations["byAuthor"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2247,6 +2349,23 @@ export interface paths {
         post?: never;
         /** Detach a file from the submission */
         delete: operations["remove_3"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviewer/assignments/{assignmentId}/files/{fileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a reviewer-uploaded attachment */
+        delete: operations["deleteFile"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3276,6 +3395,19 @@ export interface components {
         ReviewerFormResponsesRequest: {
             answers: components["schemas"]["Entry"][];
         };
+        ReviewerAttachmentResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            submissionId?: number;
+            originalFilename?: string;
+            contentType?: string;
+            /** Format: int64 */
+            sizeBytes?: number;
+            downloadUrl?: string;
+            /** Format: date-time */
+            uploadedAt?: string;
+        };
         ReviewFormElementReorderRequest: {
             orderedElementIds: number[];
         };
@@ -3439,16 +3571,16 @@ export interface components {
             sort?: string[];
         };
         PageUserResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
-            sort?: components["schemas"]["SortObject"];
             /** Format: int32 */
             numberOfElements?: number;
+            sort?: components["schemas"]["SortObject"];
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["UserResponse"][];
@@ -3457,13 +3589,13 @@ export interface components {
             empty?: boolean;
         };
         PageableObject: {
+            sort?: components["schemas"]["SortObject"];
+            unpaged?: boolean;
             paged?: boolean;
             /** Format: int32 */
             pageNumber?: number;
             /** Format: int32 */
             pageSize?: number;
-            unpaged?: boolean;
-            sort?: components["schemas"]["SortObject"];
             /** Format: int64 */
             offset?: number;
         };
@@ -3473,16 +3605,16 @@ export interface components {
             empty?: boolean;
         };
         PageSubmissionResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
-            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int64 */
+            totalElements?: number;
             first?: boolean;
             last?: boolean;
-            sort?: components["schemas"]["SortObject"];
             /** Format: int32 */
             numberOfElements?: number;
+            sort?: components["schemas"]["SortObject"];
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["SubmissionResponse"][];
@@ -5176,6 +5308,78 @@ export interface operations {
             };
         };
     };
+    unassign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submissionId: number;
+                roundId: number;
+                assignmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewAssignmentResponse"];
+                };
+            };
+        };
+    };
+    resend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submissionId: number;
+                roundId: number;
+                assignmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewAssignmentResponse"];
+                };
+            };
+        };
+    };
+    reinstate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submissionId: number;
+                roundId: number;
+                assignmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewAssignmentResponse"];
+                };
+            };
+        };
+    };
     confirm: {
         parameters: {
             query?: never;
@@ -5662,6 +5866,59 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    listFiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewerAttachmentResponse"][];
+                };
+            };
+        };
+    };
+    uploadFile: {
+        parameters: {
+            query?: {
+                locale?: string;
+            };
+            header?: never;
+            path: {
+                assignmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewerAttachmentResponse"];
+                };
             };
         };
     };
@@ -6884,7 +7141,7 @@ export interface operations {
             };
         };
     };
-    unassign: {
+    unassign_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -7596,6 +7853,28 @@ export interface operations {
             };
         };
     };
+    list_18: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categoryId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PublicationSummary"][];
+                };
+            };
+        };
+    };
     byPath: {
         parameters: {
             query?: never;
@@ -7665,6 +7944,30 @@ export interface operations {
     articleVersions: {
         parameters: {
             query?: never;
+            header?: never;
+            path: {
+                slugOrId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PublicationSummary"][];
+                };
+            };
+        };
+    };
+    byAuthor: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
             header?: never;
             path: {
                 slugOrId: string;
@@ -8030,6 +8333,27 @@ export interface operations {
             header?: never;
             path: {
                 submissionId: number;
+                fileId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    deleteFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignmentId: number;
                 fileId: number;
             };
             cookie?: never;
