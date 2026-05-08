@@ -13,6 +13,6 @@
     displayName = "Messaging",
     allowedDependencies = { "shared", "identity::api", "submission::api",
                             "review::api", "editorial::api", "publication::api",
-                            "issue::api", "journal::api" }
+                            "issue::api", "journal::api", "discussion::api" }
 )
 package com.eneml.ajs.messaging;

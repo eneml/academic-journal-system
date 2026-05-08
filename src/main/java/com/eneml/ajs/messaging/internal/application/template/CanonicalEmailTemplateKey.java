@@ -65,7 +65,14 @@ public enum CanonicalEmailTemplateKey {
 
     REVIEW_REQUEST(
             "review.request",
-            "Sent to a reviewer with the initial assignment invitation.");
+            "Sent to a reviewer with the initial assignment invitation."),
+
+    DISCUSSION_OPENED(
+            "discussion.opened",
+            "Sent to participants when a workflow discussion is opened."),
+    DISCUSSION_MESSAGE(
+            "discussion.message",
+            "Sent to participants when a new message is posted to a workflow discussion.");
 
     private final String key;
     private final String description;

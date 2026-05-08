@@ -16,6 +16,8 @@ public final class NotificationType {
     public static final String REVIEWER_INVITED      = "reviewer.invited";
     public static final String REVIEW_SUBMITTED      = "review.submitted";
     public static final String PUBLICATION_PUBLISHED = "publication.published";
+    public static final String DISCUSSION_OPENED     = "discussion.opened";
+    public static final String DISCUSSION_MESSAGE    = "discussion.message";
 
     private NotificationType() {}
 }
